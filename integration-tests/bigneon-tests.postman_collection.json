@@ -268,6 +268,58 @@
 					"response": []
 				},
 				{
+					"name": "Admin - search for events",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "947e2cc1-0d92-4d1b-b5ab-c1a599ea3bd4",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"pm.test(\"should be one result\", function(){",
+									"    pm.expect(JSON.parse(responseBody).length).to.equal(1);",
+									"})"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/organizations/{{last_org_id}}/events",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"organizations",
+								"{{last_org_id}}",
+								"events"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Admin - create tickets",
 					"event": [
 						{
@@ -317,6 +369,43 @@
 								"events",
 								"{{last_event_id}}",
 								"tickets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - search for event",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f40a2996-aa1a-4be7-925f-1e55828eb494",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/events",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"events"
 							]
 						}
 					},
