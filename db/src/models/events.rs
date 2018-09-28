@@ -3,6 +3,8 @@ use chrono::NaiveDateTime;
 use diesel;
 use diesel::expression::dsl;
 use diesel::prelude::*;
+use diesel::sql_types;
+use diesel::sql_types::Nullable;
 use models::*;
 use schema::{artists, event_artists, events, venues};
 use utils::errors::DatabaseError;
@@ -161,57 +163,21 @@ impl Event {
         start_time: Option<NaiveDateTime>,
         end_time: Option<NaiveDateTime>,
         status_filter: Option<Vec<EventStatus>>,
+        current_user: Option<User>,
         conn: &PgConnection,
     ) -> Result<Vec<Event>, DatabaseError> {
-        let query_like = match query_filter {
-            Some(n) => format!("%{}%", n),
-            None => "%".to_string(),
-        };
-        let mut query = events::table
-            .filter(
-                events::event_start
-                    .gt(start_time
-                        .unwrap_or_else(|| NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0))),
-            ).filter(
-                events::event_start
-                    .lt(end_time
-                        .unwrap_or_else(|| NaiveDate::from_ymd(3970, 1, 1).and_hms(0, 0, 0))),
-            ).left_join(venues::table.on(events::venue_id.eq(venues::id.nullable())))
-            .left_join(
-                event_artists::table
-                    .inner_join(
-                        artists::table.on(event_artists::artist_id
-                            .eq(artists::id)
-                            .and(artists::name.ilike(query_like.clone()))),
-                    ).on(events::id.eq(event_artists::event_id)),
-            ).filter(
-                events::name
-                    .ilike(query_like.clone())
-                    .or(venues::id
-                        .is_not_null()
-                        .and(venues::name.ilike(query_like.clone()))).or(artists::id.is_not_null()),
-            ).filter(events::status.ne(EventStatus::Draft.to_string()))
-            .select(events::all_columns)
-            .distinct()
-            .order_by(events::event_start.asc())
-            .then_order_by(events::name.asc())
-            .into_boxed();
+        use schema::*;
+        let query = include_str!("../queries/reserve_tickets.sql");
+        let q = diesel::sql_query(query);
+        //         .bind::<Nullable<sql_types::Text>, _>(query_filter);
+        //            .bind::<Nullable<sql_types::Timestamp>, _>(start_time)
+        //            .bind::<Nullable<sql_types::Timestamp>, _>(end_time)
+        //            .bind::<Nullable<sql_types::Uuid>, _>(current_user.map(|u| u.id))
+        //            .bind::<sql_types::Bool, _>(current_user.map(|u| u.has_role(Roles::Admin)))
+        //            .bind::<Nullable<sql_types::Uuid>, _>(region_id);
 
-        if let Some(statuses) = status_filter {
-            let statuses: Vec<String> = statuses
-                .into_iter()
-                .map(|status| status.to_string())
-                .collect();
-            query = query.filter(events::status.eq_any(statuses));
-        }
-
-        if let Some(region_id) = region_id {
-            query = query.filter(venues::region_id.eq(region_id));
-        }
-
-        let result = query.load(conn);
-
-        DatabaseError::wrap(ErrorCode::QueryError, "Unable to load all events", result)
+        q.get_results(conn)
+            .to_db_error(ErrorCode::QueryError, "Unable to load all events")
     }
 
     pub fn add_artist(&self, artist_id: Uuid, conn: &PgConnection) -> Result<(), DatabaseError> {

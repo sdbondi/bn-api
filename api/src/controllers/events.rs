@@ -46,7 +46,7 @@ pub struct UpdateArtistsRequest {
 }
 
 pub fn index(
-    (connection, parameters): (Connection, Query<SearchParameters>),
+    (connection, parameters, user): (Connection, Query<SearchParameters>, Option<User>),
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = connection.get();
     let parameters = parameters.into_inner();
@@ -60,6 +60,7 @@ pub fn index(
         } else {
             Some(parameters.status)
         },
+        user.map(|u| u.user),
         connection,
     )?;
 

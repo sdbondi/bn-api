@@ -172,178 +172,179 @@ fn search() {
         .with_venue(&venue2)
         .with_event_start(&NaiveDate::from_ymd(2017, 7, 8).and_hms(9, 10, 11))
         .finish();
-
-    let all_events = vec![event, event2, event3];
-    let all_found_events =
-        Event::search(None, None, None, None, None, project.get_connection()).unwrap();
-    assert_eq!(all_events, all_found_events);
-
-    let all_found_events = Event::search(
-        Some("".to_string()),
-        None,
-        None,
-        None,
-        None,
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_events, all_found_events);
-
-    // Limited by just Published and Offline events
-    let all_found_events = Event::search(
-        Some("".to_string()),
-        None,
-        None,
-        None,
-        Some(vec![EventStatus::Published, EventStatus::Offline]),
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_found_events.len(), 2);
-    assert_eq!(all_events[0], all_found_events[0]);
-    assert_eq!(all_events[2], all_found_events[1]);
-
-    // Limited by just Closed events
-    let all_found_events = Event::search(
-        Some("".to_string()),
-        None,
-        None,
-        None,
-        Some(vec![EventStatus::Closed]),
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_found_events.len(), 1);
-    assert_eq!(all_events[1], all_found_events[0]);
-
-    // Event name search
-    let all_found_events = Event::search(
-        Some("New".to_string()),
-        None,
-        None,
-        None,
-        None,
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_found_events.len(), 2);
-    assert_eq!(all_events[1], all_found_events[0]);
-    assert_eq!(all_events[2], all_found_events[1]);
-
-    // Venue name search
-    let all_found_events = Event::search(
-        Some("Venue1".to_string()),
-        None,
-        None,
-        None,
-        None,
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_found_events.len(), 1);
-    assert_eq!(all_events[0], all_found_events[0]);
-
-    // Artist name search for artist in both events
-    let all_found_events = Event::search(
-        Some("Artist1".to_string()),
-        None,
-        None,
-        None,
-        None,
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_found_events.len(), 2);
-    assert_eq!(all_events[0], all_found_events[0]);
-    assert_eq!(all_events[1], all_found_events[1]);
-
-    // Artist name search for artist at only one event
-    let all_found_events = Event::search(
-        Some("Artist2".to_string()),
-        None,
-        None,
-        None,
-        None,
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_found_events.len(), 1);
-    assert_eq!(all_events[0], all_found_events[0]);
-
-    // Match names Venue2 and Artist2 returning all events
-    let all_found_events = Event::search(
-        Some("2".to_string()),
-        None,
-        None,
-        None,
-        None,
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_events, all_found_events);
-
-    // Match events belonging to given region
-    let all_found_events = Event::search(
-        None,
-        Some(region1.id.into()),
-        None,
-        None,
-        None,
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_found_events.len(), 1);
-    assert_eq!(all_events[0], all_found_events[0]);
-
-    // Match events belonging to other region
-    let all_found_events = Event::search(
-        None,
-        Some(region2.id.into()),
-        None,
-        None,
-        None,
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_found_events.len(), 2);
-    assert_eq!(all_events[1], all_found_events[0]);
-    assert_eq!(all_events[2], all_found_events[1]);
-
-    // Combination of query and region resulting in no records
-    let all_found_events = Event::search(
-        Some("Artist2".to_string()),
-        Some(region2.id.into()),
-        None,
-        None,
-        None,
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_found_events.len(), 0);
-
-    // Combination of query and region resulting in records
-    let all_found_events = Event::search(
-        Some("Artist2".to_string()),
-        Some(region1.id.into()),
-        None,
-        None,
-        None,
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_found_events.len(), 1);
-    assert_eq!(all_events[0], all_found_events[0]);
-
-    let all_found_events = Event::search(
-        None,
-        None,
-        Some(NaiveDate::from_ymd(2017, 7, 8).and_hms(9, 0, 11)),
-        None,
-        None,
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_found_events.len(), 2);
-    assert_eq!(all_events[1], all_found_events[0]);
-    assert_eq!(all_events[2], all_found_events[1]);
-
-    let all_found_events = Event::search(
-        None,
-        None,
-        None,
-        Some(NaiveDate::from_ymd(2017, 7, 8).and_hms(9, 0, 11)),
-        None,
-        project.get_connection(),
-    ).unwrap();
-    assert_eq!(all_found_events.len(), 1);
-    assert_eq!(all_events[0], all_found_events[0]);
+    unimplemented!();
+    // Need to review these tests
+    //    let all_events = vec![event, event2, event3];
+    //    let all_found_events =
+    //        Event::search(None, None, None, None, None, project.get_connection()).unwrap();
+    //    assert_eq!(all_events, all_found_events);
+    //
+    //    let all_found_events = Event::search(
+    //        Some("".to_string()),
+    //        None,
+    //        None,
+    //        None,
+    //        None,
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_events, all_found_events);
+    //
+    //    // Limited by just Published and Offline events
+    //    let all_found_events = Event::search(
+    //        Some("".to_string()),
+    //        None,
+    //        None,
+    //        None,
+    //        Some(vec![EventStatus::Published, EventStatus::Offline]),
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_found_events.len(), 2);
+    //    assert_eq!(all_events[0], all_found_events[0]);
+    //    assert_eq!(all_events[2], all_found_events[1]);
+    //
+    //    // Limited by just Closed events
+    //    let all_found_events = Event::search(
+    //        Some("".to_string()),
+    //        None,
+    //        None,
+    //        None,
+    //        Some(vec![EventStatus::Closed]),
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_found_events.len(), 1);
+    //    assert_eq!(all_events[1], all_found_events[0]);
+    //
+    //    // Event name search
+    //    let all_found_events = Event::search(
+    //        Some("New".to_string()),
+    //        None,
+    //        None,
+    //        None,
+    //        None,
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_found_events.len(), 2);
+    //    assert_eq!(all_events[1], all_found_events[0]);
+    //    assert_eq!(all_events[2], all_found_events[1]);
+    //
+    //    // Venue name search
+    //    let all_found_events = Event::search(
+    //        Some("Venue1".to_string()),
+    //        None,
+    //        None,
+    //        None,
+    //        None,
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_found_events.len(), 1);
+    //    assert_eq!(all_events[0], all_found_events[0]);
+    //
+    //    // Artist name search for artist in both events
+    //    let all_found_events = Event::search(
+    //        Some("Artist1".to_string()),
+    //        None,
+    //        None,
+    //        None,
+    //        None,
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_found_events.len(), 2);
+    //    assert_eq!(all_events[0], all_found_events[0]);
+    //    assert_eq!(all_events[1], all_found_events[1]);
+    //
+    //    // Artist name search for artist at only one event
+    //    let all_found_events = Event::search(
+    //        Some("Artist2".to_string()),
+    //        None,
+    //        None,
+    //        None,
+    //        None,
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_found_events.len(), 1);
+    //    assert_eq!(all_events[0], all_found_events[0]);
+    //
+    //    // Match names Venue2 and Artist2 returning all events
+    //    let all_found_events = Event::search(
+    //        Some("2".to_string()),
+    //        None,
+    //        None,
+    //        None,
+    //        None,
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_events, all_found_events);
+    //
+    //    // Match events belonging to given region
+    //    let all_found_events = Event::search(
+    //        None,
+    //        Some(region1.id.into()),
+    //        None,
+    //        None,
+    //        None,
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_found_events.len(), 1);
+    //    assert_eq!(all_events[0], all_found_events[0]);
+    //
+    //    // Match events belonging to other region
+    //    let all_found_events = Event::search(
+    //        None,
+    //        Some(region2.id.into()),
+    //        None,
+    //        None,
+    //        None,
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_found_events.len(), 2);
+    //    assert_eq!(all_events[1], all_found_events[0]);
+    //    assert_eq!(all_events[2], all_found_events[1]);
+    //
+    //    // Combination of query and region resulting in no records
+    //    let all_found_events = Event::search(
+    //        Some("Artist2".to_string()),
+    //        Some(region2.id.into()),
+    //        None,
+    //        None,
+    //        None,
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_found_events.len(), 0);
+    //
+    //    // Combination of query and region resulting in records
+    //    let all_found_events = Event::search(
+    //        Some("Artist2".to_string()),
+    //        Some(region1.id.into()),
+    //        None,
+    //        None,
+    //        None,
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_found_events.len(), 1);
+    //    assert_eq!(all_events[0], all_found_events[0]);
+    //
+    //    let all_found_events = Event::search(
+    //        None,
+    //        None,
+    //        Some(NaiveDate::from_ymd(2017, 7, 8).and_hms(9, 0, 11)),
+    //        None,
+    //        None,
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_found_events.len(), 2);
+    //    assert_eq!(all_events[1], all_found_events[0]);
+    //    assert_eq!(all_events[2], all_found_events[1]);
+    //
+    //    let all_found_events = Event::search(
+    //        None,
+    //        None,
+    //        None,
+    //        Some(NaiveDate::from_ymd(2017, 7, 8).and_hms(9, 0, 11)),
+    //        None,
+    //        project.get_connection(),
+    //    ).unwrap();
+    //    assert_eq!(all_found_events.len(), 1);
+    //    assert_eq!(all_events[0], all_found_events[0]);
 }
 
 #[test]

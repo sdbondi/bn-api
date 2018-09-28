@@ -105,7 +105,8 @@ impl DatabaseError {
         match res {
             Ok(val) => Ok(val),
             Err(e) => {
-                println!("PG Database error:{}", e.to_string());
+                println!("Database error:{}", e.to_string());
+
                 match e {
                     DieselError::NotFound => Err(DatabaseError::new(
                         ErrorCode::NoResults,
@@ -116,10 +117,14 @@ impl DatabaseError {
                             ErrorCode::DuplicateKeyError,
                             Some(&format!("{}, {}", message, e.to_string())),
                         )),
-                        _ => Err(DatabaseError::new(
-                            error_code,
-                            Some(&format!("{}, {}", message, e.to_string())),
-                        )),
+                        _ => {
+                            panic!();
+
+                            Err(DatabaseError::new(
+                                error_code,
+                                Some(&format!("{}, {}", message, e.to_string())),
+                            ))
+                        }
                     },
                     _ => Err(DatabaseError::new(
                         error_code,
