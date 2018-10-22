@@ -93,11 +93,17 @@ impl Order {
     pub fn add_tickets(
         &self,
         ticket_type_id: Uuid,
+        hold_redemption_key: Option<String>,
         quantity: i64,
         conn: &PgConnection,
     ) -> Result<Vec<TicketInstance>, DatabaseError> {
         let ticket_pricing = TicketPricing::get_current_ticket_pricing(ticket_type_id, conn)?;
         let ticket_type = TicketType::find(ticket_type_id, conn)?;
+        let hold_id = if hold_redemption_key.is_some() {
+            Some(Hold::find_by_redemption_key(hold_redemption_key, conn)?.id);
+        } else {
+            None;
+        };
 
         let event = Event::find(ticket_type.event_id, conn)?;
         let organization = Organization::find(event.organization_id, conn)?;
@@ -131,7 +137,7 @@ impl Order {
             &order_item,
             &self.expires_at,
             ticket_type_id,
-            None,
+            hold_id,
             quantity,
             conn,
         )

@@ -22,6 +22,7 @@ pub struct CartResponse {
 
 #[derive(Deserialize)]
 pub struct AddToCartRequestItem {
+    pub redemption_key: Option<String>,
     pub ticket_type_id: Uuid,
     pub quantity: i64,
 }
@@ -54,10 +55,10 @@ pub fn add(
     for (ticket_type_id, request_items) in &json
         .items
         .iter()
-        .group_by(|request_item| request_item.ticket_type_id)
+        .group_by(|request_item| (request_item.ticket_type_id, request_item.redemption_key))
     {
         let quantity = request_items.fold(0, |sum, request_item| sum + request_item.quantity);
-        cart.add_tickets(ticket_type_id, quantity, connection)?;
+        cart.add_tickets(ticket_type_id, redemption_key, quantity, connection)?;
     }
 
     Ok(HttpResponse::Created().json(&CartResponse { cart_id: cart.id }))
