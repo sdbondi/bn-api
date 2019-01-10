@@ -11,6 +11,7 @@ pub mod organization_invites;
 pub mod organizations;
 pub mod password_resets;
 pub mod payment_methods;
+pub mod redemption_codes;
 pub mod regions;
 pub mod reports;
 pub mod ticket_types;

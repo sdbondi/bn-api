@@ -74,25 +74,6 @@ pub fn update_cart(
         })
         .collect();
 
-    if redemption_code.is_some() {
-        let hold = Hold::find_by_redemption_code(redemption_code.as_ref().unwrap(), connection)?;
-        if !order_items.iter().any(|oi| {
-            oi.ticket_type_id == hold.ticket_type_id && oi.redemption_code == redemption_code
-        }) {
-            let quantity = cmp::max(
-                hold.max_per_order
-                    .unwrap_or(hold.quantity(connection)?.1 as i64) as u32,
-                1,
-            );
-
-            order_items.push(UpdateOrderItem {
-                quantity,
-                ticket_type_id: hold.ticket_type_id,
-                redemption_code: Some(hold.redemption_code.clone()),
-            })
-        }
-    }
-
     for order_item in &order_items {
         if !Dbticket_types::is_event_not_draft(&order_item.ticket_type_id, connection)? {
             return Ok(
@@ -154,25 +135,6 @@ pub fn replace_cart(
             redemption_code: i.redemption_code.clone(),
         })
         .collect();
-
-    if redemption_code.is_some() {
-        let hold = Hold::find_by_redemption_code(redemption_code.as_ref().unwrap(), connection)?;
-        if !order_items.iter().any(|oi| {
-            oi.ticket_type_id == hold.ticket_type_id && oi.redemption_code == redemption_code
-        }) {
-            let quantity = cmp::max(
-                hold.max_per_order
-                    .unwrap_or(hold.quantity(connection)?.1 as i64) as u32,
-                1,
-            );
-
-            order_items.push(UpdateOrderItem {
-                quantity,
-                ticket_type_id: hold.ticket_type_id,
-                redemption_code: Some(hold.redemption_code.clone()),
-            })
-        }
-    }
 
     for order_item in &order_items {
         if !Dbticket_types::is_event_not_draft(&order_item.ticket_type_id, connection)? {

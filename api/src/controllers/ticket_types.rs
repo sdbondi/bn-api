@@ -150,6 +150,7 @@ pub fn index(
     let fee_schedule = FeeSchedule::find(organization.fee_schedule_id, connection)?;
     //TODO refactor using paging params
     let ticket_types = TicketType::find_by_event_id(path.id, connection)?;
+
     let mut payload = Payload::new(vec![], query_parameters.into_inner().into());
 
     for t in ticket_types {

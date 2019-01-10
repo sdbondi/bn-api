@@ -189,6 +189,9 @@ pub fn routes(app: &mut CorsBuilder<AppState>) -> App<AppState> {
     .resource("/payment_methods", |r| {
         r.method(Method::GET).with(payment_methods::index);
     })
+    .resource("/redemption_codes/{code}", |r| {
+        r.method(Method::GET).with(redemption_codes::show)
+    })
     .resource("/regions/{id}", |r| {
         r.method(Method::GET).with(regions::show);
         r.method(Method::PUT).with(regions::update);

@@ -6558,7 +6558,71 @@
 					"response": []
 				},
 				{
-					"name": "User - add to cart - redemption code",
+					"name": "Guest - get redemption code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "aadca825-5dbc-4d09-8fb8-6b9d7cbe9350",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.test(\"data should be present\", function(){",
+									"    pm.expect(json.redemption_code).to.equal(pm.environment.get(\"last_redemption_code\"));",
+									"    pm.expect(json.hold_type).to.equal(\"Comp\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/redemption_codes/{{last_redemption_code}}",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"redemption_codes",
+								"{{last_redemption_code}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - add to cart - redemption code Copy",
 					"event": [
 						{
 							"listen": "test",
