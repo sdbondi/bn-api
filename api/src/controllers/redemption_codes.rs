@@ -3,7 +3,7 @@ use actix_web::Path;
 use bigneon_db::prelude::*;
 use db::Connection;
 use errors::BigNeonError;
-use uuid::Uuid;
+use models::UserDisplayTicketType;
 
 #[derive(Deserialize)]
 pub struct PathParameters {
@@ -18,14 +18,22 @@ pub fn show(
 
     #[derive(Serialize)]
     struct R {
-        ticket_type_id: Uuid,
+        ticket_type: UserDisplayTicketType,
         redemption_code: String,
         max_per_order: Option<i64>,
         discount_in_cents: Option<i64>,
         hold_type: HoldTypes,
     }
     let r = R {
-        ticket_type_id: hold.ticket_type_id,
+        ticket_type: UserDisplayTicketType::from_ticket_type(
+            &TicketType::find(hold.ticket_type_id, conn)?,
+            &FeeSchedule::find(
+                Organization::find_for_event(hold.event_id, conn)?.fee_schedule_id,
+                conn,
+            )?,
+            false,
+            conn,
+        )?,
         redemption_code: hold.redemption_code.clone(),
         max_per_order: hold.max_per_order,
         discount_in_cents: hold.discount_in_cents,

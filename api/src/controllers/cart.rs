@@ -13,7 +13,6 @@ use helpers::application;
 use itertools::Itertools;
 use payments::PaymentProcessor;
 use server::AppState;
-use std::cmp;
 use std::collections::HashMap;
 use utils::ServiceLocator;
 use uuid::Uuid;
@@ -60,8 +59,6 @@ pub fn update_cart(
 
     // Find the current cart of the user, if it exists.
     let mut cart = Order::find_or_create_cart(&user.user, connection)?;
-
-    let redemption_code = json.redemption_code.clone();
 
     let mut order_items: Vec<UpdateOrderItem> = json
         .into_inner()
@@ -122,8 +119,6 @@ pub fn replace_cart(
 
     // Find the current cart of the user, if it exists.
     let mut cart = Order::find_or_create_cart(&user.user, connection)?;
-
-    let redemption_code = json.redemption_code.clone();
 
     let mut order_items: Vec<UpdateOrderItem> = json
         .into_inner()
