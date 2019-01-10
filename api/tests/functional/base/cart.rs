@@ -42,7 +42,6 @@ pub fn update_box_office_pricing(role: Roles, should_test_succeed: bool) {
             quantity: 2,
             redemption_code: None,
         }],
-        redemption_code: None,
     });
 
     let response: HttpResponse =
@@ -146,7 +145,6 @@ pub fn replace_box_office_pricing(role: Roles, should_test_succeed: bool) {
             quantity: 2,
             redemption_code: None,
         }],
-        redemption_code: None,
     });
 
     let response: HttpResponse =
