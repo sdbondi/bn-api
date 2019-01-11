@@ -27,6 +27,7 @@ matrix:
     - TEST_SCRIPT="run-integration-tests.sh"
     - DATABASE_URL=postgres://postgres:password123@localhost/bigneon_test
     - RUST_BACKTRACE=1
+    - RUST_LOG=error # Postman output is very verbose
   - stage: tests
     name: Cargo Audit
     env:
