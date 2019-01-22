@@ -20,6 +20,7 @@ itertools = "0.7"
 jsonwebtoken = "5"
 lettre = "0.8"
 lettre_email = "0.8"
+lazy_static = "1.2.0"
 log = { version = "0.4", features = ["max_level_debug"]}
 logging = {path="../logging"}
 r2d2 = "0.8"
