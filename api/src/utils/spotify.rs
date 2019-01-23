@@ -263,3 +263,37 @@ impl SpotifyAccessToken {
         self.expires_at < since_the_epoch.as_secs() + 60
     }
 }
+
+#[cfg(all(test))]
+mod test {
+    use super::*;
+
+    #[test]
+    fn spotify_access_token_is_expired() {
+        let subject = SpotifyAccessToken {
+            token: "dummy".to_string(),
+            expires_at: 0,
+        };
+
+        assert!(subject.is_expired());
+
+        let since_the_epoch = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards");
+
+        let subject = SpotifyAccessToken {
+            token: "dummy".to_string(),
+            expires_at: since_the_epoch.as_secs(),
+        };
+
+        assert!(subject.is_expired());
+
+        let subject = SpotifyAccessToken {
+            token: "dummy".to_string(),
+            expires_at: since_the_epoch.as_secs() + 1000,
+        };
+
+        assert!(!subject.is_expired());
+    }
+
+}
