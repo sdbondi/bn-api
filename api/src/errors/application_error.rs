@@ -5,6 +5,8 @@ use std::fmt;
 pub enum ApplicationErrorType {
     Unprocessable,
     Internal,
+
+    ServerConfigError,
 }
 
 #[derive(Debug)]

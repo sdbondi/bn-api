@@ -25,14 +25,8 @@ pub fn create(role: Roles, should_test_succeed: bool) {
         ..Default::default()
     });
 
-    let test_request = TestRequest::create();
-    let response: HttpResponse = artists::create((
-        test_request.extract_state(),
-        database.connection.into(),
-        json,
-        auth_user,
-    ))
-    .into();
+    let response: HttpResponse =
+        artists::create((database.connection.into(), json, auth_user)).into();
 
     if should_test_succeed {
         let body = support::unwrap_body_to_string(&response).unwrap();
@@ -64,14 +58,8 @@ pub fn create_with_organization(role: Roles, should_test_succeed: bool) {
         ..Default::default()
     });
 
-    let test_request = TestRequest::create();
-    let response: HttpResponse = artists::create((
-        test_request.extract_state(),
-        database.connection.into(),
-        json,
-        auth_user.clone(),
-    ))
-    .into();
+    let response: HttpResponse =
+        artists::create((database.connection.into(), json, auth_user.clone())).into();
 
     if should_test_succeed {
         let body = support::unwrap_body_to_string(&response).unwrap();

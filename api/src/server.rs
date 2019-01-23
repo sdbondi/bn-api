@@ -55,10 +55,10 @@ impl Server {
             domain_action_monitor.start()
         }
 
-	if config.spotify_auth_token.is_some() {
-	    let token = config.spotify_auth_token.clone().unwrap();
-	    spotify::SINGLETON.set_auth_token(&token);
-	}
+        if config.spotify_auth_token.is_some() {
+            let token = config.spotify_auth_token.clone().unwrap();
+            spotify::SINGLETON.set_auth_token(&token);
+        }
 
         if process_http {
             info!("Listening on {}", bind_addr);

@@ -1,4 +1,4 @@
-use errors::{ApplicationError, BigNeonError};
+use errors::{ApplicationError, ApplicationErrorType, BigNeonError};
 use log::Level::*;
 use models::CreateArtistRequest;
 use reqwest::Client;
@@ -16,7 +16,7 @@ pub static mut AUTH_TOKEN: Option<&str> = None;
 
 lazy_static! {
     pub static ref SINGLETON: Spotify = Spotify {
-	..Default::default()
+        ..Default::default()
     };
 }
 
@@ -42,154 +42,165 @@ pub struct Spotify {
 
 impl Spotify {
     pub fn set_auth_token(&self, token: &str) {
-	let mut auth_token = self.auth_token.write().unwrap();
-	*auth_token = Some(token.to_owned());
+        let mut auth_token = self.auth_token.write().unwrap();
+        *auth_token = Some(token.to_owned());
     }
 
     pub fn connect(&self) -> Result<(), BigNeonError> {
-	match *self.auth_token.read().unwrap() {
-	    Some(ref token) => {
-		let mut access_token = self.access_token.write().unwrap();
-		// This code must have no panics as that will poison the RwLock
-		// which is a case we don't expect/handle when read locking (`read().unwrap()`)
-		if (*access_token).is_expired() {
-		    *access_token = self.authenticate(token)?;
-		    jlog!(Info, LOG_TARGET, "Fetching new Spotify access token", {
-			"expires_at": (*access_token).expires_at
-		    });
-		} else {
-		    jlog!(Info, LOG_TARGET, "Reusing valid Spotify access token", {
-			"expires_at": (* access_token).expires_at
-		    });
-		}
-		Ok(())
+        match *self.auth_token.read().unwrap() {
+            Some(ref token) => {
+                let mut access_token = self.access_token.write().unwrap();
+                // This code must have no panics as that will poison the RwLock
+                // which is a case we don't expect/handle when read locking (`read().unwrap()`)
+                if (*access_token).is_expired() {
+                    *access_token = self.authenticate(token)?;
+                    jlog!(Info, LOG_TARGET, "Fetching new Spotify access token", {
+                        "expires_at": (*access_token).expires_at
+                    });
+                } else {
+                    jlog!(Info, LOG_TARGET, "Reusing valid Spotify access token", {
+                        "expires_at": (* access_token).expires_at
+                    });
+                }
+                Ok(())
             }
-	    None => Err(ApplicationError::new("No spotify auth key provided".to_owned()).into()),
+            None => Err(ApplicationError::new_with_type(
+                ApplicationErrorType::ServerConfigError,
+                "No Spotify auth key provided".to_owned(),
+            )
+            .into()),
         }
     }
 
     fn authenticate(&self, auth_token: &str) -> Result<SpotifyAccessToken, reqwest::Error> {
-	let reqwest_client = Client::new();
-	let params = [("grant_type", "client_credentials")];
-	let res: AuthResponse = reqwest_client
-	    .post(SPOTIFY_URL_AUTH)
-	    .header("Authorization", format!("Basic {}", auth_token))
-	    .form(&params)
-	    .send()?
-	    .json()?;
+        let reqwest_client = Client::new();
+        let params = [("grant_type", "client_credentials")];
+        let res: AuthResponse = reqwest_client
+            .post(SPOTIFY_URL_AUTH)
+            .header("Authorization", format!("Basic {}", auth_token))
+            .form(&params)
+            .send()?
+            .json()?;
 
-	let start = SystemTime::now();
-	let since_the_epoch = start
-	    .duration_since(UNIX_EPOCH)
-	    .expect("Time went backwards");
-	let expires_at = since_the_epoch.as_secs() + res.expires_in;
+        let start = SystemTime::now();
+        let since_the_epoch = start
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards");
+        let expires_at = since_the_epoch.as_secs() + res.expires_in;
 
-	Ok(SpotifyAccessToken {
-	    token: res.access_token,
-	    expires_at,
-	})
+        Ok(SpotifyAccessToken {
+            token: res.access_token,
+            expires_at,
+        })
     }
 
     pub fn search(&self, q: String) -> Result<Vec<CreateArtistRequest>, BigNeonError> {
-	self.connect()?;
-
-	// Lock access token for reading
-	let access_token = self.access_token.read().unwrap();
-
-	let reqwest_client = Client::new();
-	let access_token = &*access_token.token;
-    let encoded_q = utf8_percent_encode(&q, PATH_SEGMENT_ENCODE_SET);
-	let url = format!(
-	    "https://api.spotify.com/v1/search?q={}&type=artist&access_token={}",
-	    encoded_q, access_token
-	);
-	let res = reqwest_client.get(&url).send()?.text()?;
-	let result: Value = serde_json::from_str(&res)?;
-	if result.get("error").is_some() {
-	    return Err(ApplicationError::new(
-		result["error"]["message"]
-		    .as_str()
-		    .unwrap_or("Invalid Spotify Response")
-		    .to_string(),
-	    )
-	    .into());
+        {
+            // For search we ignore not having an auth token
+            if self.auth_token.read().unwrap().is_none() {
+                return Ok(vec![]);
+            }
         }
-	let spotify_artists = result["artists"]["items"]
-	    .as_array()
-	    .unwrap()
-	    .into_iter()
-	    .map(|item| {
-		let artist = item;
-		let image_url = Spotify::get_image_from_artist(&artist["images"], Some(600), None);
-		CreateArtistRequest {
-		    name: artist["name"].as_str().map(|s| s.to_string()),
-		    bio: Some("".to_string()),
-		    spotify_id: artist["id"].as_str().map(|s| s.to_string()),
-		    image_url,
-		    other_image_urls: artist["images"].as_array().map(|a| {
-			a.iter()
-			    .map(|i| i["url"].as_str().map(|s| s.to_string()))
-			    .filter(|i| i.is_some())
-			    .map(|i| i.unwrap())
-			    .collect()
-		    }),
-		    ..Default::default()
-		}
-	    })
-	    .collect();
-	Ok(spotify_artists)
+
+        self.connect()?;
+
+        // Lock access token for reading
+        let access_token = self.access_token.read().unwrap();
+
+        let reqwest_client = Client::new();
+        let access_token = &*access_token.token;
+        let encoded_q = utf8_percent_encode(&q, PATH_SEGMENT_ENCODE_SET);
+        let url = format!(
+            "https://api.spotify.com/v1/search?q={}&type=artist&access_token={}",
+            encoded_q, access_token
+        );
+        let res = reqwest_client.get(&url).send()?.text()?;
+        let result: Value = serde_json::from_str(&res)?;
+        if result.get("error").is_some() {
+            return Err(ApplicationError::new(
+                result["error"]["message"]
+                    .as_str()
+                    .unwrap_or("Invalid Spotify Response")
+                    .to_string(),
+            )
+            .into());
+        }
+        let spotify_artists = result["artists"]["items"]
+            .as_array()
+            .unwrap()
+            .into_iter()
+            .map(|item| {
+                let artist = item;
+                let image_url = Spotify::get_image_from_artist(&artist["images"], Some(600), None);
+                CreateArtistRequest {
+                    name: artist["name"].as_str().map(|s| s.to_string()),
+                    bio: Some("".to_string()),
+                    spotify_id: artist["id"].as_str().map(|s| s.to_string()),
+                    image_url,
+                    other_image_urls: artist["images"].as_array().map(|a| {
+                        a.iter()
+                            .map(|i| i["url"].as_str().map(|s| s.to_string()))
+                            .filter(|i| i.is_some())
+                            .map(|i| i.unwrap())
+                            .collect()
+                    }),
+                    ..Default::default()
+                }
+            })
+            .collect();
+        Ok(spotify_artists)
     }
 
     pub fn read_artist(
         &self,
         artist_id: &str,
     ) -> Result<Option<CreateArtistRequest>, BigNeonError> {
-	self.connect()?;
+        self.connect()?;
 
-	// Lock access token for reading
-	let access_token = self.access_token.read().unwrap();
+        // Lock access token for reading
+        let access_token = self.access_token.read().unwrap();
 
-	let reqwest_client = Client::new();
+        let reqwest_client = Client::new();
 
-	let url = format!("https://api.spotify.com/v1/artists/{}", artist_id);
+        let url = format!("https://api.spotify.com/v1/artists/{}", artist_id);
 
-	let res = reqwest_client
-	    .get(&url)
-	    .header("Authorization", format!("Bearer {}", &*access_token.token))
-	    .send()?
-	    .text()?;
+        let res = reqwest_client
+            .get(&url)
+            .header("Authorization", format!("Bearer {}", &*access_token.token))
+            .send()?
+            .text()?;
 
-	let artist: Value = serde_json::from_str(&res)?;
-	if artist.get("error").is_some() {
-	    return Err(ApplicationError::new(
-		artist["error"]["message"]
-		    .as_str()
-		    .unwrap_or("Invalid Spotify Response")
-		    .to_string(),
-	    )
-	    .into());
-	} else {
-	    let image_url = Spotify::get_image_from_artist(&artist["images"], Some(600), None);
-	    let thumb_image_url =
-		Spotify::get_image_from_artist(&artist["images"], None, Some(300));
+        let artist: Value = serde_json::from_str(&res)?;
+        if artist.get("error").is_some() {
+            return Err(ApplicationError::new(
+                artist["error"]["message"]
+                    .as_str()
+                    .unwrap_or("Invalid Spotify Response")
+                    .to_string(),
+            )
+            .into());
+        } else {
+            let image_url = Spotify::get_image_from_artist(&artist["images"], Some(600), None);
+            let thumb_image_url =
+                Spotify::get_image_from_artist(&artist["images"], None, Some(300));
 
-	    let create_artist = CreateArtistRequest {
-		name: artist["name"].as_str().map(|s| s.to_string()),
-		bio: Some("".to_string()),
-		spotify_id: artist["id"].as_str().map(|s| s.to_string()),
-		image_url,
-		thumb_image_url,
-		other_image_urls: artist["images"].as_array().map(|a| {
-		    a.iter()
-			.map(|i| i["url"].as_str().map(|s| s.to_string()))
-			.filter(|i| i.is_some())
-			.map(|i| i.unwrap())
-			.collect()
-		}),
+            let create_artist = CreateArtistRequest {
+                name: artist["name"].as_str().map(|s| s.to_string()),
+                bio: Some("".to_string()),
+                spotify_id: artist["id"].as_str().map(|s| s.to_string()),
+                image_url,
+                thumb_image_url,
+                other_image_urls: artist["images"].as_array().map(|a| {
+                    a.iter()
+                        .map(|i| i["url"].as_str().map(|s| s.to_string()))
+                        .filter(|i| i.is_some())
+                        .map(|i| i.unwrap())
+                        .collect()
+                }),
 
-		..Default::default()
-	    };
-	    Ok(Some(create_artist))
+                ..Default::default()
+            };
+            Ok(Some(create_artist))
         }
     }
 
@@ -245,12 +256,12 @@ struct SpotifyAccessToken {
 
 impl SpotifyAccessToken {
     pub fn is_expired(&self) -> bool {
-	let since_the_epoch = SystemTime::now()
-	    .duration_since(UNIX_EPOCH)
-	    .expect("Time went backwards");
+        let since_the_epoch = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards");
 
-	// If we're a minute or less away from expiring,
-	// get a new token
-	self.expires_at < since_the_epoch.as_secs() + 60
+        // If we're a minute or less away from expiring,
+        // get a new token
+        self.expires_at < since_the_epoch.as_secs() + 60
     }
 }

@@ -2,6 +2,7 @@ use actix_web::{test, FromRequest, HttpRequest, State};
 use bigneon_api::config::{Config, Environment};
 use bigneon_api::db::Database;
 use bigneon_api::server::AppState;
+use bigneon_api::utils::spotify;
 
 pub struct TestRequest {
     pub request: HttpRequest<AppState>,
@@ -23,6 +24,9 @@ impl TestRequest {
         config.token_issuer = "bn-api-test".into();
         config.api_keys_encryption_key = "test_encryption_key".to_string();
         config.google_recaptcha_secret_key = None;
+        if config.spotify_auth_token.is_some() {
+            spotify::SINGLETON.set_auth_token(&config.spotify_auth_token.clone().unwrap());
+        }
 
         let test_request = test::TestRequest::with_state(AppState::new(
             config.clone(),

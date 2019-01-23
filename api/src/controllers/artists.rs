@@ -20,7 +20,7 @@ pub fn search(
         .unwrap_or(false);
     if try_spotify && artists.is_empty() && query_parameters.get_tag("q").is_some() {
         //Try spotify
-	let spotify_client = &spotify::SINGLETON;
+        let spotify_client = &spotify::SINGLETON;
         let spotify_artists =
             spotify_client.search(query_parameters.get_tag("q").unwrap_or("".to_string()))?;
 
@@ -67,7 +67,7 @@ pub fn create(
     let create_artist = json_create_artist.into_inner();
     let mut artist = match &create_artist.spotify_id {
         Some(spotify_id) => {
-	    let spotify_client = &spotify::SINGLETON;
+            let spotify_client = &spotify::SINGLETON;
 
             let spotify_artist_result = spotify_client.read_artist(&spotify_id)?;
             match spotify_artist_result {
