@@ -1,8 +1,7 @@
 use bigneon_db::prelude::*;
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use diesel::PgConnection;
 use models::DisplayTicketPricing;
-use std::cmp;
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
@@ -25,22 +24,7 @@ impl UserDisplayTicketType {
         ticket_type: &TicketType,
         fee_schedule: &FeeSchedule,
         box_office_pricing: bool,
-        conn: &PgConnection,
-    ) -> Result<UserDisplayTicketType, DatabaseError> {
-        UserDisplayTicketType::from_ticket_type_and_hold(
-            ticket_type,
-            fee_schedule,
-            box_office_pricing,
-            None,
-            conn,
-        )
-    }
-
-    pub fn from_ticket_type_and_hold(
-        ticket_type: &TicketType,
-        fee_schedule: &FeeSchedule,
-        box_office_pricing: bool,
-        hold: Option<Hold>,
+        redemption_code: Option<String>,
         conn: &PgConnection,
     ) -> Result<UserDisplayTicketType, DatabaseError> {
         let mut status = ticket_type.status;
@@ -53,6 +37,7 @@ impl UserDisplayTicketType {
             Some(ticket_pricing) => Some(DisplayTicketPricing::from_ticket_pricing(
                 &ticket_pricing,
                 fee_schedule,
+                redemption_code.clone(),
                 conn,
             )?),
             None => None,
@@ -75,31 +60,29 @@ impl UserDisplayTicketType {
             end_date: ticket_type.end_date,
             ticket_pricing,
             available,
-            redemption_code: hold.as_ref().map(|h| h.redemption_code.to_string()),
+            redemption_code: None,
             increment: ticket_type.increment,
             limit_per_person: ticket_type.limit_per_person as u32,
         };
 
-        if let Some(h) = hold {
-            result.description = Some(format!("Using promo code: {}", h.redemption_code));
-            result.limit_per_person = h.max_per_order.unwrap_or(0) as u32;
-            result.available = h.quantity(conn)?.1;
-            match h.hold_type {
-                HoldTypes::Comp => {
-                    result.ticket_pricing = result.ticket_pricing.map(|tp| DisplayTicketPricing {
-                        fee_in_cents: 0,
-                        price_in_cents: 0,
-                        ..tp
-                    })
+        if let Some(ref redemption_code) = redemption_code {
+            if let Some(hold) = Hold::find_by_redemption_code(redemption_code, conn).optional()? {
+                if hold.ticket_type_id == ticket_type.id {
+                    result.description = Some(format!("Using promo code: {}", redemption_code));
+                    result.limit_per_person = hold.max_per_order.unwrap_or(0) as u32;
+                    result.available = hold.quantity(conn)?.1;
+                    result.redemption_code = Some(redemption_code.clone());
                 }
-                HoldTypes::Discount => {
-                    result.ticket_pricing = result.ticket_pricing.map(|tp| DisplayTicketPricing {
-                        price_in_cents: cmp::max(
-                            0,
-                            tp.price_in_cents - h.discount_in_cents.unwrap_or(0),
-                        ),
-                        ..tp
-                    })
+            } else if let Some(code) =
+                Code::find_by_redemption_code(redemption_code, conn).optional()?
+            {
+                let now = Utc::now().naive_utc();
+                if now >= code.start_date && now <= code.end_date {
+                    if TicketType::find_for_code(code.id, conn)?.contains(&ticket_type) {
+                        result.description = Some(format!("Using promo code: {}", redemption_code));
+                        result.limit_per_person = code.max_tickets_per_user.unwrap_or(0) as u32;
+                        result.redemption_code = Some(redemption_code.clone());
+                    }
                 }
             }
         }

@@ -2,6 +2,7 @@ use chrono::NaiveDateTime;
 use diesel;
 use diesel::dsl;
 use diesel::prelude::*;
+use diesel::sql_types::{Nullable, Text, Uuid as dUuid};
 use models::*;
 use schema::{
     assets, events, fee_schedules, organizations, ticket_instances, ticket_pricing,
@@ -12,7 +13,7 @@ use uuid::Uuid;
 use validator::*;
 use validators;
 
-#[derive(Identifiable, Associations, Queryable, PartialEq, Debug)]
+#[derive(Associations, Clone, Debug, Identifiable, PartialEq, Queryable, QueryableByName)]
 #[table_name = "ticket_types"]
 #[belongs_to(Event)]
 pub struct TicketType {
@@ -212,16 +213,48 @@ impl TicketType {
 
     pub fn find_by_event_id(
         event_id: Uuid,
+        filter_access_tokens: bool,
+        redemption_code: Option<String>,
         conn: &PgConnection,
     ) -> Result<Vec<TicketType>, DatabaseError> {
-        ticket_types::table
-            .filter(ticket_types::event_id.eq(event_id))
-            .order_by(ticket_types::name)
-            .load(conn)
-            .to_db_error(
-                ErrorCode::QueryError,
-                "Could not load ticket types for event",
-            )
+        if filter_access_tokens {
+            let query = r#"
+                    SELECT DISTINCT tt.*
+                    FROM ticket_types tt
+                    LEFT JOIN (
+                        SELECT ttc.ticket_type_id, c.redemption_code, c.start_date, c.end_date
+                        FROM ticket_type_codes ttc
+                        JOIN codes c ON ttc.code_id = c.id
+                        JOIN ticket_types tt ON tt.id = ttc.ticket_type_id
+                        WHERE c.code_type = 'Access' AND tt.event_id = $1
+                    ) ttc ON ttc.ticket_type_id = tt.id
+                    WHERE tt.event_id = $1
+                    AND (
+                        ttc.redemption_code is null
+                        OR (
+                            ttc.redemption_code = $2 and ttc.start_date <= now() and ttc.end_date >= now()
+                        )
+                    )
+                    ORDER BY tt.name
+                    "#;
+
+            diesel::sql_query(query)
+                .bind::<dUuid, _>(event_id)
+                .bind::<Nullable<Text>, _>(redemption_code)
+                .load(conn)
+                .to_db_error(
+                    ErrorCode::QueryError,
+                    "Could not load ticket types for event",
+                )
+        } else {
+            ticket_types::table
+                .filter(ticket_types::event_id.eq(event_id))
+                .load(conn)
+                .to_db_error(
+                    ErrorCode::QueryError,
+                    "Could not load ticket types for event",
+                )
+        }
     }
 
     pub fn ticket_count(&self, conn: &PgConnection) -> Result<u32, DatabaseError> {

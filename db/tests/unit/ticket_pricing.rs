@@ -9,7 +9,9 @@ use chrono::NaiveDate;
 fn create() {
     let project = TestProject::new();
     let event = project.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(project.get_connection()).unwrap()[0];
+    let ticket_type = &event
+        .ticket_types(true, None, project.get_connection())
+        .unwrap()[0];
     let sd1 = NaiveDate::from_ymd(2016, 7, 8).and_hms(4, 10, 11);
     let ed1 = NaiveDate::from_ymd(2016, 7, 9).and_hms(4, 10, 11);
     let sd2 = NaiveDate::from_ymd(2016, 7, 9).and_hms(4, 10, 11);
@@ -49,7 +51,9 @@ fn create() {
 fn ticket_pricing_no_overlapping_periods() {
     let project = TestProject::new();
     let event = project.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(project.get_connection()).unwrap()[0];
+    let ticket_type = &event
+        .ticket_types(true, None, project.get_connection())
+        .unwrap()[0];
     let start_date1 = NaiveDate::from_ymd(2016, 7, 6).and_hms(4, 10, 11);
     let end_date1 = NaiveDate::from_ymd(2016, 7, 10).and_hms(4, 10, 11);
     let start_date2 = NaiveDate::from_ymd(2016, 7, 7).and_hms(4, 10, 11);
@@ -134,7 +138,9 @@ fn ticket_pricing_no_overlapping_periods() {
 fn create_with_same_date_validation_errors() {
     let project = TestProject::new();
     let event = project.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(project.get_connection()).unwrap()[0];
+    let ticket_type = &event
+        .ticket_types(true, None, project.get_connection())
+        .unwrap()[0];
     let same_date = NaiveDate::from_ymd(2016, 7, 9).and_hms(4, 10, 11);
 
     let mut ticket_pricing = TicketPricing::create(
@@ -184,7 +190,9 @@ fn create_with_same_date_validation_errors() {
 fn create_with_validation_errors() {
     let project = TestProject::new();
     let event = project.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(project.get_connection()).unwrap()[0];
+    let ticket_type = &event
+        .ticket_types(true, None, project.get_connection())
+        .unwrap()[0];
     let start_date1 = NaiveDate::from_ymd(2016, 7, 6).and_hms(4, 10, 11);
     let end_date1 = NaiveDate::from_ymd(2016, 7, 10).and_hms(4, 10, 11);
     let start_date2 = NaiveDate::from_ymd(2016, 7, 9).and_hms(4, 10, 11);
@@ -248,7 +256,9 @@ fn create_with_validation_errors() {
 fn update_with_validation_errors() {
     let project = TestProject::new();
     let event = project.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(project.get_connection()).unwrap()[0];
+    let ticket_type = &event
+        .ticket_types(true, None, project.get_connection())
+        .unwrap()[0];
     let start_date1 = NaiveDate::from_ymd(2016, 7, 6).and_hms(4, 10, 11);
     let end_date1 = NaiveDate::from_ymd(2016, 7, 10).and_hms(4, 10, 11);
     let start_date2 = NaiveDate::from_ymd(2016, 7, 10).and_hms(4, 10, 11);
@@ -317,7 +327,7 @@ fn update() {
     let project = TestProject::new();
     let connection = project.get_connection();
     let event = project.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let start_date = NaiveDate::from_ymd(2016, 7, 8).and_hms(4, 10, 11);
     let end_date = NaiveDate::from_ymd(2016, 7, 9).and_hms(4, 10, 11);
     let ticket_pricing = TicketPricing::create(
@@ -358,7 +368,7 @@ fn remove() {
     let project = TestProject::new();
     let connection = project.get_connection();
     let event = project.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let start_date = NaiveDate::from_ymd(2016, 7, 8).and_hms(4, 10, 11);
     let end_date = NaiveDate::from_ymd(2016, 7, 9).and_hms(4, 10, 11);
     let ticket_pricing1 = TicketPricing::create(
@@ -403,7 +413,9 @@ fn remove() {
 fn find() {
     let project = TestProject::new();
     let event = project.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(project.get_connection()).unwrap()[0];
+    let ticket_type = &event
+        .ticket_types(true, None, project.get_connection())
+        .unwrap()[0];
     let sd1 = NaiveDate::from_ymd(2016, 7, 8).and_hms(4, 10, 11);
     let ed1 = NaiveDate::from_ymd(2016, 7, 9).and_hms(4, 10, 11);
     let ticket_pricing = TicketPricing::create(
@@ -438,7 +450,8 @@ fn get_current_ticket_pricing() {
         .with_ticket_pricing()
         .finish();
 
-    let ticket_types = TicketType::find_by_event_id(event.id, project.get_connection()).unwrap();
+    let ticket_types =
+        TicketType::find_by_event_id(event.id, true, None, project.get_connection()).unwrap();
 
     let ticket_pricing = TicketPricing::get_current_ticket_pricing(
         ticket_types[0].id,
@@ -466,7 +479,8 @@ fn get_current_ticket_capacity() {
         .with_organization(&organization)
         .with_ticket_pricing()
         .finish();
-    let ticket_types = TicketType::find_by_event_id(event.id, project.get_connection()).unwrap();
+    let ticket_types =
+        TicketType::find_by_event_id(event.id, true, None, project.get_connection()).unwrap();
     assert_eq!(ticket_types.len(), 1);
 
     let ticket_capacity = ticket_types[0]

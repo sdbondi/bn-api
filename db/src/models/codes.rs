@@ -151,13 +151,24 @@ impl Code {
             name,
             event_id,
             code_type,
-            redemption_code,
+            redemption_code: redemption_code.to_uppercase(),
             max_uses: max_uses as i64,
             discount_in_cents: discount_in_cents.map(|max| max as i64),
             start_date,
             end_date,
             max_tickets_per_user: max_tickets_per_user.map(|max| max as i64),
         }
+    }
+
+    pub fn confirm_code_valid(&self) -> Result<(), DatabaseError> {
+        let now = Utc::now().naive_utc();
+        if now < self.start_date || now > self.end_date {
+            return DatabaseError::validation_error(
+                "code_id",
+                "Code not valid for current datetime",
+            );
+        }
+        Ok(())
     }
 
     pub fn organization(&self, conn: &PgConnection) -> Result<Organization, DatabaseError> {

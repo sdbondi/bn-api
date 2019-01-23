@@ -13,12 +13,12 @@ use validators::{self, *};
 
 sql_function!(fn ticket_pricing_no_overlapping_periods(id: dUuid, ticket_type_id: dUuid, start_date: Timestamp, end_date: Timestamp, is_box_office_only: Bool, is_default_status: Bool) -> Bool);
 
-#[derive(Identifiable, Associations, Queryable, PartialEq, Debug)]
+#[derive(Clone, Identifiable, Associations, Queryable, PartialEq, Debug)]
 #[belongs_to(TicketType)]
 #[table_name = "ticket_pricing"]
 pub struct TicketPricing {
     pub id: Uuid,
-    ticket_type_id: Uuid,
+    pub ticket_type_id: Uuid,
     pub name: String,
     pub status: TicketPricingStatus,
     pub price_in_cents: i64,

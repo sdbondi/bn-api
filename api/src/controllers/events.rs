@@ -245,6 +245,7 @@ pub fn index(
 #[derive(Deserialize)]
 pub struct EventParameters {
     pub box_office_pricing: Option<bool>,
+    pub redemption_code: Option<String>,
 }
 
 pub fn show(
@@ -289,7 +290,12 @@ pub fn show(
         }
     }
 
-    let ticket_types = TicketType::find_by_event_id(parameters.id, connection)?;
+    let ticket_types = TicketType::find_by_event_id(
+        parameters.id,
+        true,
+        query.redemption_code.clone(),
+        connection,
+    )?;
     let mut display_ticket_types = Vec::new();
     for ticket_type in ticket_types {
         if ticket_type.status != TicketTypeStatus::Cancelled {
@@ -297,6 +303,7 @@ pub fn show(
                 &ticket_type,
                 &fee_schedule,
                 box_office_pricing,
+                query.redemption_code.clone(),
                 connection,
             )?;
 

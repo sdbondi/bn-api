@@ -271,7 +271,7 @@ fn find() {
     let user = project.create_user().finish();
     //let _d_user: DisplayUser = user.into();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let ticket_pricing = ticket_type
         .current_ticket_pricing(false, connection)
         .unwrap();
@@ -337,7 +337,7 @@ fn find_for_user() {
 
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
@@ -367,7 +367,7 @@ fn release_tickets() {
     let event = project.create_event().with_ticket_pricing().finish();
     let user = project.create_user().finish();
     let mut order = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type_id = event.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event.ticket_types(true, None, connection).unwrap()[0].id;
     order
         .update_quantities(
             &[UpdateOrderItem {
@@ -516,7 +516,7 @@ fn show_redeemable_ticket() {
         .quantity(1)
         .is_paid()
         .finish();
-    let ticket_type = &event.ticket_types(&connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, &connection).unwrap()[0];
     let ticket = order.tickets(ticket_type.id, connection).unwrap().remove(0);
     let result = TicketInstance::show_redeemable_ticket(ticket.id, connection).unwrap();
     assert_eq!(result.user_id, Some(user2.id));
@@ -541,7 +541,7 @@ fn authorize_ticket_transfer() {
 
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
@@ -602,7 +602,7 @@ fn receive_ticket_transfer() {
 
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,

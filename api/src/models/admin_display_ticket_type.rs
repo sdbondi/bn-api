@@ -33,6 +33,7 @@ impl AdminDisplayTicketType {
             ticket_pricing_list.push(DisplayTicketPricing::from_ticket_pricing(
                 &ticket_pricing,
                 fee_schedule,
+                None,
                 conn,
             )?);
         }

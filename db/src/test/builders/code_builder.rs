@@ -19,6 +19,8 @@ pub struct CodeBuilder<'a> {
     discount_in_cents: Option<u32>,
     max_uses: u32,
     max_tickets_per_user: Option<u32>,
+    start_date: NaiveDateTime,
+    end_date: NaiveDateTime,
 }
 
 impl<'a> CodeBuilder<'a> {
@@ -40,11 +42,23 @@ impl<'a> CodeBuilder<'a> {
             discount_in_cents: Some(100),
             max_tickets_per_user: None,
             max_uses: 10,
+            start_date: NaiveDateTime::from(Utc::now().naive_utc() - Duration::days(1)),
+            end_date: NaiveDateTime::from(Utc::now().naive_utc() + Duration::days(2)),
         }
     }
 
     pub fn with_name(mut self, name: String) -> Self {
         self.name = name;
+        self
+    }
+
+    pub fn with_start_date(mut self, start_date: NaiveDateTime) -> Self {
+        self.start_date = start_date;
+        self
+    }
+
+    pub fn with_end_date(mut self, end_date: NaiveDateTime) -> Self {
+        self.end_date = end_date;
         self
     }
 
@@ -94,9 +108,6 @@ impl<'a> CodeBuilder<'a> {
             );
         }
 
-        let start_date = NaiveDateTime::from(Utc::now().naive_utc() - Duration::days(1));
-        let end_date = NaiveDateTime::from(Utc::now().naive_utc() + Duration::days(2));
-
         let code = Code::create(
             self.name,
             self.event_id.unwrap(),
@@ -104,8 +115,8 @@ impl<'a> CodeBuilder<'a> {
             self.redemption_code,
             self.max_uses,
             self.discount_in_cents,
-            start_date,
-            end_date,
+            self.start_date,
+            self.end_date,
             self.max_tickets_per_user,
         )
         .commit(self.connection)

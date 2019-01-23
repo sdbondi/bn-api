@@ -43,9 +43,9 @@ pub fn index() {
         .finish();
     let conn = database.connection.get();
     let mut cart = Order::find_or_create_cart(&user, conn).unwrap();
-    let ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     let ticket_pricing = ticket_type.current_ticket_pricing(false, conn).unwrap();
-    let ticket_type2 = &event2.ticket_types(conn).unwrap()[0];
+    let ticket_type2 = &event2.ticket_types(true, None, conn).unwrap()[0];
     let ticket_pricing2 = ticket_type2.current_ticket_pricing(false, conn).unwrap();
     cart.update_quantities(
         &[UpdateOrderItem {
@@ -197,7 +197,7 @@ pub fn show() {
         .finish();
     let conn = database.connection.get();
     let mut cart = Order::find_or_create_cart(&user, conn).unwrap();
-    let ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     let ticket_pricing = ticket_type.current_ticket_pricing(false, conn).unwrap();
     cart.update_quantities(
         &[UpdateOrderItem {
@@ -360,7 +360,7 @@ fn ticket_transfer_authorization() {
     let conn = database.connection.get();
 
     let mut cart = Order::find_or_create_cart(&user, conn).unwrap();
-    let ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
 
     cart.update_quantities(
         &[UpdateOrderItem {
@@ -440,7 +440,7 @@ fn receive_ticket_transfer() {
     let conn = database.connection.get();
 
     let mut cart = Order::find_or_create_cart(&user, conn).unwrap();
-    let ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
 
     cart.update_quantities(
         &[UpdateOrderItem {

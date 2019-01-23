@@ -15,7 +15,7 @@ fn create() {
         None,
         Some(4),
         HoldTypes::Discount,
-        event.ticket_types(db.get_connection()).unwrap()[0].id,
+        event.ticket_types(true, None, db.get_connection()).unwrap()[0].id,
     )
     .commit(db.get_connection())
     .unwrap();
@@ -33,7 +33,7 @@ fn create_with_validation_errors() {
         None,
         Some(4),
         HoldTypes::Discount,
-        event.ticket_types(db.get_connection()).unwrap()[0].id,
+        event.ticket_types(true, None, db.get_connection()).unwrap()[0].id,
     )
     .commit(db.get_connection());
 
@@ -61,7 +61,7 @@ fn create_with_validation_errors() {
         None,
         Some(4),
         HoldTypes::Discount,
-        event.ticket_types(db.get_connection()).unwrap()[0].id,
+        event.ticket_types(true, None, db.get_connection()).unwrap()[0].id,
     )
     .commit(db.get_connection());
     match result {
@@ -88,7 +88,7 @@ fn create_with_validation_errors() {
         None,
         Some(4),
         HoldTypes::Discount,
-        event.ticket_types(db.get_connection()).unwrap()[0].id,
+        event.ticket_types(true, None, db.get_connection()).unwrap()[0].id,
     )
     .commit(db.get_connection());
     match result {
@@ -218,7 +218,7 @@ fn update_with_validation_errors() {
 
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &vec![UpdateOrderItem {
             ticket_type_id: ticket_type.id,

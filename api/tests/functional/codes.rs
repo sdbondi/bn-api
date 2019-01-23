@@ -149,7 +149,7 @@ fn create_with_validation_errors() {
     let connection = database.connection.get();
     let user = database.create_user().finish();
     let event = database.create_event().with_ticket_pricing().finish();
-    let ticket_type_id = event.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event.ticket_types(true, None, connection).unwrap()[0].id;
     let organization = event.organization(connection).unwrap();
     let auth_user =
         support::create_auth_user_from_user(&user, Roles::OrgOwner, Some(&organization), &database);
@@ -199,7 +199,7 @@ fn create_fails_adding_ticket_type_id_from_other_event() {
     let user = database.create_user().finish();
     let event = database.create_event().with_ticket_pricing().finish();
     let event2 = database.create_event().with_ticket_pricing().finish();
-    let ticket_type_id = event2.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event2.ticket_types(true, None, connection).unwrap()[0].id;
     let organization = event.organization(connection).unwrap();
     let auth_user =
         support::create_auth_user_from_user(&user, Roles::OrgOwner, Some(&organization), &database);
@@ -287,7 +287,7 @@ fn update_fails_adding_ticket_type_id_from_other_event() {
     let user = database.create_user().finish();
     let event = database.create_event().finish();
     let event2 = database.create_event().with_ticket_pricing().finish();
-    let ticket_type_id = event2.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event2.ticket_types(true, None, connection).unwrap()[0].id;
     let code = database.create_code().with_event(&event).finish();
     let organization = event.organization(connection).unwrap();
     let auth_user =
@@ -326,7 +326,7 @@ pub fn update_adding_keeping_and_removing_ticket_types() {
         .with_ticket_pricing()
         .with_ticket_type_count(3)
         .finish();
-    let ticket_types = event.ticket_types(connection).unwrap();
+    let ticket_types = event.ticket_types(true, None, connection).unwrap();
     let ticket_type = &ticket_types[0];
     let ticket_type2 = &ticket_types[1];
     let ticket_type3 = &ticket_types[2];

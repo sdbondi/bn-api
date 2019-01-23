@@ -31,7 +31,7 @@ pub fn profile(role: Roles, should_test_true: bool) {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let mut cart = Order::find_or_create_cart(&user2, connection).unwrap();
     cart.update_quantities(
         &[UpdateOrderItem {
@@ -100,7 +100,7 @@ pub fn history(role: Roles, should_test_true: bool) {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let mut cart = Order::find_or_create_cart(&user2, connection).unwrap();
     cart.update_quantities(
         &[UpdateOrderItem {

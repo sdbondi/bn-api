@@ -10,6 +10,7 @@ pub struct HoldBuilder<'a> {
     event_id: Option<Uuid>,
     ticket_type_id: Option<Uuid>,
     hold_type: HoldTypes,
+    quantity: u32,
     connection: &'a PgConnection,
 }
 
@@ -23,11 +24,17 @@ impl<'a> HoldBuilder<'a> {
             hold_type: HoldTypes::Discount,
             event_id: None,
             ticket_type_id: None,
+            quantity: 10,
         }
     }
 
     pub fn with_hold_type(mut self, hold_type: HoldTypes) -> Self {
         self.hold_type = hold_type;
+        self
+    }
+
+    pub fn with_quantity(mut self, quantity: u32) -> Self {
+        self.quantity = quantity;
         self
     }
 
@@ -71,7 +78,7 @@ impl<'a> HoldBuilder<'a> {
                 }
 
                 let event = Event::find(self.event_id.unwrap(), self.connection).unwrap();
-                event.ticket_types(self.connection).unwrap()[0].id
+                event.ticket_types(true, None, self.connection).unwrap()[0].id
             }
         };
 
@@ -92,7 +99,7 @@ impl<'a> HoldBuilder<'a> {
         .commit(self.connection)
         .unwrap();
 
-        hold.set_quantity(10, self.connection).unwrap();
+        hold.set_quantity(self.quantity, self.connection).unwrap();
         hold
     }
 }

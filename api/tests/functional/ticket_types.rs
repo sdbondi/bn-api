@@ -371,7 +371,7 @@ pub fn update_with_invalid_id() {
 
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
-    let created_ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
     created_ticket_type.ticket_pricing(conn).unwrap();
 
@@ -435,7 +435,7 @@ pub fn update_with_validation_errors() {
 
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
-    let created_ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
     let created_ticket_pricing = created_ticket_type.ticket_pricing(conn).unwrap();
 
@@ -512,7 +512,7 @@ pub fn update_with_validation_errors_on_ticket_pricing() {
 
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
-    let created_ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
     let created_ticket_pricing = created_ticket_type.ticket_pricing(conn).unwrap();
 
@@ -592,7 +592,7 @@ pub fn update_with_overlapping_periods() {
 
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
-    let created_ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
     let created_ticket_pricing = created_ticket_type.ticket_pricing(conn).unwrap();
 

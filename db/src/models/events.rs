@@ -205,7 +205,7 @@ impl Event {
     }
 
     pub fn update_cache(&self, conn: &PgConnection) -> Result<Event, DatabaseError> {
-        let ticket_types = TicketType::find_by_event_id(self.id, conn)?;
+        let ticket_types = TicketType::find_by_event_id(self.id, true, None, conn)?;
 
         let mut has_prices = false;
         let mut min_ticket_price_cache: i64 = std::i64::MAX;
@@ -965,8 +965,13 @@ impl Event {
         Ok(ticket_type)
     }
 
-    pub fn ticket_types(&self, conn: &PgConnection) -> Result<Vec<TicketType>, DatabaseError> {
-        TicketType::find_by_event_id(self.id, conn)
+    pub fn ticket_types(
+        &self,
+        filter_access_tokens: bool,
+        redemption_code: Option<String>,
+        conn: &PgConnection,
+    ) -> Result<Vec<TicketType>, DatabaseError> {
+        TicketType::find_by_event_id(self.id, filter_access_tokens, redemption_code, conn)
     }
 
     pub fn issuer_wallet(&self, conn: &PgConnection) -> Result<Wallet, DatabaseError> {

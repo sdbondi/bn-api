@@ -193,8 +193,8 @@ pub fn details_with_tickets_user_has_no_access_to() {
         .finish();
     let user = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
-    let ticket_type2 = &event2.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    let ticket_type2 = &event2.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[
             UpdateOrderItem {
@@ -326,7 +326,7 @@ pub fn refund_for_non_refundable_tickets() {
     let auth_user =
         support::create_auth_user_from_user(&user, Roles::OrgOwner, Some(&organization), &database);
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
@@ -438,7 +438,7 @@ pub fn refund_removes_event_fee_if_all_event_tickets_refunded() {
     let auth_user =
         support::create_auth_user_from_user(&user, Roles::OrgOwner, Some(&organization), &database);
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,

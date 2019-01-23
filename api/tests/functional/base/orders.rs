@@ -29,7 +29,7 @@ pub fn details(role: Roles, should_succeed: bool) {
         .finish();
     let user = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
@@ -156,7 +156,7 @@ pub fn refund(role: Roles, should_succeed: bool) {
     let auth_user =
         support::create_auth_user_from_user(&user, role, Some(&organization), &database);
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,

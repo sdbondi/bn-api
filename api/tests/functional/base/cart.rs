@@ -20,7 +20,7 @@ pub fn update_box_office_pricing(role: Roles, should_test_succeed: bool) {
     let user = database.create_user().finish();
     let auth_user =
         support::create_auth_user_from_user(&user, role, Some(&organization), &database);
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let box_office_pricing = ticket_type
         .add_ticket_pricing(
             "Box office".into(),
@@ -93,8 +93,8 @@ pub fn replace_box_office_pricing(role: Roles, should_test_succeed: bool) {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
-    let old_ticket_type = &event2.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    let old_ticket_type = &event2.ticket_types(true, None, connection).unwrap()[0];
 
     let user = database.create_user().finish();
     let auth_user =

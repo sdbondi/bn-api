@@ -51,8 +51,8 @@ fn find_by_asset_id() {
         .with_ticket_pricing()
         .with_ticket_type_count(1)
         .finish();
-    let ticket_type = &event.ticket_types(&connection).unwrap()[0];
-    let ticket_type2 = &event2.ticket_types(&connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, &connection).unwrap()[0];
+    let ticket_type2 = &event2.ticket_types(true, None, &connection).unwrap()[0];
     let asset = Asset::find_by_ticket_type(&ticket_type.id, connection).unwrap();
     let asset2 = Asset::find_by_ticket_type(&ticket_type2.id, connection).unwrap();
     assert_eq!(
@@ -79,10 +79,10 @@ fn find_by_ticket_type_ids() {
         .with_ticket_pricing()
         .with_ticket_type_count(1)
         .finish();
-    let ticket_types = event.ticket_types(&connection).unwrap();
+    let ticket_types = event.ticket_types(true, None, &connection).unwrap();
     let ticket_type = &ticket_types[0];
     let ticket_type2 = &ticket_types[1];
-    let ticket_types = event2.ticket_types(&connection).unwrap();
+    let ticket_types = event2.ticket_types(true, None, &connection).unwrap();
     let ticket_type3 = &ticket_types[0];
 
     let organizations = Organization::find_by_ticket_type_ids(
@@ -124,8 +124,8 @@ fn find_by_order_item_ids() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
-    let ticket_type2 = &event2.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    let ticket_type2 = &event2.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[
             UpdateOrderItem {
@@ -189,7 +189,7 @@ fn has_fan() {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
 
     // No relationship
     assert!(!organization.has_fan(&user, connection).unwrap());
@@ -820,7 +820,7 @@ fn search_fans() {
         .finish();
 
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,

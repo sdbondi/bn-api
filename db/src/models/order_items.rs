@@ -5,7 +5,7 @@ use diesel::prelude::*;
 use diesel::sql_types;
 use diesel::sql_types::{BigInt, Nullable, Text, Uuid as dUuid};
 use models::*;
-use schema::{order_items, ticket_instances};
+use schema::{codes, order_items, ticket_instances};
 use std::borrow::Cow;
 use utils::errors::*;
 use uuid::Uuid;
@@ -15,6 +15,7 @@ use validators::{self, *};
 sql_function!(fn order_items_quantity_in_increments(item_type: Text, quantity: BigInt, ticket_pricing_id: Nullable<dUuid>) -> Bool);
 sql_function!(fn order_items_code_id_max_uses_valid(order_id: dUuid, code_id: dUuid) -> Bool);
 sql_function!(fn order_items_code_id_max_tickets_per_user_valid(order_item_id: dUuid, order_id: dUuid, code_id: dUuid, quantity: BigInt) -> Bool);
+sql_function!(fn order_items_ticket_type_id_valid_for_access_code(ticket_type_id: dUuid, code_id: Nullable<dUuid>) -> Bool);
 
 #[derive(Identifiable, Associations, Queryable, AsChangeset)]
 #[belongs_to(Order)]
@@ -84,6 +85,25 @@ impl OrderItem {
             .execute(conn)
             .to_db_error(ErrorCode::UpdateError, "Could not refund ticket instance")?;
         Ok(refund_amount_in_cents as u32)
+    }
+
+    pub fn code(&self, conn: &PgConnection) -> Result<Option<Code>, DatabaseError> {
+        match self.code_id {
+            Some(code_id) => codes::table
+                .filter(codes::id.eq(code_id))
+                .first(conn)
+                .optional()
+                .to_db_error(ErrorCode::QueryError, "Could not retrieve code"),
+            _ => return Ok(None),
+        }
+    }
+
+    pub fn confirm_code_valid(&self, conn: &PgConnection) -> Result<(), DatabaseError> {
+        if let Some(code) = self.code(conn)? {
+            code.confirm_code_valid()?;
+        }
+
+        Ok(())
     }
 
     pub(crate) fn update_fees(
@@ -209,6 +229,33 @@ impl OrderItem {
             )?,
         );
         Ok(validation_errors?)
+    }
+
+    fn ticket_type_id_valid_for_access_code(
+        ticket_type_id: Uuid,
+        code_id: Option<Uuid>,
+        conn: &PgConnection,
+    ) -> Result<Result<(), ValidationError>, DatabaseError> {
+        let result = select(order_items_ticket_type_id_valid_for_access_code(
+            ticket_type_id,
+            code_id,
+        ))
+        .get_result::<bool>(conn)
+        .to_db_error(
+            ErrorCode::InsertError,
+            "Could not confirm if ticket type valid without access code",
+        )?;
+        if !result {
+            let mut validation_error = create_validation_error(
+                "ticket_type_requires_access_code",
+                "Ticket type requires access code for purchase",
+            );
+            validation_error.add_param(Cow::from("ticket_type_id"), &ticket_type_id);
+            validation_error.add_param(Cow::from("code_id"), &code_id);
+
+            return Ok(Err(validation_error));
+        }
+        Ok(Ok(()))
     }
 
     fn code_id_max_tickets_per_user_valid(
@@ -406,7 +453,7 @@ impl NewTicketsOrderItem {
     }
 
     pub fn validate_record(&self, conn: &PgConnection) -> Result<(), DatabaseError> {
-        let validation_errors = validators::append_validation_error(
+        let mut validation_errors = validators::append_validation_error(
             Ok(()),
             "quantity",
             OrderItem::quantity_valid_increment(
@@ -417,7 +464,7 @@ impl NewTicketsOrderItem {
                 conn,
             )?,
         );
-        let validation_errors = validators::append_validation_error(
+        validation_errors = validators::append_validation_error(
             validation_errors,
             "quantity",
             OrderItem::code_id_max_tickets_per_user_valid(
@@ -428,10 +475,19 @@ impl NewTicketsOrderItem {
                 conn,
             )?,
         );
-        let validation_errors = validators::append_validation_error(
+        validation_errors = validators::append_validation_error(
             validation_errors,
             "code_id",
             OrderItem::code_id_max_uses_valid(self.order_id, self.code_id, conn)?,
+        );
+        validation_errors = validators::append_validation_error(
+            validation_errors,
+            "code_id",
+            OrderItem::ticket_type_id_valid_for_access_code(
+                self.ticket_type_id,
+                self.code_id,
+                conn,
+            )?,
         );
         Ok(validation_errors?)
     }

@@ -100,7 +100,10 @@ fn create_with_validation_errors() {
         end_at: None,
         max_per_order: None,
         quantity: 2,
-        ticket_type_id: event.ticket_types(database.connection.get()).unwrap()[0].id,
+        ticket_type_id: event
+            .ticket_types(true, None, database.connection.get())
+            .unwrap()[0]
+            .id,
     });
 
     let test_request = TestRequest::create();
@@ -185,7 +188,10 @@ pub fn read_hold() {
         end_at: None,
         max_per_order: None,
         quantity: 2,
-        ticket_type_id: event.ticket_types(database.connection.get()).unwrap()[0].id,
+        ticket_type_id: event
+            .ticket_types(true, None, database.connection.get())
+            .unwrap()[0]
+            .id,
     });
 
     let test_request = TestRequest::create();

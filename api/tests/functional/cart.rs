@@ -113,7 +113,7 @@ fn destroy() {
 
     let user = database.create_user().finish();
     let auth_user = support::create_auth_user_from_user(&user, Roles::User, None, &database);
-    let ticket_type_id = event.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event.ticket_types(true, None, connection).unwrap()[0].id;
 
     // Cart has existing items
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
@@ -171,7 +171,7 @@ fn update() {
         .finish();
 
     let user = database.create_user().finish();
-    let ticket_type_id = event.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event.ticket_types(true, None, connection).unwrap()[0].id;
 
     let input = Json(cart::UpdateCartRequest {
         box_office_pricing: None,
@@ -225,7 +225,7 @@ fn update_with_draft_event() {
         .finish();
 
     let user = database.create_user().finish();
-    let ticket_type_id = event.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event.ticket_types(true, None, connection).unwrap()[0].id;
 
     let input = Json(cart::UpdateCartRequest {
         items: vec![cart::CartItem {
@@ -254,7 +254,7 @@ fn update_multiple() {
         .finish();
 
     let user = database.create_user().finish();
-    let ticket_types = event.ticket_types(connection).unwrap();
+    let ticket_types = event.ticket_types(true, None, connection).unwrap();
     let ticket_type_id = ticket_types[0].id;
     let ticket_type_id2 = ticket_types[1].id;
     let input = Json(cart::UpdateCartRequest {
@@ -333,7 +333,10 @@ fn add_with_increment() {
         .finish();
 
     let user = database.create_user().finish();
-    let ticket_type = event.ticket_types(connection).unwrap().remove(0);
+    let ticket_type = event
+        .ticket_types(true, None, connection)
+        .unwrap()
+        .remove(0);
     let update_parameters = TicketTypeEditableAttributes {
         increment: Some(4),
         ..Default::default()
@@ -388,7 +391,10 @@ fn update_with_increment_failure_invalid_quantity() {
         .finish();
 
     let user = database.create_user().finish();
-    let ticket_type = event.ticket_types(connection).unwrap().remove(0);
+    let ticket_type = event
+        .ticket_types(true, None, connection)
+        .unwrap()
+        .remove(0);
     let update_parameters = TicketTypeEditableAttributes {
         increment: Some(4),
         ..Default::default()
@@ -430,7 +436,7 @@ fn update_with_existing_cart() {
         .finish();
 
     let user = database.create_user().finish();
-    let ticket_type_id = event.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event.ticket_types(true, None, connection).unwrap()[0].id;
     let cart = Order::find_or_create_cart(&user, connection).unwrap();
 
     let input = Json(cart::UpdateCartRequest {
@@ -478,7 +484,7 @@ fn reduce() {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type_id = event.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event.ticket_types(true, None, connection).unwrap()[0].id;
     let user = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
@@ -559,7 +565,7 @@ fn remove() {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type_id = event.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event.ticket_types(true, None, connection).unwrap()[0].id;
     let user = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
@@ -628,7 +634,10 @@ fn remove_with_increment() {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type = event.ticket_types(connection).unwrap().remove(0);
+    let ticket_type = event
+        .ticket_types(true, None, connection)
+        .unwrap()
+        .remove(0);
     let update_parameters = TicketTypeEditableAttributes {
         increment: Some(4),
         ..Default::default()
@@ -715,7 +724,10 @@ fn remove_with_increment_failure_invalid_quantity() {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type = event.ticket_types(connection).unwrap().remove(0);
+    let ticket_type = event
+        .ticket_types(true, None, connection)
+        .unwrap()
+        .remove(0);
     let update_parameters = TicketTypeEditableAttributes {
         increment: Some(4),
         ..Default::default()

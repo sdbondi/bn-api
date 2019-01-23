@@ -46,7 +46,7 @@ fn add_tickets() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket = &event.ticket_types(connection).unwrap()[0];
+    let ticket = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &vec![UpdateOrderItem {
             ticket_type_id: ticket.id,
@@ -122,7 +122,7 @@ fn details() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
@@ -298,7 +298,7 @@ fn refund() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
@@ -391,8 +391,8 @@ fn organizations() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
-    let ticket_type2 = &event2.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    let ticket_type2 = &event2.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[
             UpdateOrderItem {
@@ -428,7 +428,7 @@ fn payments() {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
         &[UpdateOrderItem {
@@ -474,7 +474,7 @@ fn add_tickets_with_increment() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let update_parameters = TicketTypeEditableAttributes {
         increment: Some(4),
         ..Default::default()
@@ -556,7 +556,7 @@ fn clear_cart() {
 
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
 
     cart.update_quantities(
         &vec![UpdateOrderItem {
@@ -595,7 +595,7 @@ fn replace_tickets_for_box_office() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     assert!(!cart.box_office_pricing);
 
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
 
     let box_office_pricing = ticket_type
         .add_ticket_pricing(
@@ -692,7 +692,7 @@ fn replace_tickets() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket = &event.ticket_types(connection).unwrap()[0];
+    let ticket = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &vec![UpdateOrderItem {
             ticket_type_id: ticket.id,
@@ -751,6 +751,90 @@ fn replace_tickets() {
 }
 
 #[test]
+fn replace_tickets_with_code_pricing() {
+    let project = TestProject::new();
+    let creator = project.create_user().finish();
+
+    let connection = project.get_connection();
+    let organization = project
+        .create_organization()
+        .with_fee_schedule(&project.create_fee_schedule().finish(creator.id))
+        .finish();
+    let event = project
+        .create_event()
+        .with_organization(&organization)
+        .with_tickets()
+        .with_ticket_pricing()
+        .finish();
+    let user = project.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    let discount_in_cents: i64 = 20;
+    let code = project
+        .create_code()
+        .with_discount_in_cents(Some(discount_in_cents as u32))
+        .with_code_type(CodeTypes::Access)
+        .with_event(&event)
+        .for_ticket_type(&ticket_type)
+        .finish();
+    cart.update_quantities(
+        &vec![UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 10,
+            redemption_code: Some(code.redemption_code.clone()),
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    let items = cart.items(&connection).unwrap();
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type.id))
+        .unwrap();
+
+    let ticket_pricing =
+        TicketPricing::find(order_item.ticket_pricing_id.unwrap(), connection).unwrap();
+    assert_eq!(order_item.calculate_quantity(connection), Ok(10));
+    assert_eq!(
+        order_item.unit_price_in_cents,
+        ticket_pricing.price_in_cents - discount_in_cents
+    );
+
+    let fee_item = order_item.find_fee_item(connection).unwrap().unwrap();
+    let fee_schedule_range =
+        FeeScheduleRange::find(fee_item.fee_schedule_range_id.unwrap(), connection).unwrap();
+    assert_eq!(
+        fee_item.unit_price_in_cents,
+        fee_schedule_range.fee_in_cents
+    );
+    assert_eq!(fee_item.quantity, 10);
+
+    // Add some more
+    cart.update_quantities(
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 15,
+            redemption_code: Some(code.redemption_code.clone()),
+        }],
+        false,
+        true,
+        connection,
+    )
+    .unwrap();
+    let items = cart.items(connection).unwrap();
+
+    assert_eq!(items.len(), 2);
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type.id))
+        .unwrap();
+
+    assert_eq!(order_item.calculate_quantity(connection), Ok(15));
+}
+
+#[test]
 fn remove_tickets() {
     let project = TestProject::new();
     let connection = project.get_connection();
@@ -761,7 +845,7 @@ fn remove_tickets() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
@@ -852,7 +936,7 @@ fn clear_tickets() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
@@ -883,7 +967,7 @@ fn remove_tickets_with_increment() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let update_parameters = TicketTypeEditableAttributes {
         increment: Some(4),
         ..Default::default()
@@ -961,7 +1045,7 @@ fn find_item() {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let user = project.create_user().finish();
     let user2 = project.create_user().finish();
     let mut order = Order::find_or_create_cart(&user, connection).unwrap();
@@ -1070,7 +1154,7 @@ fn has_items() {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
@@ -1117,7 +1201,7 @@ fn calculate_cart_total() {
     let user = project.create_user().finish();
     let conn = project.get_connection();
     let mut cart = Order::find_or_create_cart(&user, conn).unwrap();
-    let ticket = &event.ticket_types(conn).unwrap()[0];
+    let ticket = &event.ticket_types(true, None, conn).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket.id,
@@ -1159,7 +1243,7 @@ fn add_external_payment() {
         .finish();
     let conn = project.get_connection();
     let mut cart = Order::find_or_create_cart(&user, conn).unwrap();
-    let ticket = &event.ticket_types(conn).unwrap()[0];
+    let ticket = &event.ticket_types(true, None, conn).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket.id,
@@ -1185,6 +1269,72 @@ fn add_external_payment() {
         .unwrap();
     assert_eq!(cart.status, OrderStatus::Paid);
     assert!(cart.paid_at.is_some());
+}
+
+#[test]
+fn add_external_payment_for_expired_code() {
+    let project = TestProject::new();
+    let user = project.create_user().finish();
+    let event = project
+        .create_event()
+        .with_tickets()
+        .with_ticket_pricing()
+        .finish();
+    let conn = project.get_connection();
+    let mut cart = Order::find_or_create_cart(&user, conn).unwrap();
+    let ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
+    let code = project
+        .create_code()
+        .with_code_type(CodeTypes::Access)
+        .with_event(&event)
+        .for_ticket_type(&ticket_type)
+        .finish();
+    assert_eq!(code.discount_in_cents, Some(100));
+    cart.update_quantities(
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 10,
+            redemption_code: Some(code.redemption_code.clone()),
+        }],
+        false,
+        false,
+        conn,
+    )
+    .unwrap();
+    assert_eq!(cart.calculate_total(conn).unwrap(), 1000);
+    assert!(cart.paid_at.is_none());
+
+    // Update code so it's expired
+    let start_date = NaiveDateTime::from(Utc::now().naive_utc() - Duration::days(3));
+    let end_date = NaiveDateTime::from(Utc::now().naive_utc() - Duration::days(2));
+    code.update(
+        UpdateCodeAttributes {
+            start_date: Some(start_date),
+            end_date: Some(end_date),
+            ..Default::default()
+        },
+        conn,
+    )
+    .unwrap();
+
+    // Attempting to pay triggers error
+    let result = cart.add_external_payment(Some("test".to_string()), user.id, 1000, conn);
+    match result {
+        Ok(_) => {
+            panic!("Expected validation error");
+        }
+        Err(error) => match &error.error_code {
+            ValidationError { errors } => {
+                assert!(errors.contains_key("code_id"));
+                assert_eq!(errors["code_id"].len(), 1);
+                assert_eq!(
+                    &errors["code_id"][0].code,
+                    "Code not valid for current datetime"
+                );
+            }
+            _ => panic!("Expected validation error"),
+        },
+    }
 }
 
 #[test]
@@ -1298,10 +1448,10 @@ fn adding_event_fees() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket1 = &event1.ticket_types(connection).unwrap()[0];
-    let ticket2 = &event2.ticket_types(connection).unwrap()[0];
-    let ticket3 = &event3.ticket_types(connection).unwrap()[0];
-    let ticket4 = &event4.ticket_types(connection).unwrap()[0];
+    let ticket1 = &event1.ticket_types(true, None, connection).unwrap()[0];
+    let ticket2 = &event2.ticket_types(true, None, connection).unwrap()[0];
+    let ticket3 = &event3.ticket_types(true, None, connection).unwrap()[0];
+    let ticket4 = &event4.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket1.id,

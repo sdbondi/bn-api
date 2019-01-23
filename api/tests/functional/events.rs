@@ -363,7 +363,7 @@ fn show() {
     let test_request = TestRequest::create_with_uri(&format!("/events/{}", event.id));
     let mut path = Path::<PathParameters>::extract(&test_request.request).unwrap();
     let event_expected_json =
-        base::events::expected_show_json(event, organization, venue, false, conn);
+        base::events::expected_show_json(event, organization, venue, false, None, None, conn);
     path.id = event_id;
     let query_parameters = Query::<EventParameters>::extract(&test_request.request).unwrap();
 
@@ -405,16 +405,147 @@ fn show_with_cancelled_ticket_type() {
     event.add_artist(artist1.id, conn).unwrap();
     event.add_artist(artist2.id, conn).unwrap();
 
-    let ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     let _cancelled_ticket_type = ticket_type.cancel(conn).unwrap();
 
     let _event_interest = EventInterest::create(event.id, user.id).commit(conn);
     let test_request = TestRequest::create_with_uri(&format!("/events/{}", event.id));
     let mut path = Path::<PathParameters>::extract(&test_request.request).unwrap();
     let event_expected_json =
-        base::events::expected_show_json(event, organization, venue, false, conn);
+        base::events::expected_show_json(event, organization, venue, false, None, None, conn);
     path.id = event_id;
     let query_parameters = Query::<EventParameters>::extract(&test_request.request).unwrap();
+
+    let response: HttpResponse = events::show((
+        test_request.extract_state(),
+        database.connection.clone(),
+        path,
+        query_parameters,
+        OptionalUser(Some(auth_user)),
+    ))
+    .into();
+    let body = support::unwrap_body_to_string(&response).unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(body, event_expected_json);
+}
+
+#[test]
+fn show_with_access_restricted_ticket_type_and_no_code() {
+    let database = TestDatabase::new();
+    let user = database.create_user().finish();
+    let auth_user = support::create_auth_user_from_user(&user, Roles::User, None, &database);
+
+    let organization = database.create_organization().finish();
+    let venue = database.create_venue().finish();
+    let event = database
+        .create_event()
+        .with_name("NewEvent".to_string())
+        .with_organization(&organization)
+        .with_venue(&venue)
+        .with_ticket_pricing()
+        .with_ticket_type_count(2)
+        .finish();
+    let event_id = event.id;
+
+    let artist1 = database.create_artist().finish();
+    let artist2 = database.create_artist().finish();
+    let conn = database.connection.get();
+
+    event.add_artist(artist1.id, conn).unwrap();
+    event.add_artist(artist2.id, conn).unwrap();
+
+    let ticket_types = &event.ticket_types(true, None, conn).unwrap();
+    let ticket_type = &ticket_types[0];
+    let ticket_type2 = &ticket_types[1];
+    let _code = database
+        .create_code()
+        .with_code_type(CodeTypes::Access)
+        .with_event(&event)
+        .for_ticket_type(&ticket_type2)
+        .finish();
+
+    let _event_interest = EventInterest::create(event.id, user.id).commit(conn);
+    let test_request = TestRequest::create_with_uri(&format!("/events/{}", event.id));
+    let mut path = Path::<PathParameters>::extract(&test_request.request).unwrap();
+    let event_expected_json = base::events::expected_show_json(
+        event,
+        organization,
+        venue,
+        false,
+        None,
+        Some(vec![ticket_type.id]),
+        conn,
+    );
+    path.id = event_id;
+    let query_parameters = Query::<EventParameters>::extract(&test_request.request).unwrap();
+    assert_eq!(query_parameters.redemption_code, None);
+
+    let response: HttpResponse = events::show((
+        test_request.extract_state(),
+        database.connection.clone(),
+        path,
+        query_parameters,
+        OptionalUser(Some(auth_user)),
+    ))
+    .into();
+    let body = support::unwrap_body_to_string(&response).unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(body, event_expected_json);
+}
+
+#[test]
+fn show_with_access_restricted_ticket_type_and_access_code() {
+    let database = TestDatabase::new();
+    let user = database.create_user().finish();
+    let auth_user = support::create_auth_user_from_user(&user, Roles::User, None, &database);
+
+    let organization = database.create_organization().finish();
+    let venue = database.create_venue().finish();
+    let event = database
+        .create_event()
+        .with_name("NewEvent".to_string())
+        .with_organization(&organization)
+        .with_venue(&venue)
+        .with_ticket_pricing()
+        .with_ticket_type_count(2)
+        .finish();
+    let event_id = event.id;
+
+    let artist1 = database.create_artist().finish();
+    let artist2 = database.create_artist().finish();
+    let conn = database.connection.get();
+
+    event.add_artist(artist1.id, conn).unwrap();
+    event.add_artist(artist2.id, conn).unwrap();
+
+    let ticket_types = &event.ticket_types(true, None, conn).unwrap();
+    let ticket_type = &ticket_types[0];
+    let ticket_type2 = &ticket_types[1];
+    let code = database
+        .create_code()
+        .with_code_type(CodeTypes::Access)
+        .with_event(&event)
+        .for_ticket_type(&ticket_type2)
+        .finish();
+
+    let _event_interest = EventInterest::create(event.id, user.id).commit(conn);
+    let test_request = TestRequest::create_with_uri(&format!(
+        "/events/{}?redemption_code={}",
+        event.id, code.redemption_code
+    ));
+    let mut path = Path::<PathParameters>::extract(&test_request.request).unwrap();
+    let event_expected_json = base::events::expected_show_json(
+        event,
+        organization,
+        venue,
+        false,
+        Some(code.redemption_code.clone()),
+        Some(vec![ticket_type.id, ticket_type2.id]),
+        conn,
+    );
+    path.id = event_id;
+    let query_parameters = Query::<EventParameters>::extract(&test_request.request).unwrap();
+    assert_eq!(query_parameters.redemption_code, Some(code.redemption_code));
 
     let response: HttpResponse = events::show((
         test_request.extract_state(),
@@ -793,7 +924,7 @@ fn dashboard_with_default_range() {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
 
     // org_admin purchases 10 tickets
     let mut cart = Order::find_or_create_cart(&org_admin, connection).unwrap();
