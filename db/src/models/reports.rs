@@ -28,6 +28,18 @@ pub struct TransactionReportRow {
     pub company_fee_in_cents: i64,
     #[sql_type = "BigInt"]
     pub client_fee_in_cents: i64,
+    #[sql_type = "BigInt"]
+    pub gross_fee_in_cents: i64,
+    #[sql_type = "BigInt"]
+    pub gross_fee_in_cents_total: i64,
+    #[sql_type = "BigInt"]
+    pub event_fee_company_in_cents: i64,
+    #[sql_type = "BigInt"]
+    pub event_fee_client_in_cents: i64,
+    #[sql_type = "BigInt"]
+    pub event_fee_gross_in_cents: i64,
+    #[sql_type = "BigInt"]
+    pub event_fee_gross_in_cents_total: i64,
     #[sql_type = "Text"]
     pub order_type: OrderTypes,
     #[sql_type = "Nullable<Text>"]
@@ -42,6 +54,10 @@ pub struct TransactionReportRow {
     pub event_id: Uuid,
     #[sql_type = "dUuid"]
     pub user_id: Uuid,
+    #[sql_type = "Text"]
+    pub user_name: String,
+    #[sql_type = "Text"]
+    pub email: String,
 }
 
 #[derive(Serialize, Deserialize)]
