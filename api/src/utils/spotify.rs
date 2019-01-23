@@ -12,8 +12,6 @@ use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 const SPOTIFY_URL_AUTH: &'static str = "https://accounts.spotify.com/api/token";
 const LOG_TARGET: &'static str = "bigneon::utils::spotify";
 
-pub static mut AUTH_TOKEN: Option<&str> = None;
-
 lazy_static! {
     pub static ref SINGLETON: Spotify = Spotify {
         ..Default::default()
