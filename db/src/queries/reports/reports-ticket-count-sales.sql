@@ -7,9 +7,14 @@ SELECT e.id                                                                     
        CAST(COALESCE(SUM(oi.unit_price_in_cents * (oi.quantity - oi.refunded_quantity))
                          FILTER (WHERE o.on_behalf_of_user_id IS NULL),
                      0) AS BIGINT)                                                                     AS online_sales_in_cents,
-       CAST(COALESCE(SUM(oi.quantity) FILTER (WHERE o.on_behalf_of_user_id IS NOT NULL),
+       --Total Sold CountCAST(COALESCE(SUM(oi.quantity) FILTER (WHERE o.on_behalf_of_user_id IS NOT NULL),
                      0) AS BIGINT)                                                                     AS box_office_count,
-       CAST(COALESCE(SUM(oi.quantity) FILTER (WHERE o.on_behalf_of_user_id IS NULL), 0) AS BIGINT)     AS online_count,
+       CAST(COALESCE(SUM(oi.quantity) FILTER (WHERE o.on_behalf_of_user_id IS NULL), 0) AS BIGINT)     AS online_count,--Refunded
+       CAST(COALESCE(SUM(oi.refunded_quantity) FILTER (WHERE o.on_behalf_of_user_id IS NOT NULL), 0) AS BIGINT)                                                                                                                                                          AS box_office_refunded_count,
+       CAST(COALESCE(SUM(oi.refunded_quantity) FILTER (WHERE o.on_behalf_of_user_id IS NULL), 0) AS BIGINT)                                                                                                                                                              AS online_refunded_count,
+       --Actual Count
+       CAST(COALESCE(SUM(oi.quantity - oi.refunded_quantity) FILTER (WHERE o.on_behalf_of_user_id IS NOT NULL), 0) AS BIGINT)                                                                                                                                            AS box_office_actual_count,
+       CAST(COALESCE(SUM(oi.quantity - oi.refunded_quantity) FILTER (WHERE o.on_behalf_of_user_id IS NULL), 0) AS BIGINT)                                                                                                                                                AS online_actual_count,
        CAST(COALESCE(SUM((oi_t_fees.unit_price_in_cents * (oi_t_fees.quantity - oi_t_fees.refunded_quantity)) +
                          (oi_e_fees.unit_price_in_cents * (oi_e_fees.quantity - oi_e_fees.refunded_quantity)))
                          FILTER (WHERE o.on_behalf_of_user_id IS NOT NULL),

@@ -11,13 +11,14 @@ use errors::BigNeonError;
 use extractors::*;
 use helpers::application;
 use itertools::Itertools;
+use log::Level::Debug;
 use payments::PaymentProcessor;
 use server::AppState;
 use std::collections::HashMap;
 use utils::ServiceLocator;
 use uuid::Uuid;
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct CartItem {
     pub ticket_type_id: Uuid,
     pub quantity: u32,
@@ -25,7 +26,7 @@ pub struct CartItem {
     pub redemption_code: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct UpdateCartRequest {
     pub items: Vec<CartItem>,
     pub box_office_pricing: Option<bool>,
@@ -34,6 +35,8 @@ pub struct UpdateCartRequest {
 pub fn update_cart(
     (connection, json, user): (Connection, Json<UpdateCartRequest>, User),
 ) -> Result<HttpResponse, BigNeonError> {
+    let json = json.into_inner();
+    jlog!(Debug, "Update Cart", {"cart": json, "user_id": user.id()});
     let connection = connection.get();
 
     let box_office_pricing = json.box_office_pricing.unwrap_or(false);
@@ -59,7 +62,6 @@ pub fn update_cart(
     let mut cart = Order::find_or_create_cart(&user.user, connection)?;
 
     let order_items: Vec<UpdateOrderItem> = json
-        .into_inner()
         .items
         .iter()
         .map(|i| UpdateOrderItem {
@@ -93,6 +95,9 @@ pub fn destroy((connection, user): (Connection, User)) -> Result<HttpResponse, B
 pub fn replace_cart(
     (connection, json, user): (Connection, Json<UpdateCartRequest>, User),
 ) -> Result<HttpResponse, BigNeonError> {
+    let json = json.into_inner();
+    jlog!(Debug, "Replace Cart", {"cart": json, "user_id": user.id() });
+
     let connection = connection.get();
 
     let box_office_pricing = json.box_office_pricing.unwrap_or(false);
@@ -118,7 +123,6 @@ pub fn replace_cart(
     let mut cart = Order::find_or_create_cart(&user.user, connection)?;
 
     let order_items: Vec<UpdateOrderItem> = json
-        .into_inner()
         .items
         .iter()
         .map(|i| UpdateOrderItem {
