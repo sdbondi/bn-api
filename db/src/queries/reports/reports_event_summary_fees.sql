@@ -18,7 +18,7 @@ FROM orders
        LEFT JOIN order_items oi_fees on oi.id = oi_fees.parent_id
        LEFT JOIN ticket_types tt ON (oi.ticket_type_id = tt.id)
        LEFT JOIN ticket_pricing tp ON (oi.ticket_pricing_id = tp.id)
-       LEFT JOIN payments p on orders.id = p.order_id
+       LEFT JOIN (SELECT order_id, ARRAY_TO_STRING(ARRAY_AGG(DISTINCT p.payment_method), ', ') AS payment_method FROM payments p GROUP BY p.payment_method, p.order_id) AS p on orders.id = p.order_id
        LEFT JOIN holds h on oi.hold_id = h.id
        LEFT JOIN events e on oi.event_id = e.id
 WHERE orders.status = 'Paid'
