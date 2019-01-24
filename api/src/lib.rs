@@ -10,6 +10,7 @@ extern crate actix_web;
 extern crate bigneon_db;
 //#[macro_use]
 extern crate chrono;
+extern crate crypto;
 extern crate diesel;
 extern crate dotenv;
 extern crate futures;
@@ -52,6 +53,7 @@ pub mod domain_events;
 pub mod errors;
 pub mod extractors;
 pub mod helpers;
+pub mod http;
 pub mod middleware;
 pub mod models;
 mod payments;

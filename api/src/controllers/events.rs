@@ -14,6 +14,7 @@ use serde_with::{self, CommaSeparator};
 use server::AppState;
 use std::collections::HashMap;
 use utils::marketing_contacts;
+use http::cache::{CacheHeaders, CacheInfo};
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -85,11 +86,12 @@ pub fn checkins(
 }
 
 pub fn index(
-    (state, connection, query, auth_user): (
+    (state, connection, query, auth_user, http_request: HttpRequest<AppState>): (
         State<AppState>,
         Connection,
         Query<SearchParameters>,
         OptionalUser,
+	http_request,
     ),
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = connection.get();
@@ -256,7 +258,24 @@ pub fn index(
     let mut payload = Payload::new(results, query.into());
     payload.paging.total = payload.data.len() as u64;
     payload.paging.limit = 100;
-    Ok(HttpResponse::Ok().json(&payload))
+
+//    let mut builder = HttpResponse::Ok();
+    let cache_headers = CacheHeaders::from(payload, CacheInfo {
+	max_age: 100u32,
+	public: true,
+    });
+
+    Ok(cache_headers.response(http_request))
+
+//    if cache_headers.is_stale(http_request) {
+//        Ok(HttpResponse::Ok().json(&payload))
+//    } else {
+//        Ok(cache_headers.response())
+//    }
+//
+//    builder.set(cache_headers.cache_control());
+//    builder.set(cache_headers.etag());
+//    Ok(cache_headers.response().json(&payload))
 }
 
 #[derive(Deserialize)]
