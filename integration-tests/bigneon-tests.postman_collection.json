@@ -14192,6 +14192,146 @@
 					"_postman_isSubFolder": true
 				},
 				{
+					"name": "Event Audit Report",
+					"item": [
+						{
+							"name": "OrgMember - Audit Report - 401",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "6ba3137a-44b4-4df4-a044-9435b7a0b652",
+										"exec": [
+											"pm.test(\"should be 401\", function() {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{org_member_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://{{server}}/reports/{{last_org_id}}?report=audit_report&event_id={{last_event_id}}",
+									"protocol": "http",
+									"host": [
+										"{{server}}"
+									],
+									"path": [
+										"reports",
+										"{{last_org_id}}"
+									],
+									"query": [
+										{
+											"key": "report",
+											"value": "audit_report"
+										},
+										{
+											"key": "event_id",
+											"value": "{{last_event_id}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "OrgAdmin - Audit Report",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "8d593ad4-0921-4427-9a81-4a4b3b46a72e",
+										"exec": [
+											"pm.test(\"should be 200\", function() {",
+											"    pm.response.to.have.status(200);",
+											"})",
+											"pm.test(\"should not be empty\", function() {",
+											"\tlet json = JSON.parse(responseBody);",
+											"\t",
+											"\tpm.expect(json).to.have.all.keys('event_id', 'sales', 'ticket_fees', 'other_fees');",
+											"\tpm.expect(json.sales).to.not.be.empty;",
+											"\tpm.expect(json.ticket_fees).to.not.be.empty;",
+											"\tpm.expect(json.other_fees).to.not.be.empty;",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{org_admin_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://{{server}}/reports/{{last_org_id}}?report=audit_report&event_id={{last_event_id}}",
+									"protocol": "http",
+									"host": [
+										"{{server}}"
+									],
+									"path": [
+										"reports",
+										"{{last_org_id}}"
+									],
+									"query": [
+										{
+											"key": "report",
+											"value": "audit_report"
+										},
+										{
+											"key": "event_id",
+											"value": "{{last_event_id}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
 					"name": "Event Ticket Count",
 					"item": [
 						{
