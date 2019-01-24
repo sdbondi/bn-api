@@ -1,7 +1,9 @@
 use bigneon_db::dev::TestProject;
 use bigneon_db::prelude::*;
+use bigneon_db::schema::ticket_instances;
 use bigneon_db::utils::errors::ErrorCode::ValidationError;
 use chrono::NaiveDate;
+use diesel::prelude::*;
 use uuid::Uuid;
 
 #[test]
@@ -78,6 +80,99 @@ pub fn create_with_validation_errors() {
 }
 
 #[test]
+fn valid_unsold_ticket_count() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let event = project.create_event().with_ticket_pricing().finish();
+    let ticket_type = event
+        .ticket_types(true, None, connection)
+        .unwrap()
+        .remove(0);
+    assert_eq!(
+        100,
+        ticket_type.valid_unsold_ticket_count(connection).unwrap()
+    );
+
+    let user = project.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    cart.update_quantities(
+        &vec![UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 50,
+            redemption_code: None,
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+
+    // 50 in cart
+    assert_eq!(
+        100,
+        ticket_type.valid_unsold_ticket_count(connection).unwrap()
+    );
+
+    let total = cart.calculate_total(connection).unwrap();
+    cart.add_external_payment(Some("test".to_string()), user.id, total, connection)
+        .unwrap();
+
+    // 50 paid
+    assert_eq!(
+        50,
+        ticket_type.valid_unsold_ticket_count(connection).unwrap()
+    );
+
+    // Add 1 to cart marking it as reserved
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    cart.update_quantities(
+        &vec![UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 1,
+            redemption_code: None,
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+
+    let items = cart.items(&connection).unwrap();
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type.id))
+        .unwrap();
+    let ticket_instance = ticket_instances::table
+        .filter(ticket_instances::order_item_id.eq(order_item.id))
+        .first::<TicketInstance>(connection)
+        .unwrap();
+    assert_eq!(TicketInstanceStatus::Reserved, ticket_instance.status);
+
+    // Nullify 49
+    let asset = Asset::find_by_ticket_type(&ticket_type.id, connection).unwrap();
+    TicketInstance::nullify_tickets(asset.id, 49, connection).unwrap();
+    assert_eq!(
+        1,
+        ticket_type.valid_unsold_ticket_count(connection).unwrap()
+    );
+
+    // Reload ticket instance, should not nullify
+    let ticket_instance = TicketInstance::find(ticket_instance.id, connection).unwrap();
+    assert_eq!(TicketInstanceStatus::Reserved, ticket_instance.status);
+
+    // Nullify remaining 1
+    TicketInstance::nullify_tickets(asset.id, 1, connection).unwrap();
+    assert_eq!(
+        0,
+        ticket_type.valid_unsold_ticket_count(connection).unwrap()
+    );
+
+    // Reload ticket instance, should nullify
+    let ticket_instance = TicketInstance::find(ticket_instance.id, connection).unwrap();
+    assert_eq!(TicketInstanceStatus::Nullified, ticket_instance.status);
+}
+
+#[test]
 fn find_for_code() {
     let project = TestProject::new();
     let connection = project.get_connection();
@@ -86,7 +181,7 @@ fn find_for_code() {
         .with_ticket_pricing()
         .with_ticket_type_count(2)
         .finish();
-    let ticket_types = event.ticket_types(&connection).unwrap();
+    let ticket_types = event.ticket_types(true, None, &connection).unwrap();
     let ticket_type = &ticket_types[0];
     let ticket_type2 = &ticket_types[1];
     let code = project.create_code().with_event(&event).finish();
@@ -107,6 +202,118 @@ fn find_for_code() {
             .sort(),
         vec![ticket_type.id, ticket_type2.id].sort()
     );
+}
+
+#[test]
+fn find_by_event_id() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let event = project
+        .create_event()
+        .with_ticket_pricing()
+        .with_ticket_type_count(2)
+        .finish();
+    let mut ticket_types = event.ticket_types(true, None, &connection).unwrap();
+    let ticket_type = ticket_types.remove(0);
+    let ticket_type2 = ticket_types.remove(0);
+
+    // No access codes on file checking with access code filtering
+    let results = TicketType::find_by_event_id(event.id, true, None, &connection).unwrap();
+    assert_eq!(vec![ticket_type.clone(), ticket_type2.clone()], results);
+
+    // No access codes on file checking without access code filtering
+    let results = TicketType::find_by_event_id(event.id, false, None, &connection).unwrap();
+    assert_eq!(vec![ticket_type.clone(), ticket_type2.clone()], results);
+
+    // Add access code
+    let code = project
+        .create_code()
+        .with_event(&event)
+        .for_ticket_type(&ticket_type)
+        .with_code_type(CodeTypes::Access)
+        .finish();
+
+    // One ticket type is filtered while one is not so filtered only shows when code is present
+    let results = TicketType::find_by_event_id(event.id, true, None, &connection).unwrap();
+    assert_eq!(vec![ticket_type2.clone()], results);
+    let results = TicketType::find_by_event_id(
+        event.id,
+        true,
+        Some(code.redemption_code.clone()),
+        &connection,
+    )
+    .unwrap();
+    assert_eq!(vec![ticket_type.clone(), ticket_type2.clone()], results);
+    let results = TicketType::find_by_event_id(event.id, false, None, &connection).unwrap();
+    assert_eq!(vec![ticket_type.clone(), ticket_type2.clone()], results);
+
+    // Add additional code for discount but it does not affect visibility
+    let code2 = project
+        .create_code()
+        .with_event(&event)
+        .for_ticket_type(&ticket_type2)
+        .with_code_type(CodeTypes::Discount)
+        .finish();
+
+    // Behavior mimics previous logic in that no ticket types have been filtered for new code
+    let results = TicketType::find_by_event_id(event.id, true, None, &connection).unwrap();
+    assert_eq!(vec![ticket_type2.clone()], results);
+    let results = TicketType::find_by_event_id(
+        event.id,
+        true,
+        Some(code.redemption_code.clone()),
+        &connection,
+    )
+    .unwrap();
+    assert_eq!(vec![ticket_type.clone(), ticket_type2.clone()], results);
+    let results = TicketType::find_by_event_id(
+        event.id,
+        true,
+        Some(code2.redemption_code.clone()),
+        &connection,
+    )
+    .unwrap();
+    assert_eq!(vec![ticket_type2.clone()], results);
+    let results = TicketType::find_by_event_id(event.id, false, None, &connection).unwrap();
+    assert_eq!(vec![ticket_type.clone(), ticket_type2.clone()], results);
+
+    // Add additional access code
+    let code3 = project
+        .create_code()
+        .with_event(&event)
+        .for_ticket_type(&ticket_type2)
+        .with_code_type(CodeTypes::Access)
+        .finish();
+
+    // No ticket types present when filtering but they can show up with each redemption code or without filtering
+    let results = TicketType::find_by_event_id(event.id, true, None, &connection).unwrap();
+    assert!(results.is_empty());
+    let results = TicketType::find_by_event_id(
+        event.id,
+        true,
+        Some(code.redemption_code.clone()),
+        &connection,
+    )
+    .unwrap();
+    assert_eq!(vec![ticket_type.clone()], results);
+    let results = TicketType::find_by_event_id(
+        event.id,
+        true,
+        Some(code2.redemption_code.clone()),
+        &connection,
+    )
+    .unwrap();
+    assert!(results.is_empty());
+    let results = TicketType::find_by_event_id(
+        event.id,
+        true,
+        Some(code3.redemption_code.clone()),
+        &connection,
+    )
+    .unwrap();
+    assert_eq!(vec![ticket_type2.clone()], results);
+    let results = TicketType::find_by_event_id(event.id, false, None, &connection).unwrap();
+    assert_eq!(vec![ticket_type.clone(), ticket_type2.clone()], results);
 }
 
 #[test]
@@ -185,7 +392,9 @@ pub fn create_with_same_date_validation_errors() {
 fn validate_ticket_pricing() {
     let project = TestProject::new();
     let event = project.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(project.get_connection()).unwrap()[0];
+    let ticket_type = &event
+        .ticket_types(true, None, project.get_connection())
+        .unwrap()[0];
 
     // Set short window for validations to detect dates outside of ticket type window
     let ticket_type = ticket_type
@@ -320,7 +529,10 @@ pub fn remaining_ticket_count() {
     let project = TestProject::new();
     let connection = project.get_connection();
     let event = project.create_event().with_ticket_pricing().finish();
-    let ticket_type = event.ticket_types(connection).unwrap().remove(0);
+    let ticket_type = event
+        .ticket_types(true, None, connection)
+        .unwrap()
+        .remove(0);
     let mut order = project.create_order().for_event(&event).finish();
     assert_eq!(90, ticket_type.remaining_ticket_count(connection).unwrap());
 
@@ -358,7 +570,7 @@ fn update() {
     let db = TestProject::new();
     let connection = db.get_connection();
     let event = db.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     //Change editable parameter and submit ticket type update request
     let update_name = String::from("updated_event_name");
     let update_start_date = NaiveDate::from_ymd(2018, 4, 23).and_hms(5, 14, 18);
@@ -381,7 +593,7 @@ fn cancel() {
     let db = TestProject::new();
     let connection = db.get_connection();
     let event = db.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
 
     let cancelled_ticket_type = ticket_type.cancel(connection).unwrap();
 
@@ -393,7 +605,7 @@ pub fn update_with_validation_errors() {
     let db = TestProject::new();
     let connection = db.get_connection();
     let event = db.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     //Change editable parameter and submit ticket type update request
     let update_name = String::from("updated_event_name");
     let update_start_date = NaiveDate::from_ymd(2018, 6, 23).and_hms(5, 14, 18);
@@ -435,7 +647,9 @@ pub fn update_with_validation_errors() {
 fn find() {
     let db = TestProject::new();
     let event = db.create_event().with_tickets().finish();
-    let ticket_type = &event.ticket_types(&db.get_connection()).unwrap()[0];
+    let ticket_type = &event
+        .ticket_types(true, None, &db.get_connection())
+        .unwrap()[0];
 
     let found_ticket_type = TicketType::find(ticket_type.id, &db.get_connection()).unwrap();
     assert_eq!(&found_ticket_type, ticket_type);

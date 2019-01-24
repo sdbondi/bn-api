@@ -456,21 +456,58 @@ impl Order {
             event_id: Uuid,
             limit_per_person: i32,
         }
+
+        struct MatchData<'a> {
+            index: Option<usize>,
+            hold_id: Option<Uuid>,
+            hold: Option<Hold>,
+            code_id: Option<Uuid>,
+            code: Option<Code>,
+            update_order_item: &'a UpdateOrderItem,
+        }
+
         let mut check_ticket_limits: Vec<LimitCheck> = vec![];
 
         let mut mapped = vec![];
         for (index, item) in items.iter().enumerate() {
             mapped.push(match &item.redemption_code {
                 Some(r) => match Hold::find_by_redemption_code(r, conn).optional()? {
-                    Some(hold) => (Some(index), Some(hold.id), Some(hold), item),
-                    None => {
-                        return DatabaseError::validation_error(
-                            "redemption_code",
-                            "Redemption code is not valid",
-                        );
-                    }
+                    Some(hold) => MatchData {
+                        index: Some(index),
+                        hold_id: Some(hold.id),
+                        hold: Some(hold),
+                        code_id: None,
+                        code: None,
+                        update_order_item: item,
+                    },
+                    None => match Code::find_by_redemption_code(r, conn).optional()? {
+                        Some(code) => {
+                            code.confirm_code_valid()?;
+                            MatchData {
+                                index: Some(index),
+                                hold_id: None,
+                                hold: None,
+                                code_id: Some(code.id),
+                                code: Some(code),
+                                update_order_item: item,
+                            }
+                        }
+                        None => {
+                            return DatabaseError::validation_error(
+                                "redemption_code",
+                                "Redemption code is not valid",
+                            );
+                        }
+                    },
                 },
-                None => (Some(index), None, None, item),
+                None => MatchData {
+                    index: Some(index),
+                    hold_id: None,
+                    hold: None,
+                    code_id: None,
+                    code: None,
+                    update_order_item: item,
+                },
             });
         }
 
@@ -481,39 +518,32 @@ impl Order {
 
             let mut index_to_remove: Option<usize> = None;
             {
-                let matching_result: Vec<&(
-                    Option<usize>,
-                    Option<Uuid>,
-                    Option<Hold>,
-                    &UpdateOrderItem,
-                )> = mapped
-                    .iter()
-                    .filter(|(index, hold_id, _, item)| {
-                        index.is_some()
-                            && Some(item.ticket_type_id) == current_line.ticket_type_id
-                            && *hold_id == current_line.hold_id
-                    })
-                    .collect();
-                let matching_result = matching_result.first();
+                let matching_result: Option<&MatchData> = mapped.iter().find(|match_data| {
+                    match_data.index.is_some()
+                        && Some(match_data.update_order_item.ticket_type_id)
+                            == current_line.ticket_type_id
+                        && match_data.hold_id == current_line.hold_id
+                        && match_data.code_id == current_line.code_id
+                });
 
-                if let Some(matching_result) = matching_result {
+                if let Some(match_data) = matching_result {
                     jlog!(Level::Debug, "Found an existing cart item, replacing");
-                    let (index, hold_id, hold, mut matching_line) = matching_result;
-                    index_to_remove = *index;
-                    if current_line.quantity as u32 > matching_line.quantity {
+                    index_to_remove = match_data.index;
+                    if current_line.quantity as u32 > match_data.update_order_item.quantity {
                         jlog!(Level::Debug, "Reducing quantity of cart item");
                         TicketInstance::release_tickets(
                             &current_line,
-                            current_line.quantity as u32 - matching_line.quantity,
+                            current_line.quantity as u32 - match_data.update_order_item.quantity,
                             conn,
                         )?;
-                        current_line.quantity = matching_line.quantity as i64;
+                        current_line.quantity = match_data.update_order_item.quantity as i64;
                         current_line.update(conn)?;
                         if current_line.quantity == 0 {
                             jlog!(Level::Debug, "Cart item has 0 quantity, deleting it");
                             self.destroy_item(current_line.id, conn)?;
                         }
-                    } else if (current_line.quantity as u32) < matching_line.quantity {
+                    } else if (current_line.quantity as u32) < match_data.update_order_item.quantity
+                    {
                         jlog!(Level::Debug, "Increasing quantity of cart item");
                         // Ticket pricing might have changed since we added the previous item.
                         // In future we may want to use the ticket pricing at the time the order was created.
@@ -537,7 +567,7 @@ impl Order {
                         // TODO: Move this to an external processer
                         if Some(ticket_pricing.id) != current_line.ticket_pricing_id {
                             let mut price_in_cents = ticket_pricing.price_in_cents;
-                            if let Some(h) = hold.as_ref() {
+                            if let Some(h) = match_data.hold.as_ref() {
                                 let discount = h.discount_in_cents;
                                 let hold_type = h.hold_type;
                                 price_in_cents = match hold_type {
@@ -545,27 +575,31 @@ impl Order {
                                         cmp::max(0, price_in_cents - discount.unwrap_or(0))
                                     }
                                     HoldTypes::Comp => 0,
-                                }
+                                };
+                            } else if let Some(c) = match_data.code.as_ref() {
+                                price_in_cents =
+                                    cmp::max(0, price_in_cents - c.discount_in_cents.unwrap_or(0));
                             }
 
                             let order_item = NewTicketsOrderItem {
                                 order_id: self.id,
                                 item_type: OrderItemTypes::Tickets,
-                                quantity: matching_line.quantity as i64,
+                                quantity: match_data.update_order_item.quantity as i64,
                                 ticket_type_id: ticket_type.id,
                                 ticket_pricing_id: ticket_pricing.id,
                                 event_id: Some(ticket_type.event_id),
                                 unit_price_in_cents: price_in_cents,
-                                hold_id: *hold_id,
-                                code_id: None,
+                                hold_id: match_data.hold_id,
+                                code_id: match_data.code_id,
                             }
                             .commit(conn)?;
                             TicketInstance::reserve_tickets(
                                 &order_item,
                                 self.expires_at,
                                 ticket_type_id,
-                                *hold_id,
-                                matching_line.quantity - current_line.quantity as u32,
+                                match_data.hold_id,
+                                match_data.update_order_item.quantity
+                                    - current_line.quantity as u32,
                                 conn,
                             )?;
                         } else {
@@ -573,11 +607,12 @@ impl Order {
                                 &current_line,
                                 self.expires_at,
                                 ticket_type_id,
-                                *hold_id,
-                                matching_line.quantity - current_line.quantity as u32,
+                                match_data.hold_id,
+                                match_data.update_order_item.quantity
+                                    - current_line.quantity as u32,
                                 conn,
                             )?;
-                            current_line.quantity = matching_line.quantity as i64;
+                            current_line.quantity = match_data.update_order_item.quantity as i64;
                             current_line.update(conn)?;
                         }
                     }
@@ -593,7 +628,7 @@ impl Order {
                 }
             }
             if let Some(index) = index_to_remove {
-                mapped[index].0 = None;
+                mapped[index].index = None;
             }
         }
 
@@ -602,19 +637,19 @@ impl Order {
             self.set_expiry(conn)?;
         }
 
-        for (index, hold_id, hold, new_line) in mapped {
-            if new_line.quantity == 0 || index.is_none() {
+        for match_data in mapped {
+            if match_data.update_order_item.quantity == 0 || match_data.index.is_none() {
                 continue;
             }
 
             jlog!(Level::Debug, "Adding new cart items");
             let ticket_pricing = TicketPricing::get_current_ticket_pricing(
-                new_line.ticket_type_id,
+                match_data.update_order_item.ticket_type_id,
                 box_office_pricing,
                 false,
                 conn,
             )?;
-            let ticket_type = TicketType::find(new_line.ticket_type_id, conn)?;
+            let ticket_type = TicketType::find(match_data.update_order_item.ticket_type_id, conn)?;
 
             check_ticket_limits.push(LimitCheck {
                 limit_per_person: ticket_type.limit_per_person.clone(),
@@ -623,34 +658,37 @@ impl Order {
             });
 
             let mut price_in_cents = ticket_pricing.price_in_cents;
-            if let Some(h) = hold.as_ref() {
+            if let Some(h) = match_data.hold.as_ref() {
                 let discount = h.discount_in_cents;
                 let hold_type = h.hold_type;
                 price_in_cents = match hold_type {
                     HoldTypes::Discount => cmp::max(0, price_in_cents - discount.unwrap_or(0)),
                     HoldTypes::Comp => 0,
                 }
+            } else if let Some(c) = match_data.code.as_ref() {
+                price_in_cents = cmp::max(0, price_in_cents - c.discount_in_cents.unwrap_or(0));
             }
+
             // TODO: Move this to an external processer
             let order_item = NewTicketsOrderItem {
                 order_id: self.id,
                 item_type: OrderItemTypes::Tickets,
-                quantity: new_line.quantity as i64,
+                quantity: match_data.update_order_item.quantity as i64,
                 ticket_type_id: ticket_type.id,
                 ticket_pricing_id: ticket_pricing.id,
                 event_id: Some(ticket_type.event_id),
                 unit_price_in_cents: price_in_cents,
-                hold_id: hold_id,
-                code_id: None,
+                hold_id: match_data.hold_id,
+                code_id: match_data.code_id,
             }
             .commit(conn)?;
 
             TicketInstance::reserve_tickets(
                 &order_item,
                 self.expires_at,
-                new_line.ticket_type_id,
-                hold_id,
-                new_line.quantity,
+                match_data.update_order_item.ticket_type_id,
+                match_data.hold_id,
+                match_data.update_order_item.quantity,
                 conn,
             )?;
         }
@@ -727,8 +765,8 @@ impl Order {
             if event_id.is_none() {
                 continue;
             }
-            if hold_id.is_some() {
-                let hold = Hold::find(hold_id.unwrap(), conn)?;
+            if let Some(hold_id) = hold_id {
+                let hold = Hold::find(hold_id, conn)?;
                 if hold.hold_type == HoldTypes::Comp {
                     continue;
                 }
@@ -996,6 +1034,11 @@ impl Order {
                     self.status
                 ));
             }
+        }
+
+        // Confirm codes are still valid
+        for item in self.items(conn)? {
+            item.confirm_code_valid(conn)?;
         }
 
         let p = payment.commit(current_user_id, conn)?;

@@ -28,6 +28,22 @@ fn create() {
 }
 
 #[test]
+pub fn confirm_code_valid() {
+    let db = TestProject::new();
+    let code = db.create_code().finish();
+    assert!(code.confirm_code_valid().is_ok());
+
+    let start_date = NaiveDateTime::from(Utc::now().naive_utc() - Duration::days(3));
+    let end_date = NaiveDateTime::from(Utc::now().naive_utc() - Duration::days(2));
+    let code = db
+        .create_code()
+        .with_start_date(start_date)
+        .with_end_date(end_date)
+        .finish();
+    assert!(code.confirm_code_valid().is_err());
+}
+
+#[test]
 pub fn create_with_validation_errors() {
     let db = TestProject::new();
     let event = db.create_event().with_tickets().finish();
@@ -356,7 +372,7 @@ fn for_display() {
         .with_ticket_pricing()
         .with_ticket_type_count(2)
         .finish();
-    let ticket_types = event.ticket_types(&connection).unwrap();
+    let ticket_types = event.ticket_types(true, None, &connection).unwrap();
     let ticket_type = &ticket_types[0];
     let ticket_type2 = &ticket_types[1];
     let code = project
@@ -385,7 +401,7 @@ fn update_ticket_types() {
         .with_ticket_pricing()
         .with_ticket_type_count(3)
         .finish();
-    let ticket_types = event.ticket_types(&connection).unwrap();
+    let ticket_types = event.ticket_types(true, None, &connection).unwrap();
     let ticket_type = &ticket_types[0];
     let ticket_type2 = &ticket_types[1];
     let ticket_type3 = &ticket_types[2];

@@ -371,7 +371,7 @@ pub fn update_with_invalid_id() {
 
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
-    let created_ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
     created_ticket_type.ticket_pricing(conn).unwrap();
 
@@ -435,7 +435,7 @@ pub fn update_with_validation_errors() {
 
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
-    let created_ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
     let created_ticket_pricing = created_ticket_type.ticket_pricing(conn).unwrap();
 
@@ -512,7 +512,7 @@ pub fn update_with_validation_errors_on_ticket_pricing() {
 
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
-    let created_ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
     let created_ticket_pricing = created_ticket_type.ticket_pricing(conn).unwrap();
 
@@ -592,7 +592,7 @@ pub fn update_with_overlapping_periods() {
 
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
-    let created_ticket_type = &event.ticket_types(conn).unwrap()[0];
+    let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
     let created_ticket_pricing = created_ticket_type.ticket_pricing(conn).unwrap();
 
@@ -657,4 +657,84 @@ pub fn update_with_overlapping_periods() {
     }
     let deserialized_response: Response = serde_json::from_str(&body).unwrap();
     assert_eq!(deserialized_response.error, "Validation error");
+}
+
+#[test]
+pub fn cancel_with_sold_tickets_and_hold() {
+    let database = TestDatabase::new();
+    let user = database.create_user().finish();
+    let organization = database.create_organization().finish();
+    let auth_user =
+        support::create_auth_user_from_user(&user, Roles::Admin, Some(&organization), &database);
+    let event = database
+        .create_event()
+        .with_organization(&organization)
+        .with_tickets()
+        .with_ticket_pricing()
+        .finish();
+
+    let conn = database.connection.get();
+    let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
+
+    let valid_unsold_ticket_count = created_ticket_type.valid_unsold_ticket_count(conn).unwrap();
+    // 100 before taking tickets out of available inventory
+    assert_eq!(100, valid_unsold_ticket_count);
+
+    // Hold of 10 tickets
+    let hold = database
+        .create_hold()
+        .with_ticket_type_id(created_ticket_type.id)
+        .with_event(&event)
+        .finish();
+
+    let user2 = database.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user2, conn).unwrap();
+    cart.update_quantities(
+        &vec![
+            UpdateOrderItem {
+                ticket_type_id: created_ticket_type.id,
+                quantity: 10,
+                redemption_code: None,
+            },
+            UpdateOrderItem {
+                ticket_type_id: created_ticket_type.id,
+                quantity: 5,
+                redemption_code: Some(hold.redemption_code),
+            },
+        ],
+        false,
+        false,
+        conn,
+    )
+    .unwrap();
+    let total = cart.calculate_total(conn).unwrap();
+    cart.add_external_payment(Some("test".to_string()), user.id, total, conn)
+        .unwrap();
+
+    let valid_unsold_ticket_count = created_ticket_type.valid_unsold_ticket_count(conn).unwrap();
+    // 85 left from 100 - 5 (hold) - 10 (regular)
+    assert_eq!(85, valid_unsold_ticket_count);
+
+    //Construct update request
+    let test_request =
+        TestRequest::create_with_uri_custom_params("/", vec!["event_id", "ticket_type_id"]);
+    let state = test_request.extract_state();
+    let mut path = Path::<EventTicketPathParameters>::extract(&test_request.request).unwrap();
+    path.event_id = event.id;
+    path.ticket_type_id = created_ticket_type.id;
+
+    //Send update request
+    let response: HttpResponse =
+        ticket_types::cancel((database.connection.clone().into(), path, auth_user, state)).into();
+
+    let updated_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
+
+    assert_eq!(updated_ticket_type.status, TicketTypeStatus::Cancelled);
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let valid_unsold_ticket_count = created_ticket_type.valid_unsold_ticket_count(conn).unwrap();
+    assert_eq!(0, valid_unsold_ticket_count);
+
+    let valid_ticket_count = created_ticket_type.valid_ticket_count(conn).unwrap();
+    assert_eq!(15, valid_ticket_count);
 }

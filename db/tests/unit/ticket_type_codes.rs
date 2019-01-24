@@ -8,7 +8,7 @@ fn create() {
     let connection = project.get_connection();
     let event = project.create_event().with_ticket_pricing().finish();
     let code = project.create_code().with_event(&event).finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
 
     let ticket_type_code = TicketTypeCode::create(ticket_type.id, code.id)
         .commit(connection)
@@ -33,7 +33,7 @@ fn destroy_multiple() {
         .with_ticket_pricing()
         .with_ticket_type_count(3)
         .finish();
-    let ticket_types = event.ticket_types(&connection).unwrap();
+    let ticket_types = event.ticket_types(true, None, &connection).unwrap();
     let ticket_type = &ticket_types[0];
     let ticket_type2 = &ticket_types[1];
     let ticket_type3 = &ticket_types[2];
@@ -68,7 +68,7 @@ fn create_with_validation_errors() {
     let connection = project.get_connection();
     let code = project.create_code().finish();
     let event = project.create_event().with_ticket_pricing().finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
 
     let result = TicketTypeCode::create(ticket_type.id, code.id).commit(connection);
 

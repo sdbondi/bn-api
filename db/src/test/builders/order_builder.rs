@@ -37,7 +37,7 @@ impl<'a> OrderBuilder<'a> {
     }
 
     pub fn for_event(mut self, event: &Event) -> OrderBuilder<'a> {
-        self.ticket_type_id = Some(event.ticket_types(&self.connection).unwrap()[0].id);
+        self.ticket_type_id = Some(event.ticket_types(true, None, &self.connection).unwrap()[0].id);
         self
     }
 
@@ -65,7 +65,8 @@ impl<'a> OrderBuilder<'a> {
             let event = EventBuilder::new(self.connection)
                 .with_ticket_pricing()
                 .finish();
-            self.ticket_type_id = Some(event.ticket_types(&self.connection).unwrap()[0].id);
+            self.ticket_type_id =
+                Some(event.ticket_types(true, None, &self.connection).unwrap()[0].id);
         }
 
         let mut cart =

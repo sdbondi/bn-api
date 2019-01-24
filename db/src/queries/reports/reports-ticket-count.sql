@@ -39,4 +39,5 @@ FROM ticket_instances ti
        LEFT JOIN holds h ON (h.id = ti.hold_id)
 WHERE ($1 IS NULL OR e.id = $1)
   AND ($2 IS NULL OR e.organization_id = $2)
-GROUP BY a.ticket_type_id, tt.name, tt.status, e.id;
+GROUP BY a.ticket_type_id, tt.name, tt.status, e.id
+HAVING COUNT(ti.id) FILTER (WHERE ti.status <> 'Nullified') > 1;

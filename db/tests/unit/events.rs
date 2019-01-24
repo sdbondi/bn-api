@@ -342,7 +342,7 @@ fn get_sales_by_date_range() {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
 
     let user = project.create_user().finish();
     let user2 = project.create_user().finish();
@@ -1187,7 +1187,7 @@ fn ticket_types() {
         )
         .unwrap();
 
-    let ticket_types = event.ticket_types(conn).unwrap();
+    let ticket_types = event.ticket_types(true, None, conn).unwrap();
 
     assert_eq!(ticket_types, vec![ticket_type_ga, ticket_type_vip]);
 }

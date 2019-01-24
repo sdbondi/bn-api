@@ -331,6 +331,24 @@ impl Hold {
         Ok(())
     }
 
+    pub fn remove_available_quantity(&self, conn: &PgConnection) -> Result<(), DatabaseError> {
+        // Recursively remove from children
+        let children: Vec<Hold> = holds::table
+            .filter(holds::parent_hold_id.eq(self.id))
+            .load(conn)
+            .to_db_error(ErrorCode::QueryError, "Could not find children for hold")?;
+        for child in children {
+            child.remove_available_quantity(conn)?;
+        }
+
+        // Children have returned their quantity to the parent so returning remaining available ticket inventory
+        let (total, remaining) = self.quantity(conn)?;
+        let sold_quantity = total - remaining;
+        self.set_quantity(sold_quantity, conn)?;
+
+        Ok(())
+    }
+
     pub fn quantity(&self, conn: &PgConnection) -> Result<(u32, u32), DatabaseError> {
         TicketInstance::count_for_hold(self.id, self.ticket_type_id, conn)
     }
@@ -359,6 +377,16 @@ impl Hold {
                 ErrorCode::QueryError,
                 "Could not load hold with that redeem key",
             )
+    }
+
+    pub fn find_by_ticket_type(
+        ticket_type_id: Uuid,
+        conn: &PgConnection,
+    ) -> Result<Vec<Hold>, DatabaseError> {
+        holds::table
+            .filter(holds::ticket_type_id.eq(ticket_type_id))
+            .load(conn)
+            .to_db_error(ErrorCode::QueryError, "Could not load holds by ticket type")
     }
 
     pub fn into_display(self, conn: &PgConnection) -> Result<DisplayHold, DatabaseError> {

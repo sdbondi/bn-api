@@ -3,6 +3,7 @@ use auth::user::User;
 use bigneon_db::models::*;
 use chrono::prelude::*;
 use db::Connection;
+use diesel::PgConnection;
 use errors::*;
 use extractors::*;
 use helpers::application;
@@ -149,8 +150,7 @@ pub fn index(
 
     let fee_schedule = FeeSchedule::find(organization.fee_schedule_id, connection)?;
     //TODO refactor using paging params
-    let ticket_types = TicketType::find_by_event_id(path.id, connection)?;
-
+    let ticket_types = TicketType::find_by_event_id(path.id, false, None, connection)?;
     let mut payload = Payload::new(vec![], query_parameters.into_inner().into());
 
     for t in ticket_types {
@@ -167,7 +167,12 @@ pub fn index(
 }
 
 pub fn cancel(
-    (connection, path, user): (Connection, Path<EventTicketPathParameters>, User),
+    (connection, path, user, state): (
+        Connection,
+        Path<EventTicketPathParameters>,
+        User,
+        State<AppState>,
+    ),
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = connection.get();
     let event = Event::find(path.event_id, connection)?;
@@ -175,8 +180,27 @@ pub fn cancel(
     user.requires_scope_for_organization(Scopes::EventWrite, &organization, connection)?;
 
     let ticket_type = TicketType::find(path.ticket_type_id, connection)?;
-
     ticket_type.cancel(connection)?;
+
+    // Reduce holds to quantity sold
+    for hold in Hold::find_by_ticket_type(ticket_type.id, connection)?
+        .into_iter()
+        .filter(|h| h.parent_hold_id.is_none())
+    {
+        hold.remove_available_quantity(connection)?;
+        if hold.quantity(connection)?.0 == 0 {
+            hold.destroy(connection)?;
+        }
+    }
+
+    let valid_unsold_ticket_count = ticket_type.valid_unsold_ticket_count(connection)?;
+    nullify_tickets(
+        state,
+        organization,
+        ticket_type,
+        valid_unsold_ticket_count,
+        connection,
+    )?;
 
     Ok(HttpResponse::Ok().finish())
 }
@@ -227,35 +251,13 @@ pub fn update(
             }
         } else if valid_ticket_count > requested_capacity {
             let nullify_ticket_count = valid_ticket_count - requested_capacity;
-            let asset = Asset::find_by_ticket_type(&ticket_type.id, connection)?;
-            let org_wallet =
-                Wallet::find_default_for_organization(event.organization_id, connection)?;
-            //Nullify tickets locally
-            let tickets =
-                TicketInstance::nullify_tickets(asset.id, nullify_ticket_count, connection)?;
-            //Nullify tickets on chain
-            if tickets.len() == nullify_ticket_count as usize {
-                let tari_ids: Vec<u64> = (0..tickets.len())
-                    .map(|i| tickets[i as usize].token_id as u64)
-                    .collect();
-                match asset.blockchain_asset_id {
-                    Some(a) => {
-                        state.config.tari_client.modify_asset_nullify_tokens(&org_wallet.secret_key,
-                                                                             &org_wallet.public_key,
-                                                                             &a,
-                                                                             tari_ids,
-                        )?
-                    },
-                    None => return application::internal_server_error(
-                        "Could not complete capacity increase because the asset has not been assigned on the blockchain",
-                    ),
-                }
-            } else {
-                return application::internal_server_error(&format!(
-                    "Unable to nullify the requested number ({}) of ticket instances",
-                    requested_capacity
-                ));
-            }
+            nullify_tickets(
+                state,
+                organization,
+                ticket_type.clone(),
+                nullify_ticket_count,
+                connection,
+            )?;
         }
     }
 
@@ -341,4 +343,45 @@ pub fn update(
     let _updated_event = event.update_cache(connection)?;
 
     Ok(HttpResponse::Ok().finish())
+}
+
+fn nullify_tickets(
+    state: State<AppState>,
+    organization: Organization,
+    ticket_type: TicketType,
+    quantity: u32,
+    connection: &PgConnection,
+) -> Result<(), BigNeonError> {
+    let asset = Asset::find_by_ticket_type(&ticket_type.id, connection)?;
+    let org_wallet = Wallet::find_default_for_organization(organization.id, connection)?;
+    //Nullify tickets locally
+    let tickets = TicketInstance::nullify_tickets(asset.id, quantity, connection)?;
+    //Nullify tickets on chain
+    if tickets.len() == quantity as usize {
+        let tari_ids: Vec<u64> = (0..tickets.len())
+            .map(|i| tickets[i as usize].token_id as u64)
+            .collect();
+        match asset.blockchain_asset_id {
+            Some(a) => {
+                state.config.tari_client.modify_asset_nullify_tokens(
+                    &org_wallet.secret_key,
+                    &org_wallet.public_key,
+                    &a,
+                    tari_ids,
+                )?;
+            }
+            None => {
+                application::internal_server_error::<HttpResponse>(
+                    "Could not complete capacity increase because the asset has not been assigned on the blockchain",
+                )?;
+            }
+        }
+    } else {
+        application::internal_server_error::<HttpResponse>(&format!(
+            "Unable to nullify the requested number ({}) of ticket instances",
+            quantity
+        ))?;
+    }
+
+    Ok(())
 }

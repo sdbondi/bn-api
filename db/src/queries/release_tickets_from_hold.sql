@@ -7,8 +7,9 @@ WHERE id IN (SELECT t.id
                     INNER JOIN assets AS a ON t.asset_id = a.id
              WHERE t.hold_id = $1
              AND a.ticket_type_id = $2
-             AND (t.status = 'Available' or t.reserved_until < now())
-             AND t.status <> 'Purchased'
+             AND t.status in ('Available', 'Reserved')
+             -- Release available prior to reserved
+             ORDER BY t.status, t.reserved_until
              LIMIT $3 FOR UPDATE SKIP LOCKED)
     RETURNING
       id,

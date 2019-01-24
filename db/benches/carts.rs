@@ -18,7 +18,7 @@ pub fn benchmark_carts(c: &mut Criterion) {
         .with_ticket_pricing()
         .finish();
 
-    let ticket_type_id = event.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event.ticket_types(true, None, connection).unwrap()[0].id;
 
     let mut users = Vec::<Uuid>::new();
 

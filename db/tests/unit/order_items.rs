@@ -1,8 +1,7 @@
 use bigneon_db::dev::TestProject;
 use bigneon_db::models::*;
-use bigneon_db::schema::order_items;
 use bigneon_db::utils::errors::ErrorCode::ValidationError;
-use diesel::prelude::*;
+use chrono::{Duration, NaiveDateTime, Utc};
 
 #[test]
 fn find_fee_item() {
@@ -22,7 +21,7 @@ fn find_fee_item() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket = &event.ticket_types(connection).unwrap()[0];
+    let ticket = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket.id,
@@ -60,7 +59,7 @@ fn order() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket = &event.ticket_types(connection).unwrap()[0];
+    let ticket = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket.id,
@@ -82,7 +81,7 @@ fn order() {
 }
 
 #[test]
-fn update_with_validation_errors() {
+fn code() {
     let project = TestProject::new();
     let creator = project.create_user().finish();
 
@@ -99,51 +98,145 @@ fn update_with_validation_errors() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
-    cart.update_quantities(
-        &[UpdateOrderItem {
-            ticket_type_id: ticket_type.id,
-            quantity: 4,
-            redemption_code: None,
-        }],
-        false,
-        false,
-        connection,
-    )
-    .unwrap();
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let code = project
         .create_code()
         .with_event(&event)
         .for_ticket_type(&ticket_type)
+        .with_code_type(CodeTypes::Discount)
         .with_max_tickets_per_user(Some(5))
+        .with_max_uses(1)
         .finish();
 
-    let items = cart.items(&connection).unwrap();
+    cart.update_quantities(
+        &[
+            UpdateOrderItem {
+                ticket_type_id: ticket_type.id,
+                quantity: 1,
+                redemption_code: Some(code.redemption_code.clone()),
+            },
+            UpdateOrderItem {
+                ticket_type_id: ticket_type.id,
+                quantity: 1,
+                redemption_code: None,
+            },
+        ],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    let items = cart.items(connection).unwrap();
+
     let order_item = items
         .iter()
-        .find(|i| i.ticket_type_id == Some(ticket_type.id))
+        .find(|i| i.ticket_type_id == Some(ticket_type.id) && i.code_id == Some(code.id))
         .unwrap();
-    diesel::update(order_items::table.filter(order_items::id.eq(order_item.id)))
-        .set(order_items::code_id.eq(code.id))
-        .get_result::<OrderItem>(connection)
+    let order_item2 = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type.id) && i.code_id.is_none())
         .unwrap();
+    assert_eq!(Some(code), order_item.code(connection).unwrap());
+    assert_eq!(None, order_item2.code(connection).unwrap());
+}
+
+#[test]
+fn confirm_code_valid() {
+    let project = TestProject::new();
+    let creator = project.create_user().finish();
+    let connection = project.get_connection();
+    let organization = project
+        .create_organization()
+        .with_fee_schedule(&project.create_fee_schedule().finish(creator.id))
+        .finish();
+    let event = project
+        .create_event()
+        .with_organization(&organization)
+        .with_tickets()
+        .with_ticket_pricing()
+        .finish();
+    let user = project.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    let code = project
+        .create_code()
+        .with_event(&event)
+        .for_ticket_type(&ticket_type)
+        .with_code_type(CodeTypes::Discount)
+        .with_max_tickets_per_user(Some(5))
+        .with_max_uses(1)
+        .finish();
+
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
-            quantity: 5,
-            redemption_code: None,
+            quantity: 1,
+            redemption_code: Some(code.redemption_code.clone()),
         }],
         false,
         false,
         connection,
     )
     .unwrap();
+    let items = cart.items(connection).unwrap();
 
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type.id) && i.code_id == Some(code.id))
+        .unwrap();
+    assert!(order_item.confirm_code_valid(connection).is_ok());
+
+    let start_date = NaiveDateTime::from(Utc::now().naive_utc() - Duration::days(3));
+    let end_date = NaiveDateTime::from(Utc::now().naive_utc() - Duration::days(2));
+    code.update(
+        UpdateCodeAttributes {
+            start_date: Some(start_date),
+            end_date: Some(end_date),
+            ..Default::default()
+        },
+        connection,
+    )
+    .unwrap();
+    assert!(order_item.confirm_code_valid(connection).is_err());
+}
+
+#[test]
+fn update_with_validation_errors() {
+    let project = TestProject::new();
+    let creator = project.create_user().finish();
+
+    let connection = project.get_connection();
+    let organization = project
+        .create_organization()
+        .with_fee_schedule(&project.create_fee_schedule().finish(creator.id))
+        .finish();
+    let event = project
+        .create_event()
+        .with_organization(&organization)
+        .with_tickets()
+        .with_ticket_pricing()
+        .with_ticket_type_count(2)
+        .finish();
+    let user = project.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    let ticket_type = &event.ticket_types(false, None, connection).unwrap()[0];
+    let ticket_type2 = &event.ticket_types(false, None, connection).unwrap()[1];
+
+    let code = project
+        .create_code()
+        .with_event(&event)
+        .for_ticket_type(&ticket_type)
+        .with_code_type(CodeTypes::Discount)
+        .with_max_tickets_per_user(Some(5))
+        .with_max_uses(1)
+        .finish();
+
+    // max_tickets_per_user_reached 6 with a limit of 5
     let result = cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 6,
-            redemption_code: None,
+            redemption_code: Some(code.redemption_code.clone()),
         }],
         false,
         false,
@@ -168,37 +261,146 @@ fn update_with_validation_errors() {
         },
     }
 
-    // Different user can still add them to their cart
+    // Purchasing the limit of 5 succeeds
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
-            quantity: 4,
-            redemption_code: None,
+            quantity: 5,
+            redemption_code: Some(code.redemption_code.clone()),
         }],
         false,
         false,
         connection,
     )
     .unwrap();
-    let order_item = cart.items(connection).unwrap().remove(0);
-    diesel::update(order_items::table.filter(order_items::id.eq(order_item.id)))
-        .set(order_items::code_id.eq(code.id))
-        .get_result::<OrderItem>(connection)
+    let total = cart.calculate_total(connection).unwrap();
+    cart.add_external_payment(Some("Test".to_string()), user.id, total, connection)
         .unwrap();
-    // Add 1 making it 5 tickets for this type
-    cart.update_quantities(
+
+    // Max uses is 1 so second order for user should trigger validation error
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    let result = cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
+            quantity: 1,
+            redemption_code: Some(code.redemption_code.clone()),
+        }],
+        false,
+        false,
+        connection,
+    );
+
+    match result {
+        Ok(_) => {
+            panic!("Expected validation error");
+        }
+        Err(error) => match &error.error_code {
+            ValidationError { errors } => {
+                assert!(errors.contains_key("code_id"));
+                assert_eq!(errors["code_id"].len(), 1);
+                assert_eq!(errors["code_id"][0].code, "max_uses_reached");
+                assert_eq!(
+                    &errors["code_id"][0].message.clone().unwrap().into_owned(),
+                    "Redemption code maximum uses limit exceeded"
+                );
+            }
+            _ => panic!("Expected validation error"),
+        },
+    }
+
+    // Ticket type requires access code
+    let code = project
+        .create_code()
+        .with_event(&event)
+        .for_ticket_type(&ticket_type2)
+        .with_code_type(CodeTypes::Access)
+        .finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    let result = cart.update_quantities(
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type2.id,
             quantity: 1,
             redemption_code: None,
         }],
         false,
         false,
         connection,
-    )
-    .unwrap();
+    );
+
+    match result {
+        Ok(_) => {
+            panic!("Expected validation error");
+        }
+        Err(error) => match &error.error_code {
+            ValidationError { errors } => {
+                assert!(errors.contains_key("code_id"));
+                assert_eq!(errors["code_id"].len(), 1);
+                assert_eq!(
+                    errors["code_id"][0].code,
+                    "ticket_type_requires_access_code"
+                );
+                assert_eq!(
+                    &errors["code_id"][0].message.clone().unwrap().into_owned(),
+                    "Ticket type requires access code for purchase"
+                );
+            }
+            _ => panic!("Expected validation error"),
+        },
+    }
+
+    let result = cart.update_quantities(
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type2.id,
+            quantity: 1,
+            redemption_code: Some(code.redemption_code),
+        }],
+        false,
+        false,
+        connection,
+    );
+    assert!(result.is_ok());
+
+    // Code not active but is being added to the cart
+    let start_date = NaiveDateTime::from(Utc::now().naive_utc() - Duration::days(3));
+    let end_date = NaiveDateTime::from(Utc::now().naive_utc() - Duration::days(2));
+    let code = project
+        .create_code()
+        .with_event(&event)
+        .for_ticket_type(&ticket_type)
+        .with_code_type(CodeTypes::Discount)
+        .with_start_date(start_date)
+        .with_end_date(end_date)
+        .finish();
+
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    let result = cart.update_quantities(
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 1,
+            redemption_code: Some(code.redemption_code),
+        }],
+        false,
+        false,
+        connection,
+    );
+    match result {
+        Ok(_) => {
+            panic!("Expected validation error");
+        }
+        Err(error) => match &error.error_code {
+            ValidationError { errors } => {
+                assert!(errors.contains_key("code_id"));
+                assert_eq!(errors["code_id"].len(), 1);
+                assert_eq!(
+                    &errors["code_id"][0].code,
+                    "Code not valid for current datetime"
+                );
+            }
+            _ => panic!("Expected validation error"),
+        },
+    }
 }
 
 #[test]
@@ -219,7 +421,7 @@ fn calculate_quantity() {
         .finish();
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket = &event.ticket_types(connection).unwrap()[0];
+    let ticket = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &[UpdateOrderItem {
             ticket_type_id: ticket.id,

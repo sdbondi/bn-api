@@ -10,6 +10,7 @@ use std::error::Error;
 use std::fmt;
 use tari_client::TariError;
 use validator::{ValidationError, ValidationErrors};
+use validators::create_validation_error;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ErrorCode {
@@ -219,7 +220,7 @@ impl DatabaseError {
         message: &'static str,
     ) -> Result<T, DatabaseError> {
         let mut v = ValidationErrors::new();
-        v.add(field, ValidationError::new(message));
+        v.add(field, create_validation_error(message, message));
         Err(DatabaseError::new(
             ErrorCode::ValidationError {
                 errors: v.field_errors(),

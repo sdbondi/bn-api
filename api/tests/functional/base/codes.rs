@@ -68,7 +68,7 @@ pub fn create(role: Roles, should_test_succeed: bool) {
     let connection = database.connection.get();
     let user = database.create_user().finish();
     let event = database.create_event().with_ticket_pricing().finish();
-    let ticket_type_id = event.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event.ticket_types(true, None, connection).unwrap()[0].id;
     let organization = event.organization(connection).unwrap();
     let auth_user =
         support::create_auth_user_from_user(&user, role, Some(&organization), &database);
@@ -116,7 +116,7 @@ pub fn update(role: Roles, should_test_succeed: bool) {
     let connection = database.connection.get();
     let user = database.create_user().finish();
     let event = database.create_event().with_ticket_pricing().finish();
-    let ticket_type_id = event.ticket_types(connection).unwrap()[0].id;
+    let ticket_type_id = event.ticket_types(true, None, connection).unwrap()[0].id;
     let code = database.create_code().with_event(&event).finish();
     let organization = event.organization(connection).unwrap();
     let auth_user =

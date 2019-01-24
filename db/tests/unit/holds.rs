@@ -15,7 +15,7 @@ fn create() {
         None,
         Some(4),
         HoldTypes::Discount,
-        event.ticket_types(db.get_connection()).unwrap()[0].id,
+        event.ticket_types(true, None, db.get_connection()).unwrap()[0].id,
     )
     .commit(db.get_connection())
     .unwrap();
@@ -33,7 +33,7 @@ fn create_with_validation_errors() {
         None,
         Some(4),
         HoldTypes::Discount,
-        event.ticket_types(db.get_connection()).unwrap()[0].id,
+        event.ticket_types(true, None, db.get_connection()).unwrap()[0].id,
     )
     .commit(db.get_connection());
 
@@ -61,7 +61,7 @@ fn create_with_validation_errors() {
         None,
         Some(4),
         HoldTypes::Discount,
-        event.ticket_types(db.get_connection()).unwrap()[0].id,
+        event.ticket_types(true, None, db.get_connection()).unwrap()[0].id,
     )
     .commit(db.get_connection());
     match result {
@@ -88,7 +88,7 @@ fn create_with_validation_errors() {
         None,
         Some(4),
         HoldTypes::Discount,
-        event.ticket_types(db.get_connection()).unwrap()[0].id,
+        event.ticket_types(true, None, db.get_connection()).unwrap()[0].id,
     )
     .commit(db.get_connection());
     match result {
@@ -218,7 +218,7 @@ fn update_with_validation_errors() {
 
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
         &vec![UpdateOrderItem {
             ticket_type_id: ticket_type.id,
@@ -230,6 +230,85 @@ fn update_with_validation_errors() {
         connection,
     )
     .unwrap();
+}
+
+#[test]
+fn find_by_ticket_type() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let hold = project.create_hold().finish();
+    let ticket_type = TicketType::find(hold.ticket_type_id, connection).unwrap();
+
+    assert_eq!(
+        vec![hold],
+        Hold::find_by_ticket_type(ticket_type.id, connection).unwrap()
+    );
+}
+
+#[test]
+fn remove_available_quantity() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let hold = project.create_hold().finish();
+
+    let child_hold = Hold::create_comp_for_person(
+        "Child".into(),
+        hold.id,
+        None,
+        None,
+        "ChildCode".into(),
+        None,
+        None,
+        2,
+        connection,
+    )
+    .unwrap();
+    let ticket_type = TicketType::find(hold.ticket_type_id, connection).unwrap();
+
+    let user = project.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    cart.update_quantities(
+        &vec![
+            UpdateOrderItem {
+                ticket_type_id: ticket_type.id,
+                quantity: 4,
+                redemption_code: Some(hold.redemption_code.clone()),
+            },
+            UpdateOrderItem {
+                ticket_type_id: ticket_type.id,
+                quantity: 1,
+                redemption_code: Some(child_hold.redemption_code.clone()),
+            },
+        ],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    let total = cart.calculate_total(connection).unwrap();
+    cart.add_external_payment(Some("test".to_string()), user.id, total, connection)
+        .unwrap();
+
+    // Add additional cart item from existing unsold quantity (is removed from hold)
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    cart.update_quantities(
+        &vec![UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 1,
+            redemption_code: Some(hold.redemption_code.clone()),
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+
+    assert_eq!(8, hold.quantity(connection).unwrap().0);
+    assert_eq!(2, child_hold.quantity(connection).unwrap().0);
+
+    hold.remove_available_quantity(connection).unwrap();
+    assert_eq!(4, hold.quantity(connection).unwrap().0);
+    assert_eq!(1, child_hold.quantity(connection).unwrap().0);
 }
 
 #[test]

@@ -91,7 +91,8 @@ pub fn show_box_office_pricing(role: Roles, should_test_succeed: bool) {
     .into();
 
     if should_test_succeed {
-        let event_expected_json = expected_show_json(event, organization, venue, true, conn);
+        let event_expected_json =
+            expected_show_json(event, organization, venue, true, None, None, conn);
         let body = support::unwrap_body_to_string(&response).unwrap();
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(body, event_expected_json);
@@ -390,7 +391,7 @@ pub fn dashboard(role: Roles, should_test_succeed: bool) {
         .with_tickets()
         .with_ticket_pricing()
         .finish();
-    let ticket_type = &event.ticket_types(connection).unwrap()[0];
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
 
     // user purchases 10 tickets
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
@@ -673,6 +674,8 @@ pub fn expected_show_json(
     organization: Organization,
     venue: Venue,
     box_office_pricing: bool,
+    redemption_code: Option<String>,
+    filter_ticket_type_ids: Option<Vec<Uuid>>,
     connection: &PgConnection,
 ) -> String {
     #[derive(Serialize)]
@@ -727,16 +730,24 @@ pub fn expected_show_json(
     let fee_schedule = FeeSchedule::find(organization.fee_schedule_id, connection).unwrap();
     let event_artists = EventArtist::find_all_from_event(event.id, connection).unwrap();
 
-    let ticket_types = event.ticket_types(connection).unwrap();
+    let mut ticket_types = event.ticket_types(false, None, connection).unwrap();
+    if let Some(ticket_type_ids) = filter_ticket_type_ids {
+        ticket_types = ticket_types
+            .into_iter()
+            .filter(|tt| ticket_type_ids.contains(&tt.id))
+            .collect::<Vec<TicketType>>();
+    }
+
     let mut display_ticket_types: Vec<UserDisplayTicketType> = Vec::new();
 
-    for tt in ticket_types.iter() {
+    for tt in ticket_types {
         if tt.status != TicketTypeStatus::Cancelled {
             display_ticket_types.push(
                 UserDisplayTicketType::from_ticket_type(
                     &tt,
                     &fee_schedule,
                     box_office_pricing,
+                    redemption_code.clone(),
                     connection,
                 )
                 .unwrap(),

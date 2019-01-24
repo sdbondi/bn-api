@@ -3,7 +3,9 @@ SET
   status = 'Nullified'
 WHERE id IN (SELECT t.id
              FROM ticket_instances AS t
-             WHERE t.asset_id = $1 AND t.status = 'Available' AND t.hold_id IS NULL
+             WHERE t.asset_id = $1 AND t.status in ('Available', 'Reserved') AND t.hold_id IS NULL
+             -- Nullify Available inventory prior to Reserved
+             ORDER BY t.status, t.reserved_until
              LIMIT $2 FOR UPDATE SKIP LOCKED)
     RETURNING
       id,
