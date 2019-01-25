@@ -855,7 +855,7 @@ impl Order {
             .to_db_error(ErrorCode::QueryError, "Could not load orders")?;
         let mut r = Vec::<DisplayOrder>::new();
         for order in orders {
-            r.push(order.for_display(conn)?);
+            r.push(order.for_display(None, conn)?);
         }
         Ok(r)
     }
@@ -887,7 +887,11 @@ impl Order {
         Ok(result)
     }
 
-    pub fn for_display(&self, conn: &PgConnection) -> Result<DisplayOrder, DatabaseError> {
+    pub fn for_display(
+        &self,
+        organization_ids: Option<Vec<Uuid>>,
+        conn: &PgConnection,
+    ) -> Result<DisplayOrder, DatabaseError> {
         let now = Utc::now().naive_utc();
         let seconds_until_expiry = self.expires_at.map(|expires_at| {
             if expires_at >= now {
@@ -919,12 +923,28 @@ impl Order {
             }
         }
 
+        // Check if this order contains any other organization items if a list of organization_ids is passed in
+        let mut order_contains_tickets_for_other_organizations = false;
+        if let Some(ref organization_ids) = organization_ids {
+            order_contains_tickets_for_other_organizations = select(exists(
+                order_items::table
+                    .inner_join(events::table.on(order_items::event_id.eq(events::id.nullable())))
+                    .filter(order_items::order_id.eq(self.id))
+                    .filter(events::organization_id.ne_all(organization_ids)),
+            ))
+            .get_result(conn)
+            .to_db_error(
+                ErrorCode::QueryError,
+                "Could not determine if order contains tickets for other organizations",
+            )?;
+        }
+
         Ok(DisplayOrder {
             id: self.id,
             status: self.status.clone(),
             date: self.order_date,
             expires_at: self.expires_at,
-            items: self.items_for_display(conn)?,
+            items: self.items_for_display(organization_ids, conn)?,
             limited_tickets_remaining,
             total_in_cents: self.calculate_total(conn)?,
             seconds_until_expiry,
@@ -932,14 +952,16 @@ impl Order {
             note: self.note.clone(),
             order_number: self.order_number(),
             paid_at: self.paid_at,
+            order_contains_tickets_for_other_organizations,
         })
     }
 
     pub fn items_for_display(
         &self,
+        organization_ids: Option<Vec<Uuid>>,
         conn: &PgConnection,
     ) -> Result<Vec<DisplayOrderItem>, DatabaseError> {
-        OrderItem::find_for_display(self.id, conn)
+        OrderItem::find_for_display(self.id, organization_ids, conn)
     }
 
     pub fn find_item(
@@ -1291,6 +1313,7 @@ pub struct DisplayOrder {
     pub note: Option<String>,
     pub order_number: String,
     pub paid_at: Option<NaiveDateTime>,
+    pub order_contains_tickets_for_other_organizations: bool,
 }
 
 #[derive(Deserialize, Serialize, PartialEq, Debug)]

@@ -40,6 +40,81 @@ pub fn show() {
     assert_eq!(found_order.id, order.id);
 }
 
+#[cfg(test)]
+mod show_other_user_order_tests {
+    use super::*;
+    #[test]
+    fn show_other_user_order_org_member() {
+        base::orders::show_other_user_order(Roles::OrgMember, true);
+    }
+    #[test]
+    fn show_other_user_order_admin() {
+        base::orders::show_other_user_order(Roles::Admin, true);
+    }
+    #[test]
+    fn show_other_user_order_user() {
+        base::orders::show_other_user_order(Roles::User, false);
+    }
+    #[test]
+    fn show_other_user_order_org_owner() {
+        base::orders::show_other_user_order(Roles::OrgOwner, true);
+    }
+    #[test]
+    fn show_other_user_order_door_person() {
+        base::orders::show_other_user_order(Roles::DoorPerson, false);
+    }
+    #[test]
+    fn show_other_user_order_org_admin() {
+        base::orders::show_other_user_order(Roles::OrgAdmin, true);
+    }
+    #[test]
+    fn show_other_user_order_box_office() {
+        base::orders::show_other_user_order(Roles::OrgBoxOffice, false);
+    }
+}
+
+#[cfg(test)]
+mod show_other_user_order_not_matching_users_organization_tests {
+    use super::*;
+    #[test]
+    fn show_other_user_order_not_matching_users_organization_org_member() {
+        base::orders::show_other_user_order_not_matching_users_organization(
+            Roles::OrgMember,
+            false,
+        );
+    }
+    #[test]
+    fn show_other_user_order_not_matching_users_organization_admin() {
+        base::orders::show_other_user_order_not_matching_users_organization(Roles::Admin, true);
+    }
+    #[test]
+    fn show_other_user_order_not_matching_users_organization_user() {
+        base::orders::show_other_user_order_not_matching_users_organization(Roles::User, false);
+    }
+    #[test]
+    fn show_other_user_order_not_matching_users_organization_org_owner() {
+        base::orders::show_other_user_order_not_matching_users_organization(Roles::OrgOwner, false);
+    }
+    #[test]
+    fn show_other_user_order_not_matching_users_organization_door_person() {
+        base::orders::show_other_user_order_not_matching_users_organization(
+            Roles::DoorPerson,
+            false,
+        );
+    }
+    #[test]
+    fn show_other_user_order_not_matching_users_organization_org_admin() {
+        base::orders::show_other_user_order_not_matching_users_organization(Roles::OrgAdmin, false);
+    }
+    #[test]
+    fn show_other_user_order_not_matching_users_organization_box_office() {
+        base::orders::show_other_user_order_not_matching_users_organization(
+            Roles::OrgBoxOffice,
+            false,
+        );
+    }
+}
+
 #[test]
 pub fn show_for_draft_returns_forbidden() {
     let database = TestDatabase::new();
