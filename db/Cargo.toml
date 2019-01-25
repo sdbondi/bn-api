@@ -23,6 +23,8 @@ harness=false
 [dependencies]
 backtrace = "0.2"
 diesel = { version = "1.3", features = ["postgres", "uuid", "chrono","numeric", "serde_json"] }
+bigneon_http = { path = "../http" }
+bigneon_caching_derive = { path = "../http/caching_derive" }
 dotenv = "0.13"
 hex = "0.3.2"
 rand = "0.5"

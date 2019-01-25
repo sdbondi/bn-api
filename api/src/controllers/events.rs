@@ -1,4 +1,4 @@
-use actix_web::{http::StatusCode, HttpResponse, Path, Query, State};
+use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Path, Query, State};
 use auth::user::User;
 use bigneon_db::models::*;
 use bigneon_db::utils::errors::{DatabaseError, ErrorCode};
@@ -14,7 +14,7 @@ use serde_with::{self, CommaSeparator};
 use server::AppState;
 use std::collections::HashMap;
 use utils::marketing_contacts;
-use http::cache::{CacheHeaders, CacheInfo};
+use bigneon_http::caching::{ToETag, CacheHeaders, CacheControl, CacheDirective};
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -86,12 +86,12 @@ pub fn checkins(
 }
 
 pub fn index(
-    (state, connection, query, auth_user, http_request: HttpRequest<AppState>): (
+    (state, connection, query, auth_user, http_request): (
         State<AppState>,
         Connection,
         Query<SearchParameters>,
         OptionalUser,
-	http_request,
+	HttpRequest<AppState>,
     ),
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = connection.get();
@@ -140,7 +140,7 @@ pub fn index(
         connection,
     )?;
 
-    #[derive(Serialize)]
+    #[derive(Serialize, ToETag)]
     struct EventVenueEntry {
         id: Uuid,
         name: String,
@@ -259,13 +259,23 @@ pub fn index(
     payload.paging.total = payload.data.len() as u64;
     payload.paging.limit = 100;
 
-//    let mut builder = HttpResponse::Ok();
-    let cache_headers = CacheHeaders::from(payload, CacheInfo {
-	max_age: 100u32,
-	public: true,
-    });
+    let http_caching = CacheHeaders(
+       CacheControl(vec![
+	   CacheDirective::MaxAge(100u32),
+	   CacheDirective::Public,
+       ]),
+       Some(payload.to_etag()),
+    );
 
-    Ok(cache_headers.response(http_request))
+    Ok(http_caching.into_response(&http_request).json(&payload))
+
+//    let mut builder = HttpResponse::Ok();
+//    let cache_headers = CacheHeaders::from(payload, CacheInfo {
+//        max_age: 100u32,
+//        public: true,
+//    });
+//
+//    Ok(cache_headers.response(http_request))
 
 //    if cache_headers.is_stale(http_request) {
 //        Ok(HttpResponse::Ok().json(&payload))

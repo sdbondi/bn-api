@@ -4,6 +4,7 @@ members = [
     "api",
     "db",
     "globee",
+    "http",
     "tari-client",
     "stripe",
     "logging",

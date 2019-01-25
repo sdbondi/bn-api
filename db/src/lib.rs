@@ -15,6 +15,9 @@ extern crate diesel;
 extern crate diesel_migrations;
 
 extern crate argon2rs;
+extern crate bigneon_http;
+//#[macro_use]
+//extern crate bigneon_caching_derive;
 extern crate backtrace;
 extern crate chrono;
 extern crate chrono_tz;

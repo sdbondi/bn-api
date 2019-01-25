@@ -254,11 +254,13 @@ dependencies = [
 
 [[package]]
 name = "bigneon_api"
-version = "0.1.122"
+version = "0.1.124"
 dependencies = [
  "actix 0.7.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 0.7.15 (registry+https://github.com/rust-lang/crates.io-index)",
- "bigneon_db 0.1.122",
+ "bigneon_caching_derive 0.1.0",
+ "bigneon_db 0.1.124",
+ "bigneon_http 0.1.0",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "diesel 1.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -290,11 +292,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "bigneon_caching_derive"
+version = "0.1.0"
+dependencies = [
+ "quote 0.6.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 0.15.26 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "bigneon_db"
-version = "0.1.122"
+version = "0.1.124"
 dependencies = [
  "argon2rs 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "backtrace 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bigneon_caching_derive 0.1.0",
+ "bigneon_http 0.1.0",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono-tz 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -320,6 +332,17 @@ dependencies = [
  "uuid 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "validator 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "validator_derive 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "bigneon_http"
+version = "0.1.0"
+dependencies = [
+ "actix-web 0.7.15 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bigneon_caching_derive 0.1.0",
+ "serde 1.0.81 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.81 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.33 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
