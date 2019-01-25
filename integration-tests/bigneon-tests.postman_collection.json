@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8d00b382-338f-4247-b8d8-bee7bc2cd44c",
+		"_postman_id": "3223b75d-ad0f-4e88-9e9e-ed8dd0d3e5f9",
 		"name": "bigneon-tests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -11313,7 +11313,6 @@
 							"listen": "test",
 							"script": {
 								"id": "3a10ac6c-523b-43ac-b5d4-5bea60b5618b",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"should be 200\", function() {",
 									"    pm.response.to.have.status(200);",
@@ -11321,12 +11320,12 @@
 									"",
 									"let json = JSON.parse(responseBody);",
 									"",
-									"",
 									"pm.test(\"tickets should be present\", function(){",
 									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
 									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -13130,6 +13129,62 @@
 								"fans",
 								"{{last_user_id}}",
 								"history"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OrgAdmin - View Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d481afe5-174e-4720-914d-483d6b75535e",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.expect(json.items.length).to.equal(3);",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
+									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{org_admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/orders/{{last_cart_id}}",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"orders",
+								"{{last_cart_id}}"
 							]
 						}
 					},

@@ -1,8 +1,8 @@
 use chrono::prelude::*;
 use diesel;
 use diesel::dsl::{self, select};
+use diesel::pg::types::sql_types::Array;
 use diesel::prelude::*;
-use diesel::sql_types;
 use diesel::sql_types::{BigInt, Nullable, Text, Uuid as dUuid};
 use models::*;
 use schema::{codes, order_items, ticket_instances};
@@ -363,6 +363,7 @@ impl OrderItem {
 
     pub(crate) fn find_for_display(
         order_id: Uuid,
+        organization_ids: Option<Vec<Uuid>>,
         conn: &PgConnection,
     ) -> Result<Vec<DisplayOrderItem>, DatabaseError> {
         diesel::sql_query(
@@ -381,17 +382,24 @@ impl OrderItem {
              ELSE e.name || ' - ' || tt.name END AS description,
            h.redemption_code as redemption_code
         FROM order_items oi
-           LEFT JOIN events e ON event_id = e.id
+           LEFT JOIN events e ON oi.event_id = e.id
            LEFT JOIN ticket_pricing tp
            INNER JOIN ticket_types tt
             ON tp.ticket_type_id = tt.id
             ON oi.ticket_pricing_id = tp.id
            LEFT JOIN holds h ON oi.hold_id = h.id
         WHERE oi.order_id = $1
+        -- Filter by organization id if list provided otherwise do not filter
+        AND (
+            e.organization_id is null
+            OR e.organization_id = ANY($2)
+            OR $2 IS NULL
+        )
         ORDER BY oi.item_type DESC
         "#,
         )
-        .bind::<sql_types::Uuid, _>(order_id)
+        .bind::<dUuid, _>(order_id)
+        .bind::<Nullable<Array<dUuid>>, _>(organization_ids)
         .load(conn)
         .to_db_error(ErrorCode::QueryError, "Could not load order items")
     }

@@ -172,6 +172,12 @@ pub fn index(
     venue_ids.sort();
     venue_ids.dedup();
 
+    let event_ticket_range_mapping = Event::ticket_pricing_range_by_events(
+        events.iter().map(|e| e.id).collect::<Vec<Uuid>>(),
+        false,
+        connection,
+    )?;
+
     let venues = Venue::find_by_ids(venue_ids, connection)?;
     let venue_map = venues.into_iter().fold(HashMap::new(), |mut map, v| {
         map.insert(v.id, v.clone());
@@ -197,8 +203,17 @@ pub fn index(
         None => HashMap::new(),
     };
 
-    let results = events.into_iter().fold(Vec::new(), |mut results, event| {
+    let mut results: Vec<EventVenueEntry> = Vec::new();
+    for event in events.into_iter() {
         let venue = event.venue_id.and_then(|v| Some(venue_map[&v].clone()));
+
+        let mut min_ticket_price = None;
+        let mut max_ticket_price = None;
+        if let Some((min, max)) = event_ticket_range_mapping.get(&event.id) {
+            min_ticket_price = Some(*min);
+            max_ticket_price = Some(*max);
+        }
+
         let localized_times = event.get_all_localized_time_strings(&venue);
         let organization_id = event.organization_id;
         let tracking_keys = tracking_keys_for_orgs
@@ -223,8 +238,8 @@ pub fn index(
             top_line_info: event.top_line_info,
             age_limit: event.age_limit,
             cancelled_at: event.cancelled_at,
-            min_ticket_price: event.min_ticket_price,
-            max_ticket_price: event.max_ticket_price,
+            min_ticket_price: min_ticket_price,
+            max_ticket_price: max_ticket_price,
             is_external: event.is_external,
             external_url: event.external_url,
             user_is_interested: event_interest
@@ -234,8 +249,8 @@ pub fn index(
             localized_times,
             tracking_keys,
         });
-        results
-    });
+    }
+
     let mut payload = Payload::new(results, query.into());
     payload.paging.total = payload.data.len() as u64;
     payload.paging.limit = 100;
@@ -350,6 +365,9 @@ pub fn show(
     })
     .clone();
 
+    let (min_ticket_price, max_ticket_price) =
+        event.current_ticket_pricing_range(box_office_pricing, connection)?;
+
     #[derive(Serialize)]
     struct R {
         id: Uuid,
@@ -412,8 +430,8 @@ pub fn show(
         ticket_types: display_ticket_types,
         total_interest,
         user_is_interested: user_interest,
-        min_ticket_price: event.min_ticket_price,
-        max_ticket_price: event.max_ticket_price,
+        min_ticket_price: min_ticket_price,
+        max_ticket_price: max_ticket_price,
         is_external: event.is_external,
         external_url: event.external_url,
         override_status: event.override_status,

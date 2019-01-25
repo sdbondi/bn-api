@@ -9,6 +9,84 @@ use support;
 use support::database::TestDatabase;
 use support::test_request::TestRequest;
 
+pub fn show_other_user_order(role: Roles, should_succeed: bool) {
+    let database = TestDatabase::new();
+    let user = database.create_user().finish();
+    let organization = database.create_organization().finish();
+    let auth_user =
+        support::create_auth_user_from_user(&user, role, Some(&organization), &database);
+    let user2 = database.create_user().finish();
+
+    // Order contains ticket type belonging to logged in user's organization
+    let event = database
+        .create_event()
+        .with_organization(&organization)
+        .with_tickets()
+        .with_ticket_pricing()
+        .finish();
+    let mut order = database
+        .create_order()
+        .for_event(&event)
+        .for_user(&user2)
+        .finish();
+
+    let conn = database.connection.get();
+    let total = order.calculate_total(conn).unwrap();
+    order
+        .add_external_payment(Some("test".to_string()), user.id, total, conn)
+        .unwrap();
+    assert_eq!(order.status, OrderStatus::Paid);
+
+    let test_request = TestRequest::create();
+    let mut path = Path::<PathParameters>::extract(&test_request.request).unwrap();
+    path.id = order.id;
+
+    let response: HttpResponse =
+        orders::show((database.connection.clone(), path, auth_user)).into();
+
+    if should_succeed {
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = support::unwrap_body_to_string(&response).unwrap();
+        let found_order: DisplayOrder = serde_json::from_str(&body).unwrap();
+        assert_eq!(found_order.id, order.id);
+    } else {
+        support::expects_forbidden(&response, None);
+    }
+}
+
+pub fn show_other_user_order_not_matching_users_organization(role: Roles, should_succeed: bool) {
+    let database = TestDatabase::new();
+    let organization = database.create_organization().finish();
+    let user = database.create_user().finish();
+    let auth_user =
+        support::create_auth_user_from_user(&user, role, Some(&organization), &database);
+    let user2 = database.create_user().finish();
+    let mut order = database.create_order().for_user(&user2).finish();
+
+    let conn = database.connection.get();
+    let total = order.calculate_total(conn).unwrap();
+    order
+        .add_external_payment(Some("test".to_string()), user.id, total, conn)
+        .unwrap();
+    assert_eq!(order.status, OrderStatus::Paid);
+
+    let test_request = TestRequest::create();
+    let mut path = Path::<PathParameters>::extract(&test_request.request).unwrap();
+    path.id = order.id;
+
+    let response: HttpResponse =
+        orders::show((database.connection.clone(), path, auth_user)).into();
+
+    if should_succeed {
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = support::unwrap_body_to_string(&response).unwrap();
+        let found_order: DisplayOrder = serde_json::from_str(&body).unwrap();
+        assert_eq!(found_order.id, order.id);
+    } else {
+        support::expects_forbidden(&response, None);
+    }
+}
+
 pub fn details(role: Roles, should_succeed: bool) {
     let database = TestDatabase::new();
     let connection = database.connection.get();

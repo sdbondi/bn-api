@@ -183,7 +183,6 @@ pub fn search_no_spotify() {
     let test_request = TestRequest::create_with_uri(&format!("/?q=Artist&spotify=1"));
     let query_parameters = Query::<PagingParameters>::extract(&test_request.request).unwrap();
     let response = artists::search((
-        test_request.extract_state(),
         database.connection.into(),
         query_parameters,
         OptionalUser(None),
@@ -212,7 +211,6 @@ pub fn search_with_spotify() {
     let test_request = TestRequest::create_with_uri(&format!("/?q=Powerwolf&spotify=1"));
     let query_parameters = Query::<PagingParameters>::extract(&test_request.request).unwrap();
     let response = artists::search((
-        test_request.extract_state(),
         database.connection.into(),
         query_parameters,
         OptionalUser(None),
@@ -392,15 +390,8 @@ pub fn create_with_validation_errors() {
         youtube_video_urls: Some(vec!["invalid".to_string()]),
         ..Default::default()
     });
-    let test_request = TestRequest::create();
     let user = support::create_auth_user(Roles::Admin, None, &database);
-    let response: HttpResponse = artists::create((
-        test_request.extract_state(),
-        database.connection.into(),
-        json,
-        user,
-    ))
-    .into();
+    let response: HttpResponse = artists::create((database.connection.into(), json, user)).into();
 
     assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
     assert!(response.error().is_some());

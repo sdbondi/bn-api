@@ -1,4 +1,4 @@
-use actix_web::{http::StatusCode, HttpResponse, Path, Query, State};
+use actix_web::{http::StatusCode, HttpResponse, Path, Query};
 use auth::user::User;
 use bigneon_db::models::*;
 use db::Connection;
@@ -6,16 +6,10 @@ use errors::*;
 use extractors::*;
 use helpers::application;
 use models::{CreateArtistRequest, PathParameters, WebPayload};
-use server::AppState;
-use utils::spotify::*;
+use utils::spotify;
 
 pub fn search(
-    (state, connection, query_parameters, user): (
-        State<AppState>,
-        Connection,
-        Query<PagingParameters>,
-        OptionalUser,
-    ),
+    (connection, query_parameters, user): (Connection, Query<PagingParameters>, OptionalUser),
 ) -> Result<WebPayload<CreateArtistRequest>, BigNeonError> {
     let db_user = user.into_inner().map(|u| u.user);
     let artists = Artist::search(&db_user, query_parameters.get_tag("q"), connection.get())?;
@@ -26,8 +20,7 @@ pub fn search(
         .unwrap_or(false);
     if try_spotify && artists.is_empty() && query_parameters.get_tag("q").is_some() {
         //Try spotify
-        let auth_token = state.config.spotify_auth_token.clone();
-        let spotify_client = Spotify::connect(auth_token)?;
+        let spotify_client = &spotify::SINGLETON;
         let spotify_artists =
             spotify_client.search(query_parameters.get_tag("q").unwrap_or("".to_string()))?;
 
@@ -61,12 +54,7 @@ pub fn show(
 }
 
 pub fn create(
-    (state, connection, json_create_artist, user): (
-        State<AppState>,
-        Connection,
-        Json<CreateArtistRequest>,
-        User,
-    ),
+    (connection, json_create_artist, user): (Connection, Json<CreateArtistRequest>, User),
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = connection.get();
     if let Some(organization_id) = json_create_artist.organization_id {
@@ -79,8 +67,8 @@ pub fn create(
     let create_artist = json_create_artist.into_inner();
     let mut artist = match &create_artist.spotify_id {
         Some(spotify_id) => {
-            let auth_token = state.config.spotify_auth_token.clone();
-            let spotify_client = Spotify::connect(auth_token)?;
+            let spotify_client = &spotify::SINGLETON;
+
             let spotify_artist_result = spotify_client.read_artist(&spotify_id)?;
             match spotify_artist_result {
                 Some(artist) => {

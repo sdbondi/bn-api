@@ -131,6 +131,7 @@ impl ConvertToWebError for ApplicationError {
         match self.error_type {
             ApplicationErrorType::Internal => internal_error("Internal error"),
             ApplicationErrorType::Unprocessable => unprocessable(&self.reason),
+            ApplicationErrorType::ServerConfigError => internal_error(&self.reason),
         }
     }
 }
