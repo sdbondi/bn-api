@@ -106,9 +106,6 @@ pub fn create(
         )?;
     }
 
-    //Update the event with the new min / max  caches
-    let _updated_event = event.update_cache(connection)?;
-
     ticket_type.validate_ticket_pricing(connection)?;
 
     // TODO: move this to an async processor...
@@ -338,9 +335,6 @@ pub fn update(
         }
         updated_ticket_type.validate_ticket_pricing(connection)?;
     }
-
-    //Update the event with the new min / max  caches
-    let _updated_event = event.update_cache(connection)?;
 
     Ok(HttpResponse::Ok().finish())
 }

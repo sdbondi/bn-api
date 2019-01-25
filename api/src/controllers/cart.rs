@@ -79,7 +79,7 @@ pub fn update_cart(
     }
     cart.update_quantities(&order_items, box_office_pricing, false, connection)?;
 
-    Ok(HttpResponse::Ok().json(Order::find(cart.id, connection)?.for_display(connection)?))
+    Ok(HttpResponse::Ok().json(Order::find(cart.id, connection)?.for_display(None, connection)?))
 }
 
 pub fn destroy((connection, user): (Connection, User)) -> Result<HttpResponse, BigNeonError> {
@@ -89,7 +89,7 @@ pub fn destroy((connection, user): (Connection, User)) -> Result<HttpResponse, B
     let mut cart = Order::find_or_create_cart(&user.user, connection)?;
     cart.update_quantities(&[], false, true, connection)?;
 
-    Ok(HttpResponse::Ok().json(Order::find(cart.id, connection)?.for_display(connection)?))
+    Ok(HttpResponse::Ok().json(Order::find(cart.id, connection)?.for_display(None, connection)?))
 }
 
 pub fn replace_cart(
@@ -141,7 +141,7 @@ pub fn replace_cart(
 
     cart.update_quantities(&order_items, box_office_pricing, true, connection)?;
 
-    Ok(HttpResponse::Ok().json(Order::find(cart.id, connection)?.for_display(connection)?))
+    Ok(HttpResponse::Ok().json(Order::find(cart.id, connection)?.for_display(None, connection)?))
 }
 
 pub fn show((connection, user): (Connection, User)) -> Result<HttpResponse, BigNeonError> {
@@ -150,7 +150,7 @@ pub fn show((connection, user): (Connection, User)) -> Result<HttpResponse, BigN
         Some(o) => o,
         None => return Ok(HttpResponse::Ok().json(json!({}))),
     };
-    Ok(HttpResponse::Ok().json(order.for_display(connection)?))
+    Ok(HttpResponse::Ok().json(order.for_display(None, connection)?))
 }
 
 #[derive(Deserialize)]
@@ -343,7 +343,7 @@ pub fn checkout(
 
         let order = Order::find(order_id, conn)?;
 
-        let display_order = order.for_display(conn)?;
+        let display_order = order.for_display(None, conn)?;
 
         let user = DbUser::find(order.on_behalf_of_user_id.unwrap_or(order.user_id), conn)?;
 
@@ -377,7 +377,7 @@ fn checkout_free(
     order.add_external_payment(Some("Free Checkout".to_string()), user.id(), 0, conn)?;
 
     let order = Order::find(order.id, conn)?;
-    Ok(HttpResponse::Ok().json(json!(order.for_display(conn)?)))
+    Ok(HttpResponse::Ok().json(json!(order.for_display(None, conn)?)))
 }
 
 // TODO: This should actually probably move to an `orders` controller, since the
@@ -436,7 +436,7 @@ fn checkout_external(
     order.add_external_payment(reference, user.id(), checkout_request.amount, conn)?;
 
     let order = Order::find(order.id, conn)?;
-    Ok(HttpResponse::Ok().json(json!(order.for_display(conn)?)))
+    Ok(HttpResponse::Ok().json(json!(order.for_display(None, conn)?)))
 }
 
 fn checkout_payment_processor(
@@ -569,7 +569,7 @@ fn checkout_payment_processor(
     match payment.mark_complete(charge_result.to_json()?, auth_user.id(), connection) {
         Ok(_) => {
             let order = Order::find(order.id, connection)?;
-            Ok(HttpResponse::Ok().json(json!(order.for_display(connection)?)))
+            Ok(HttpResponse::Ok().json(json!(order.for_display(None, connection)?)))
         }
         Err(e) => {
             client.refund(&auth_result.id)?;

@@ -1373,6 +1373,10 @@ fn find_for_user_for_display() {
         (order1.id == ids[0] && order2.id == ids[1])
             || (order1.id == ids[1] && order2.id == ids[0])
     );
+
+    // User list so items shown in full
+    assert!(!&display_orders[0].order_contains_tickets_for_other_organizations);
+    assert!(!&display_orders[1].order_contains_tickets_for_other_organizations);
 }
 
 #[test]
@@ -1387,13 +1391,16 @@ fn for_display() {
         .set(orders::expires_at.eq(one_minute_from_now))
         .get_result::<Order>(connection)
         .unwrap();
-    let display_order = order.for_display(connection).unwrap();
+    let display_order = order.for_display(None, connection).unwrap();
     // Check both 59 and 60 for the purposes of the test to avoid timing errors
     assert!(vec![59, 60].contains(&display_order.seconds_until_expiry.unwrap()));
 
+    // No organization filtering
+    assert!(!display_order.order_contains_tickets_for_other_organizations);
+
     // No expiration
     order.remove_expiry(connection).unwrap();
-    let display_order = order.for_display(connection).unwrap();
+    let display_order = order.for_display(None, connection).unwrap();
     assert_eq!(None, display_order.seconds_until_expiry);
 
     // 1 minute ago expires
@@ -1402,8 +1409,77 @@ fn for_display() {
         .set(orders::expires_at.eq(one_minute_ago))
         .get_result::<Order>(connection)
         .unwrap();
-    let display_order = order.for_display(connection).unwrap();
+    let display_order = order.for_display(None, connection).unwrap();
     assert_eq!(Some(0), display_order.seconds_until_expiry);
+}
+
+#[test]
+fn for_display_with_organization_id_filter() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+
+    // Events with different organizations
+    let event = project
+        .create_event()
+        .with_tickets()
+        .with_ticket_pricing()
+        .finish();
+    let event2 = project
+        .create_event()
+        .with_tickets()
+        .with_ticket_pricing()
+        .finish();
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    let ticket_type2 = &event2.ticket_types(true, None, connection).unwrap()[0];
+
+    let user = project.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    cart.update_quantities(
+        &[
+            UpdateOrderItem {
+                ticket_type_id: ticket_type.id,
+                quantity: 1,
+                redemption_code: None,
+            },
+            UpdateOrderItem {
+                ticket_type_id: ticket_type2.id,
+                quantity: 1,
+                redemption_code: None,
+            },
+        ],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+
+    // No filtering
+    let display_order = cart.for_display(None, connection).unwrap();
+    assert!(!display_order.order_contains_tickets_for_other_organizations);
+    assert_eq!(display_order.items.len(), 4); // 2 tickets, 2 fees
+
+    // With filtering
+    let display_order = cart
+        .for_display(Some(vec![event.organization_id]), connection)
+        .unwrap();
+    assert!(display_order.order_contains_tickets_for_other_organizations);
+    assert_eq!(display_order.items.len(), 2); // 1 ticket, 1 fee
+    let order_item: &DisplayOrderItem = display_order
+        .items
+        .iter()
+        .find(|i| i.parent_id.is_none())
+        .unwrap();
+    assert_eq!(order_item.ticket_type_id, Some(ticket_type.id));
+
+    // With filtering, entire list
+    let display_order = cart
+        .for_display(
+            Some(vec![event.organization_id, event2.organization_id]),
+            connection,
+        )
+        .unwrap();
+    assert!(!display_order.order_contains_tickets_for_other_organizations);
+    assert_eq!(display_order.items.len(), 4); // 2 tickets, 2 fees
 }
 
 #[test]
