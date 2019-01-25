@@ -959,6 +959,115 @@ fn search() {
 }
 
 #[test]
+fn current_ticket_pricing_range() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let event = project
+        .create_event()
+        .with_tickets()
+        .with_ticket_type_count(2)
+        .finish();
+
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    let ticket_type2 = &event.ticket_types(true, None, connection).unwrap()[1];
+
+    // No current pricing set
+    let (min_ticket_price, max_ticket_price) = event
+        .current_ticket_pricing_range(false, connection)
+        .unwrap();
+    assert_eq!(None, min_ticket_price);
+    assert_eq!(None, max_ticket_price);
+
+    // Future pricing
+    ticket_type
+        .add_ticket_pricing(
+            "Pricing1".into(),
+            NaiveDate::from_ymd(2055, 7, 8).and_hms(7, 8, 10),
+            NaiveDate::from_ymd(9999, 7, 8).and_hms(7, 8, 10),
+            3000,
+            false,
+            None,
+            connection,
+        )
+        .unwrap();
+
+    let (min_ticket_price, max_ticket_price) = event
+        .current_ticket_pricing_range(false, connection)
+        .unwrap();
+    assert_eq!(None, min_ticket_price);
+    assert_eq!(None, max_ticket_price);
+
+    // Current pricing
+    ticket_type
+        .add_ticket_pricing(
+            "Pricing2".into(),
+            NaiveDate::from_ymd(2016, 7, 8).and_hms(7, 8, 10),
+            NaiveDate::from_ymd(9999, 7, 8).and_hms(7, 8, 10),
+            8000,
+            false,
+            None,
+            connection,
+        )
+        .unwrap();
+
+    let (min_ticket_price, max_ticket_price) = event
+        .current_ticket_pricing_range(false, connection)
+        .unwrap();
+    assert_eq!(Some(8000), min_ticket_price);
+    assert_eq!(Some(8000), max_ticket_price);
+
+    ticket_type2
+        .add_ticket_pricing(
+            "Pricing2".into(),
+            NaiveDate::from_ymd(2016, 7, 8).and_hms(7, 8, 10),
+            NaiveDate::from_ymd(9999, 7, 8).and_hms(7, 8, 10),
+            20000,
+            false,
+            None,
+            connection,
+        )
+        .unwrap();
+
+    let (min_ticket_price, max_ticket_price) = event
+        .current_ticket_pricing_range(false, connection)
+        .unwrap();
+    assert_eq!(Some(8000), min_ticket_price);
+    assert_eq!(Some(20000), max_ticket_price);
+
+    // Box office pricing, present
+    ticket_type
+        .add_ticket_pricing(
+            "Box office1".into(),
+            NaiveDate::from_ymd(2016, 7, 8).and_hms(7, 8, 10),
+            NaiveDate::from_ymd(9999, 7, 8).and_hms(7, 8, 10),
+            5000,
+            true,
+            None,
+            connection,
+        )
+        .unwrap();
+
+    // Box office pricing, date in future so won't activate
+    ticket_type2
+        .add_ticket_pricing(
+            "Box office2".into(),
+            NaiveDate::from_ymd(2055, 7, 8).and_hms(7, 8, 10),
+            NaiveDate::from_ymd(9999, 7, 8).and_hms(7, 8, 10),
+            1000,
+            true,
+            None,
+            connection,
+        )
+        .unwrap();
+
+    let (min_ticket_price, max_ticket_price) = event
+        .current_ticket_pricing_range(true, connection)
+        .unwrap();
+    assert_eq!(Some(5000), min_ticket_price);
+    assert_eq!(Some(20000), max_ticket_price);
+}
+
+#[test]
 fn find_for_organization() {
     //create event
     let project = TestProject::new();
