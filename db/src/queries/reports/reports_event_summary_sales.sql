@@ -16,13 +16,13 @@ FROM (
          SELECT oi.event_id,
                 oi.ticket_type_id,
                 oi.ticket_pricing_id,
-                CAST(SUM(oi.quantity - oi.refunded_quantity) AS BIGINT)        AS total_sold,
+                CAST(COALESCE(SUM(oi.quantity - oi.refunded_quantity) FILTER (WHERE h.hold_type is null or h.hold_type != 'Comp'),0) AS BIGINT)        AS total_sold,
                 CAST(
                     COALESCE(SUM(oi.quantity - oi.refunded_quantity) FILTER (WHERE h.hold_type = 'Comp'),
                              0) AS BIGINT)                                     AS comp_count,
-                CAST(COALESCE(SUM(oi.quantity - oi.refunded_quantity) FILTER (WHERE orders.box_office_pricing = TRUE),
+                CAST(COALESCE(SUM(oi.quantity - oi.refunded_quantity) FILTER (WHERE  orders.on_behalf_of_user_id IS NOT NULL and (h.hold_type is null or  h.hold_type != 'Comp')),
                               0) AS BIGINT)                                    AS box_office_count,
-                CAST(COALESCE(SUM(oi.quantity - oi.refunded_quantity) FILTER (WHERE orders.box_office_pricing = FALSE),
+                CAST(COALESCE(SUM(oi.quantity - oi.refunded_quantity) FILTER (WHERE  orders.on_behalf_of_user_id IS NULL and (h.hold_type is null or h.hold_type != 'Comp')),
                               0) AS BIGINT)                                    AS online_count,
                 CAST(AVG(tp.price_in_cents) AS BIGINT)                         AS price_in_cents, -- face price
                 CAST(COALESCE(SUM((oi.quantity - oi.refunded_quantity) * oi_fees.company_fee_in_cents), 0) AS BIGINT) AS total_company_fee_in_cents,
