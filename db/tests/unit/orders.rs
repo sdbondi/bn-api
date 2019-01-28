@@ -7,6 +7,7 @@ use diesel;
 use diesel::prelude::*;
 use time::Duration;
 use uuid::Uuid;
+use unit::times;
 
 #[test]
 fn create() {
@@ -102,6 +103,65 @@ fn add_tickets() {
         .unwrap();
 
     assert_eq!(order_item.calculate_quantity(connection), Ok(15));
+}
+
+#[test]
+fn add_tickets_below_min_fee() {
+    let project = TestProject::new();
+    let creator = project.create_user().finish();
+
+    let connection = project.get_connection();
+    let organization = project
+        .create_organization()
+        .with_fee_schedule(&project.create_fee_schedule().finish(creator.id))
+        .finish();
+    let event = project
+        .create_event()
+        .with_organization(&organization)
+        .finish();
+
+    let ticket_type = TicketType::create(
+        event.id,
+        "Free Tix".to_string(),
+        None,
+        times::zero(),
+        times::infinity(),
+        Some(1),
+        10,
+        0,
+    )
+    .commit(connection)
+    .unwrap();
+
+    let user = project.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+
+    cart.update_quantities(
+        &vec![UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 10,
+            redemption_code: None,
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    let items = cart.items(&connection).unwrap();
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type.id))
+        .unwrap();
+
+    assert_eq!(
+        order_item.unit_price_in_cents,
+      0
+    );
+
+    let fee_item = order_item.find_fee_item(connection).unwrap();
+
+    assert_eq!(fee_item, None);
+
 }
 
 #[test]
