@@ -120,17 +120,17 @@ fn add_tickets_below_min_fee() {
         .with_organization(&organization)
         .finish();
 
-    let ticket_type = TicketType::create(
-        event.id,
+    let ticket_type = event.add_ticket_type(
         "Free Tix".to_string(),
         None,
+        10,
         times::zero(),
         times::infinity(),
+        event.issuer_wallet(connection).unwrap().id,
         Some(1),
         10,
-        0,
+        0,connection
     )
-    .commit(connection)
     .unwrap();
 
     let user = project.create_user().finish();
@@ -156,6 +156,9 @@ fn add_tickets_below_min_fee() {
     assert_eq!(
         order_item.unit_price_in_cents,
       0
+    );
+    assert_eq!(
+        items.len(), 1
     );
 
     let fee_item = order_item.find_fee_item(connection).unwrap();

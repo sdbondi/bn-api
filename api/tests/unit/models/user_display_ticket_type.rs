@@ -229,4 +229,27 @@ fn from_ticket_type() {
         display_ticket_type.status,
         TicketTypeStatus::NoActivePricing
     );
+
+    // Below min fee = 0
+    let event = database
+        .create_event()
+        .with_organization(&organization)
+        .with_ticket_pricing()
+        .finish();
+    let event = database.create_event().with_tickets().finish();
+    let ticket_type = event.ticket_types(true, None, conn).unwrap().remove(0);
+    let pricing =
+    let display_ticket_type =
+        UserDisplayTicketType::from_ticket_type(&ticket_type, &fee_schedule, false, None, conn)
+            .unwrap();
+    assert_eq!(display_ticket_type.available, 100);
+    assert_eq!(
+        display_ticket_type.status,
+        TicketTypeStatus::NoActivePricing
+    );
+
+
+    assert_eq!(false, "must create min fee")
+
+
 }
