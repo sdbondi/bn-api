@@ -21,6 +21,8 @@ pub struct TransactionReportRow {
     #[sql_type = "BigInt"]
     pub refunded_quantity: i64,
     #[sql_type = "BigInt"]
+    pub actual_quantity: i64,
+    #[sql_type = "BigInt"]
     pub unit_price_in_cents: i64,
     #[sql_type = "BigInt"]
     pub gross: i64,
@@ -113,7 +115,6 @@ pub struct EventSummarySalesRow {
 pub struct EventSummaryFeesRow {
     #[sql_type = "dUuid"]
     pub event_id: Uuid,
-
     #[sql_type = "dUuid"]
     pub ticket_type_id: Uuid,
     #[sql_type = "dUuid"]
@@ -180,7 +181,13 @@ pub struct TicketCountRow {
     #[sql_type = "BigInt"]
     pub allocation_count: i64,
     #[sql_type = "BigInt"]
-    pub unpurchased_count: i64,
+    pub unallocated_count: i64,
+    #[sql_type = "BigInt"]
+    pub reserved_count: i64,
+    #[sql_type = "BigInt"]
+    pub redeemed_count: i64,
+    #[sql_type = "BigInt"]
+    pub purchased_count: i64,
     #[sql_type = "BigInt"]
     pub available_count: i64,
     #[sql_type = "BigInt"]
@@ -221,6 +228,18 @@ pub struct TicketCountSalesRow {
     pub box_office_count: i64,
     #[sql_type = "BigInt"]
     pub online_count: i64,
+    #[sql_type = "BigInt"]
+    pub box_office_refunded_count: i64,
+    #[sql_type = "BigInt"]
+    pub online_refunded_count: i64,
+    #[sql_type = "BigInt"]
+    pub box_office_actual_count: i64,
+    #[sql_type = "BigInt"]
+    pub online_actual_count: i64,
+    #[sql_type = "BigInt"]
+    pub box_office_actual_comp_count: i64,
+    #[sql_type = "BigInt"]
+    pub online_actual_comp_count: i64,
     #[sql_type = "BigInt"]
     pub box_office_sales_in_cents: i64,
     #[sql_type = "BigInt"]

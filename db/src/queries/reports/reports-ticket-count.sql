@@ -6,8 +6,11 @@ SELECT a.ticket_type_id                                                         
        e.organization_id                                                                                                                     AS organization_id,
 
        -- Total Ticket Count
-       CAST(COALESCE(COUNT(ti.id)  FILTER (WHERE ti.status != 'Nullified'), 0) AS BIGINT)                                                                                             AS allocation_count,
-       CAST(COALESCE(COUNT(ti.id) FILTER (WHERE ti.status = 'Available'), 0) AS BIGINT)                                                      AS unpurchased_count,
+       CAST(COALESCE(COUNT(ti.id) FILTER (WHERE ti.status != 'Nullified'), 0) AS BIGINT)                                                     AS allocation_count,
+       CAST(COALESCE(COUNT(ti.id) FILTER (WHERE ti.status = 'Available'), 0) AS BIGINT)                                                      AS unallocated_count,
+       CAST(COALESCE(COUNT(ti.id) FILTER (WHERE ti.status = 'Reserved'), 0) AS BIGINT)                                                       AS reserved_count,
+       CAST(COALESCE(COUNT(ti.id) FILTER (WHERE ti.status = 'Redeemed'), 0) AS BIGINT)                                                       AS redeemed_count,
+       CAST(COALESCE(COUNT(ti.id) FILTER (WHERE ti.status = 'Purchased'), 0) AS BIGINT)                                                      AS purchased_count,
        CAST(COALESCE(COUNT(ti.id) FILTER (WHERE ti.hold_id IS NULL AND ti.status = 'Available'), 0) AS BIGINT)                               AS available_count,
 
        -------------------- COMPS --------------------
