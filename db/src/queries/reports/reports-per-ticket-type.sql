@@ -1,15 +1,17 @@
 ---
 --- Data per ticket_type if $5 === false
 --- Data per ticket_pricing if $5 === true
+--- Data per event if $6 === false
 ---
-SELECT a.ticket_type_id                                                                                                                                                                                                                                        AS ticket_type_id,
+SELECT tt.id                                                                                                                                                                                                                                                   AS ticket_type_id,
        tt.name                                                                                                                                                                                                                                                 AS ticket_name,
        tt.status                                                                                                                                                                                                                                               AS ticket_stats,
        e.id                                                                                                                                                                                                                                                    AS event_id,
        e.name                                                                                                                                                                                                                                                  AS event_name,
        e.organization_id                                                                                                                                                                                                                                       AS organization_id,
-       tp.id AS ticket_pricing_id,
-       tp.name AS ticket_pricing_name,
+       tp.id                                                                                                                                                                                                                                                   AS ticket_pricing_id,
+       tp.name                                                                                                                                                                                                                                                 AS ticket_pricing_name,
+
 
        -- Total Ticket Count
        CAST(COALESCE(COUNT(ti.id), 0) AS BIGINT)                                                                                                                                                                                                               AS allocation_count,
@@ -56,7 +58,7 @@ SELECT a.ticket_type_id                                                         
 
        --Refunded
        --We can use AVG here because we aggregate the values in the sub-query below so we only return a single value
-       CAST(COUNT(rt.id) AS BIGINT)                                                                                                                                                                                                 AS total_refunded_count,
+       CAST(COUNT(rt.id) AS BIGINT)                                                                                                                                                                                                                            AS total_refunded_count,
 
        CAST(COALESCE(SUM((oi_t_fees.unit_price_in_cents * (oi_t_fees.quantity - oi_t_fees.refunded_quantity)) + (oi_e_fees.unit_price_in_cents * (oi_e_fees.quantity - oi_e_fees.refunded_quantity))) FILTER (WHERE p.is_box_office IS TRUE), 0) AS BIGINT)    AS total_box_office_fees_in_cents,
        CAST(COALESCE(SUM((oi_t_fees.unit_price_in_cents * (oi_t_fees.quantity - oi_t_fees.refunded_quantity)) + (oi_e_fees.unit_price_in_cents * (oi_e_fees.quantity - oi_e_fees.refunded_quantity))) FILTER (WHERE p.is_box_office IS FALSE), 0) AS BIGINT)   AS total_online_fees_in_cents,
@@ -69,11 +71,11 @@ SELECT a.ticket_type_id                                                         
 FROM ticket_instances ti
        LEFT JOIN refunded_tickets rt ON (rt.ticket_instance_id = ti.id)
        LEFT JOIN assets a ON (a.id = ti.asset_id)
-       LEFT JOIN ticket_types tt ON (tt.id = a.ticket_type_id)
+       LEFT JOIN (SELECT tt.id, tt.name, tt.status, tt.event_id FROM ticket_types tt WHERE $6 IS TRUE) AS tt ON (tt.id = a.ticket_type_id)
        LEFT JOIN events e ON (e.id = tt.event_id)
        LEFT JOIN holds h ON (h.id = ti.hold_id)
        LEFT JOIN order_items oi ON (oi.id = ti.order_item_id)
-       LEFT JOIN (SELECT tp.id, tp.name FROM ticket_pricing tp WHERE $5 IS TRUE)AS tp ON oi.ticket_pricing_id = tp.id
+       LEFT JOIN (SELECT tp.id, tp.name FROM ticket_pricing tp WHERE $5 IS TRUE) AS tp ON oi.ticket_pricing_id = tp.id
        LEFT JOIN orders o ON (o.id = oi.order_id)
        LEFT JOIN (SELECT order_id, CAST(ARRAY_TO_STRING(ARRAY_AGG(DISTINCT p.payment_method), ', ') LIKE '%External' AS BOOLEAN) AS is_box_office FROM payments p GROUP BY p.payment_method, p.order_id) AS p on o.id = p.order_id
   -- Per ticket fees
@@ -84,4 +86,4 @@ WHERE ($1 IS NULL OR e.id = $1)
   AND ($2 IS NULL OR e.organization_id = $2)
   AND ($3 IS NULL OR o.paid_at >= $3)
   AND ($4 IS NULL OR o.paid_at <= $4)
-GROUP BY a.ticket_type_id, tt.name, tt.status, e.id, tp.id, tp.name;
+GROUP BY tt.id, tt.name, tt.status, e.id, tp.id, tp.name;
