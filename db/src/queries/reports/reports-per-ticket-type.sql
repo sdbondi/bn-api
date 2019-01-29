@@ -71,10 +71,14 @@ SELECT tt.id                                                                    
 FROM ticket_instances ti
        LEFT JOIN refunded_tickets rt ON (rt.ticket_instance_id = ti.id)
        LEFT JOIN assets a ON (a.id = ti.asset_id)
+       -- When $6 is true group by ticket_type
        LEFT JOIN (SELECT tt.id, tt.name, tt.status, tt.event_id FROM ticket_types tt WHERE $6 IS TRUE) AS tt ON (tt.id = a.ticket_type_id)
-       LEFT JOIN events e ON (e.id = tt.event_id)
+       --Just do this join so that we can group by event
+       LEFT JOIN ticket_types tt2 ON tt2.id = a.ticket_type_id
+       LEFT JOIN events e ON (e.id = tt2.event_id)
        LEFT JOIN holds h ON (h.id = ti.hold_id)
        LEFT JOIN order_items oi ON (oi.id = ti.order_item_id)
+       -- When $5 is true group by ticket_pricing
        LEFT JOIN (SELECT tp.id, tp.name FROM ticket_pricing tp WHERE $5 IS TRUE) AS tp ON oi.ticket_pricing_id = tp.id
        LEFT JOIN orders o ON (o.id = oi.order_id)
        LEFT JOIN (SELECT order_id, CAST(ARRAY_TO_STRING(ARRAY_AGG(DISTINCT p.payment_method), ', ') LIKE '%External' AS BOOLEAN) AS is_box_office FROM payments p GROUP BY p.payment_method, p.order_id) AS p on o.id = p.order_id
@@ -86,4 +90,4 @@ WHERE ($1 IS NULL OR e.id = $1)
   AND ($2 IS NULL OR e.organization_id = $2)
   AND ($3 IS NULL OR o.paid_at >= $3)
   AND ($4 IS NULL OR o.paid_at <= $4)
-GROUP BY tt.id, tt.name, tt.status, e.id, tp.id, tp.name;
+GROUP BY e.id, tt.id, tt.name, tt.status,  tp.id, tp.name;
