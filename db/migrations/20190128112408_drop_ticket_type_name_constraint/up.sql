@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS index_ticket_types_event_id_name;

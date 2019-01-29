@@ -171,7 +171,7 @@ impl DomainActionMonitor {
             if limit < index {
                 break;
             }
-            jlog! {Info, &format!("Pending Action: {}", action.domain_action_type)};
+            jlog! {Info, &format!("Pending Action: {}", action.domain_action_type), {"id":action.id, "domain_action_type": action.domain_action_type}};
             let connection = connection.get();
             let per_action_connection = match database.get_connection() {
                 Ok(conn) => conn,

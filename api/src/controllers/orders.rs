@@ -9,8 +9,8 @@ use diesel::Connection as DieselConnection;
 use errors::BigNeonError;
 use extractors::*;
 use helpers::application;
+use log::Level::Debug;
 use models::PathParameters;
-use payments::PaymentProcessor;
 use server::AppState;
 use std::cmp;
 use std::collections::HashMap;
@@ -30,14 +30,29 @@ pub fn index(
 pub fn show(
     (conn, path, user): (Connection, Path<PathParameters>, User),
 ) -> Result<HttpResponse, BigNeonError> {
+    let connection = conn.get();
     user.requires_scope(Scopes::OrderReadOwn)?;
-    let order = Order::find(path.id, conn.get())?;
+    let order = Order::find(path.id, connection)?;
 
+    let mut organization_ids = Vec::new();
     if order.user_id != user.id() || order.status == OrderStatus::Draft {
-        return application::forbidden("You do not have access to this order");
+        for organization in order.organizations(connection)? {
+            if user.has_scope_for_organization(Scopes::OrderRead, &organization, connection)? {
+                organization_ids.push(organization.id);
+            }
+        }
+
+        if organization_ids.is_empty() {
+            return application::forbidden("You do not have access to this order");
+        }
     }
 
-    Ok(HttpResponse::Ok().json(json!(order.for_display(conn.get())?)))
+    let organization_id_filter = if order.user_id != user.id() {
+        Some(organization_ids)
+    } else {
+        None
+    };
+    Ok(HttpResponse::Ok().json(json!(order.for_display(organization_id_filter, connection)?)))
 }
 
 #[derive(Deserialize, Serialize)]
@@ -74,7 +89,7 @@ pub fn details(
     })))
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct RefundAttributes {
     pub items: Vec<RefundItem>,
 }
@@ -94,12 +109,13 @@ pub fn refund(
         State<AppState>,
     ),
 ) -> Result<HttpResponse, BigNeonError> {
-    let connection = conn.get();
     let refund_attributes = json.into_inner();
+    jlog!(Debug, "Request to refund received", {"order_id": path.id, "request": refund_attributes.clone()});
+    let connection = conn.get();
     let items = refund_attributes.items;
     let order = Order::find(path.id, connection)?;
 
-    if !vec![OrderStatus::Paid, OrderStatus::PartiallyPaid].contains(&order.status) {
+    if order.status != OrderStatus::Paid {
         return application::internal_server_error(
             "Order must have associated payments to refund order items",
         );
@@ -307,7 +323,7 @@ pub fn refund(
 
     // Reload order
     let order = Order::find(order.id, connection)?;
-    let display_order = order.for_display(connection)?;
+    let display_order = order.for_display(None, connection)?;
     let user = DbUser::find(
         order.on_behalf_of_user_id.unwrap_or(order.user_id),
         connection,
@@ -349,7 +365,7 @@ pub fn update(
 
     let order = order.update(json.into_inner(), conn)?;
 
-    Ok(HttpResponse::Ok().json(order.for_display(conn)?))
+    Ok(HttpResponse::Ok().json(order.for_display(None, conn)?))
 }
 
 pub fn tickets(

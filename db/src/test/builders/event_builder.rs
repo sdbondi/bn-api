@@ -21,6 +21,7 @@ pub struct EventBuilder<'a> {
     ticket_quantity: u32,
     ticket_type_count: i64,
     is_external: bool,
+    publish_date: Option<NaiveDateTime>,
 }
 
 impl<'a> EventBuilder<'a> {
@@ -39,6 +40,7 @@ impl<'a> EventBuilder<'a> {
             ticket_quantity: 100,
             ticket_type_count: 1,
             is_external: false,
+            publish_date: Some(NaiveDate::from_ymd(2018, 7, 8).and_hms(9, 10, 11)),
         }
     }
 
@@ -58,6 +60,9 @@ impl<'a> EventBuilder<'a> {
     }
 
     pub fn with_status(mut self, status: EventStatus) -> Self {
+        if status != EventStatus::Published {
+            self.publish_date = None;
+        }
         self.status = status;
         self
     }
@@ -79,6 +84,11 @@ impl<'a> EventBuilder<'a> {
 
     pub fn with_event_end(mut self, date: NaiveDateTime) -> Self {
         self.event_end = Some(date);
+        self
+    }
+
+    pub fn with_publish_date(mut self, date: NaiveDateTime) -> Self {
+        self.publish_date = Some(date);
         self
     }
 
@@ -115,7 +125,7 @@ impl<'a> EventBuilder<'a> {
                     .unwrap_or(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11)),
             ),
             Some(NaiveDate::from_ymd(2016, 7, 8).and_hms(7, 8, 10)),
-            None,
+            self.publish_date,
             self.event_end,
         )
         .commit(self.connection)

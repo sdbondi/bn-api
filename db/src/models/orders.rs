@@ -12,6 +12,7 @@ use log::Level;
 use models::*;
 use schema::{events, order_items, orders, organizations, payments, users};
 use serde_json;
+use serde_json::Value;
 use std::borrow::Cow;
 use std::cmp;
 use std::collections::HashMap;
@@ -40,6 +41,8 @@ pub struct Order {
     pub updated_at: NaiveDateTime,
     pub paid_at: Option<NaiveDateTime>,
     pub box_office_pricing: bool,
+    pub checkout_url: Option<String>,
+    pub checkout_url_expires: Option<NaiveDateTime>,
 }
 
 #[derive(Insertable)]
@@ -71,7 +74,7 @@ pub struct UpdateOrderAttributes {
     pub note: Option<Option<String>>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct RefundItem {
     pub order_item_id: Uuid,
     pub ticket_instance_id: Option<Uuid>,
@@ -140,6 +143,16 @@ impl Order {
             .execute(conn)
             .map(|_| ())
             .to_db_error(ErrorCode::DeleteError, "Could not delete order item")
+    }
+
+    pub fn main_event_id(&self, conn: &PgConnection) -> Result<Uuid, DatabaseError> {
+        for item in self.items(conn)? {
+            if let Some(event_id) = item.event_id {
+                return Ok(event_id);
+            }
+        }
+
+        DatabaseError::no_results("Could not find any event for this order")
     }
 
     pub fn refund(
@@ -348,9 +361,19 @@ impl Order {
             .to_db_error(ErrorCode::QueryError, "Could not find order")
     }
 
-    pub fn set_expiry(&mut self, conn: &PgConnection) -> Result<(), DatabaseError> {
-        self.expires_at =
-            Some(Utc::now().naive_utc() + Duration::minutes(CART_EXPIRY_TIME_MINUTES));
+    /// Sets the expiry time of an order. All tickets in the current order are also updated
+    /// to reflect the new expiry
+    pub fn set_expiry(
+        &mut self,
+        expires_at: Option<NaiveDateTime>,
+        conn: &PgConnection,
+    ) -> Result<(), DatabaseError> {
+        let expires_at = if expires_at.is_some() {
+            expires_at.unwrap()
+        } else {
+            Utc::now().naive_utc() + Duration::minutes(CART_EXPIRY_TIME_MINUTES)
+        };
+        self.expires_at = Some(expires_at);
         self.updated_at = Utc::now().naive_utc();
 
         let affected_rows = diesel::update(
@@ -358,7 +381,7 @@ impl Order {
                 orders::id
                     .eq(self.id)
                     .and(orders::version.eq(self.version))
-                    .and(orders::expires_at.is_null()),
+                    .and(sql("COALESCE(expires_at, '31 Dec 9999') > now()")),
             ),
         )
         .set((
@@ -370,10 +393,25 @@ impl Order {
         if affected_rows != 1 {
             return DatabaseError::concurrency_error("Could not update expiry time.");
         }
+
+        // Extend the tickets expiry
+        let order_items = OrderItem::find_for_order(self.id, conn)?;
+
+        for item in &order_items {
+            TicketInstance::update_reserved_time(item, expires_at, conn)?;
+        }
+
         Ok(())
     }
 
+    /// Removes the expiry time for an order. This can only be done when there are no
+    /// tickets in the order, otherwise the tickets will remain reserved until the expiry
     pub fn remove_expiry(&mut self, conn: &PgConnection) -> Result<(), DatabaseError> {
+        if self.items(conn)?.len() > 0 {
+            return DatabaseError::business_process_error(
+                "Cannot clear the expiry of an order when there are items in it",
+            );
+        }
         self.updated_at = Utc::now().naive_utc();
         self.expires_at = None;
         let affected_rows = diesel::update(
@@ -634,7 +672,7 @@ impl Order {
 
         // Set cart expiration time if not currently set (empty carts have no expiration)
         if self.expires_at.is_none() {
-            self.set_expiry(conn)?;
+            self.set_expiry(None, conn)?;
         }
 
         for match_data in mapped {
@@ -855,7 +893,7 @@ impl Order {
             .to_db_error(ErrorCode::QueryError, "Could not load orders")?;
         let mut r = Vec::<DisplayOrder>::new();
         for order in orders {
-            r.push(order.for_display(conn)?);
+            r.push(order.for_display(None, conn)?);
         }
         Ok(r)
     }
@@ -887,7 +925,11 @@ impl Order {
         Ok(result)
     }
 
-    pub fn for_display(&self, conn: &PgConnection) -> Result<DisplayOrder, DatabaseError> {
+    pub fn for_display(
+        &self,
+        organization_ids: Option<Vec<Uuid>>,
+        conn: &PgConnection,
+    ) -> Result<DisplayOrder, DatabaseError> {
         let now = Utc::now().naive_utc();
         let seconds_until_expiry = self.expires_at.map(|expires_at| {
             if expires_at >= now {
@@ -919,12 +961,28 @@ impl Order {
             }
         }
 
+        // Check if this order contains any other organization items if a list of organization_ids is passed in
+        let mut order_contains_tickets_for_other_organizations = false;
+        if let Some(ref organization_ids) = organization_ids {
+            order_contains_tickets_for_other_organizations = select(exists(
+                order_items::table
+                    .inner_join(events::table.on(order_items::event_id.eq(events::id.nullable())))
+                    .filter(order_items::order_id.eq(self.id))
+                    .filter(events::organization_id.ne_all(organization_ids)),
+            ))
+            .get_result(conn)
+            .to_db_error(
+                ErrorCode::QueryError,
+                "Could not determine if order contains tickets for other organizations",
+            )?;
+        }
+
         Ok(DisplayOrder {
             id: self.id,
             status: self.status.clone(),
             date: self.order_date,
             expires_at: self.expires_at,
-            items: self.items_for_display(conn)?,
+            items: self.items_for_display(organization_ids, conn)?,
             limited_tickets_remaining,
             total_in_cents: self.calculate_total(conn)?,
             seconds_until_expiry,
@@ -932,14 +990,38 @@ impl Order {
             note: self.note.clone(),
             order_number: self.order_number(),
             paid_at: self.paid_at,
+            checkout_url: if self
+                .checkout_url_expires
+                .unwrap_or(NaiveDateTime::from_timestamp(0, 0))
+                > Utc::now().naive_utc()
+            {
+                self.checkout_url.clone()
+            } else {
+                None
+            },
+            // TODO: Move this to org or event level
+            allowed_payment_methods: vec![
+                AllowedPaymentMethod {
+                    method: "Card".to_string(),
+                    provider: "stripe".to_string(),
+                    display_name: "Card".to_string(),
+                },
+                AllowedPaymentMethod {
+                    method: "Provider".to_string(),
+                    provider: "globee".to_string(),
+                    display_name: "Pay with crypto".to_string(),
+                },
+            ],
+            order_contains_tickets_for_other_organizations,
         })
     }
 
     pub fn items_for_display(
         &self,
+        organization_ids: Option<Vec<Uuid>>,
         conn: &PgConnection,
     ) -> Result<Vec<DisplayOrderItem>, DatabaseError> {
-        OrderItem::find_for_display(self.id, conn)
+        OrderItem::find_for_display(self.id, organization_ids, conn)
     }
 
     pub fn find_item(
@@ -980,13 +1062,36 @@ impl Order {
     ) -> Result<Payment, DatabaseError> {
         let payment = Payment::create(
             self.id,
-            current_user_id,
+            Some(current_user_id),
             PaymentStatus::Completed,
             PaymentMethods::External,
             "External".to_string(),
             external_reference,
             amount,
             None,
+        );
+        self.add_payment(payment, Some(current_user_id), conn)
+    }
+
+    pub fn add_provider_payment(
+        &mut self,
+        external_reference: Option<String>,
+        provider: String,
+        current_user_id: Option<Uuid>,
+        amount: i64,
+        status: PaymentStatus,
+        data: Value,
+        conn: &PgConnection,
+    ) -> Result<Payment, DatabaseError> {
+        let payment = Payment::create(
+            self.id,
+            current_user_id,
+            status,
+            PaymentMethods::Provider,
+            provider,
+            external_reference,
+            amount,
+            Some(data),
         );
         self.add_payment(payment, current_user_id, conn)
     }
@@ -1003,7 +1108,7 @@ impl Order {
     ) -> Result<Payment, DatabaseError> {
         let payment = Payment::create(
             self.id,
-            current_user_id,
+            Some(current_user_id),
             status,
             PaymentMethods::CreditCard,
             provider,
@@ -1012,13 +1117,34 @@ impl Order {
             Some(provider_data),
         );
 
-        self.add_payment(payment, current_user_id, conn)
+        self.add_payment(payment, Some(current_user_id), conn)
+    }
+
+    pub fn add_checkout_url(
+        &mut self,
+        _current_user_id: Uuid,
+        checkout_url: String,
+        expires: NaiveDateTime,
+        conn: &PgConnection,
+    ) -> Result<(), DatabaseError> {
+        self.checkout_url = Some(checkout_url);
+        self.set_expiry(Some(expires), conn)?;
+        diesel::update(&*self)
+            .set((
+                orders::checkout_url.eq(&self.checkout_url),
+                orders::checkout_url_expires.eq(expires),
+                orders::updated_at.eq(dsl::now),
+            ))
+            .execute(conn)
+            .to_db_error(ErrorCode::UpdateError, "Could not add checkout URL")?;
+
+        Ok(())
     }
 
     fn add_payment(
         &mut self,
         payment: NewPayment,
-        current_user_id: Uuid,
+        current_user_id: Option<Uuid>,
         conn: &PgConnection,
     ) -> Result<Payment, DatabaseError> {
         match self.status {
@@ -1026,8 +1152,7 @@ impl Order {
                 return DatabaseError::business_process_error("This order has already been paid");
             }
             // orders can only expire if the order is in draft
-            OrderStatus::Draft => self.mark_partially_paid(conn)?,
-            OrderStatus::PartiallyPaid => (),
+            OrderStatus::Draft => (),
             _ => {
                 return DatabaseError::business_process_error(&format!(
                     "Order was in unexpected state when trying to make a payment: {}",
@@ -1042,64 +1167,17 @@ impl Order {
         }
 
         let p = payment.commit(current_user_id, conn)?;
-        self.complete_if_fully_paid(conn)?;
+        self.complete_if_fully_paid(current_user_id, conn)?;
         Ok(p)
-    }
-
-    fn mark_partially_paid(&mut self, conn: &PgConnection) -> Result<(), DatabaseError> {
-        // TODO: The multiple queries in this method could probably be combined into a single query
-        let now_plus_one_day = Utc::now().naive_utc() + Duration::days(1);
-        let result = diesel::update(
-            orders::table.filter(
-                orders::id
-                    .eq(self.id)
-                    .and(orders::version.eq(self.version))
-                    .and(orders::expires_at.ge(Some(Utc::now().naive_utc()))),
-            ),
-        )
-        .set((
-            orders::status.eq(OrderStatus::PartiallyPaid),
-            orders::expires_at.eq(Some(now_plus_one_day)),
-            orders::updated_at.eq(dsl::now),
-        ))
-        .execute(conn)
-        .to_db_error(ErrorCode::UpdateError, "Could not update order status")?;
-
-        let db_record = Order::find(self.id, conn)?;
-
-        if result == 0 {
-            if db_record.version != self.version {
-                return DatabaseError::concurrency_error(
-                    "Could not update order because it has been updated by another process",
-                );
-            }
-
-            // Unfortunately, it's quite hard to work out what the current dsl::now() time is
-            // So assume that the order has expired.
-            return DatabaseError::business_process_error(
-                "Could not update order because it has expired",
-            );
-        }
-
-        self.updated_at = db_record.updated_at;
-        self.status = db_record.status;
-
-        //Extend the reserved_until time for tickets associated with this order
-        let order_items = OrderItem::find_for_order(db_record.id, conn)?;
-
-        for item in &order_items {
-            TicketInstance::update_reserved_time(item, now_plus_one_day, conn)?;
-        }
-
-        Ok(())
     }
 
     pub(crate) fn complete_if_fully_paid(
         &mut self,
+        current_user_id: Option<Uuid>,
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
         if self.total_paid(conn)? >= self.calculate_total(conn)? {
-            self.update_status(OrderStatus::Paid, conn)?;
+            self.update_status(current_user_id, OrderStatus::Paid, conn)?;
             //Mark tickets as Purchased
             let order_items = OrderItem::find_for_order(self.id, conn)?;
             for item in &order_items {
@@ -1158,9 +1236,11 @@ impl Order {
 
     fn update_status(
         &mut self,
+        current_user_id: Option<Uuid>,
         status: OrderStatus,
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
+        let old_status = self.status;
         self.status = status;
 
         if status == OrderStatus::Paid {
@@ -1182,6 +1262,19 @@ impl Order {
                 .execute(conn)
                 .to_db_error(ErrorCode::UpdateError, "Could not update order status")?;
         }
+
+        DomainEvent::create(
+            DomainEventTypes::OrderStatusUpdated,
+            format!("Order status changed from {} to {}", &old_status, &status),
+            Tables::Orders,
+            Some(self.id),
+            current_user_id,
+            Some(json!({
+                "old_status": &old_status,
+                "new_status": &status
+            })),
+        )
+        .commit(conn)?;
 
         Ok(())
     }
@@ -1291,6 +1384,16 @@ pub struct DisplayOrder {
     pub note: Option<String>,
     pub order_number: String,
     pub paid_at: Option<NaiveDateTime>,
+    pub checkout_url: Option<String>,
+    pub allowed_payment_methods: Vec<AllowedPaymentMethod>,
+    pub order_contains_tickets_for_other_organizations: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AllowedPaymentMethod {
+    method: String,
+    provider: String,
+    display_name: String,
 }
 
 #[derive(Deserialize, Serialize, PartialEq, Debug)]

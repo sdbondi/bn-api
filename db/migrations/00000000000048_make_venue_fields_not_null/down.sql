@@ -1,5 +1,5 @@
 ALTER TABLE venues
-    ALTER COLUMN region_id SET NULL;
+    ALTER COLUMN region_id DROP NOT NULL;
 
 
 ALTER TABLE venues
@@ -12,19 +12,19 @@ ALTER TABLE venues
     DROP COLUMN longitude;
 
 ALTER TABLE venues
-    ALTER COLUMN address SET NULL;
+    ALTER COLUMN address DROP NOT NULL;
 
 ALTER TABLE venues
-    ALTER COLUMN city SET NULL;
+    ALTER COLUMN city DROP NOT NULL;
 
 ALTER TABLE venues
-    ALTER COLUMN country SET NULL;
+    ALTER COLUMN country DROP NOT NULL;
 
 ALTER TABLE venues
-    ALTER COLUMN postal_code SET NULL;
+    ALTER COLUMN postal_code DROP NOT NULL;
 
 ALTER TABLE venues
-    ALTER COLUMN state SET NULL;
+    ALTER COLUMN state DROP NOT NULL;
 
 
 UPDATE venues

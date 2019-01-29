@@ -6,6 +6,7 @@ use diesel::prelude::*;
 use diesel::sql_types;
 use diesel::sql_types::{BigInt, Bool, Integer, Nullable, Text, Timestamp, Uuid as dUuid};
 use itertools::Itertools;
+use log::Level::Debug;
 use models::*;
 use rand;
 use rand::Rng;
@@ -36,6 +37,19 @@ pub struct TicketInstance {
 }
 
 impl TicketInstance {
+    pub fn ticket_type(&self, conn: &PgConnection) -> Result<TicketType, DatabaseError> {
+        ticket_instances::table
+            .inner_join(assets::table.on(ticket_instances::asset_id.eq(assets::id)))
+            .inner_join(ticket_types::table.on(assets::ticket_type_id.eq(ticket_types::id)))
+            .filter(ticket_instances::id.eq(self.id))
+            .select(ticket_types::all_columns)
+            .first(conn)
+            .to_db_error(
+                ErrorCode::QueryError,
+                "Unable to load ticket type for ticket instance",
+            )
+    }
+
     pub fn find(id: Uuid, conn: &PgConnection) -> Result<TicketInstance, DatabaseError> {
         ticket_instances::table
             .find(id)
@@ -45,12 +59,18 @@ impl TicketInstance {
 
     pub fn release(&self, conn: &PgConnection) -> Result<(), DatabaseError> {
         let query = include_str!("../queries/release_tickets.sql");
-        let q = diesel::sql_query(query)
+        let new_status = if self.ticket_type(conn)?.status == TicketTypeStatus::Cancelled {
+            TicketInstanceStatus::Nullified
+        } else {
+            TicketInstanceStatus::Available
+        };
+
+        let tickets: Vec<TicketInstance> = diesel::sql_query(query)
             .bind::<Nullable<dUuid>, _>(self.order_item_id)
             .bind::<BigInt, _>(1)
             .bind::<Text, _>(TicketInstanceStatus::Purchased)
-            .bind::<dUuid, _>(self.id);
-        let tickets: Vec<TicketInstance> = q
+            .bind::<dUuid, _>(self.id)
+            .bind::<Text, _>(new_status)
             .get_results(conn)
             .to_db_error(ErrorCode::QueryError, "Could not release ticket")?;
 
@@ -335,7 +355,8 @@ impl TicketInstance {
             .bind::<sql_types::Uuid, _>(order_item.id)
             .bind::<BigInt, _>(quantity as i64)
             .bind::<Text, _>(TicketInstanceStatus::Reserved)
-            .bind::<Nullable<dUuid>, _>(ticket_instance_id);
+            .bind::<Nullable<dUuid>, _>(ticket_instance_id)
+            .bind::<Text, _>(TicketInstanceStatus::Available);
         let tickets: Vec<TicketInstance> = q
             .get_results(conn)
             .to_db_error(ErrorCode::QueryError, "Could not release tickets")?;
@@ -457,8 +478,15 @@ impl TicketInstance {
         reserved_time: NaiveDateTime,
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
-        diesel::update(
-            ticket_instances::table.filter(ticket_instances::order_item_id.eq(order_item.id)),
+        if order_item.item_type != OrderItemTypes::Tickets {
+            return Ok(());
+        }
+        let rows_affected = diesel::update(
+            ticket_instances::table.filter(
+                ticket_instances::order_item_id
+                    .eq(order_item.id)
+                    .and(ticket_instances::reserved_until.gt(dsl::now.nullable())),
+            ),
         )
         .set((
             ticket_instances::reserved_until.eq(reserved_time),
@@ -469,6 +497,10 @@ impl TicketInstance {
             ErrorCode::UpdateError,
             "Could not update ticket_instance reserved time.",
         )?;
+        if rows_affected == 0 {
+            jlog!(Debug, "Could not update reserved ticket time", { "order_item_id": order_item.id, "reserved_time": reserved_time});
+            return DatabaseError::concurrency_error("Could not update reserved ticket time");
+        };
         Ok(())
     }
 

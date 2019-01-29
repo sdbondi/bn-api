@@ -9,6 +9,7 @@ use utils::errors::ConvertToDatabaseError;
 use utils::errors::DatabaseError;
 use utils::errors::ErrorCode;
 use uuid::Uuid;
+use validator::Validate;
 
 #[derive(
     Clone,
@@ -41,10 +42,10 @@ pub struct Venue {
     pub google_place_id: Option<String>,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
-    pub timezone: Option<String>,
+    pub timezone: String,
 }
 
-#[derive(AsChangeset, Default, Deserialize)]
+#[derive(AsChangeset, Default, Deserialize, Validate)]
 #[table_name = "venues"]
 pub struct VenueEditableAttributes {
     pub region_id: Option<Uuid>,
@@ -67,11 +68,12 @@ pub struct VenueEditableAttributes {
     pub google_place_id: Option<Option<String>>,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
+    #[validate(length(min = "1", message = "Timezone is invalid"))]
     #[serde(default, deserialize_with = "deserialize_unless_blank")]
     pub timezone: Option<String>,
 }
 
-#[derive(Default, Insertable, Serialize, Deserialize, PartialEq, Debug, Clone)]
+#[derive(Default, Insertable, Serialize, Deserialize, PartialEq, Debug, Clone, Validate)]
 #[table_name = "venues"]
 pub struct NewVenue {
     pub name: String,
@@ -90,8 +92,8 @@ pub struct NewVenue {
     pub google_place_id: Option<String>,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
-    #[serde(default, deserialize_with = "deserialize_unless_blank")]
-    pub timezone: Option<String>,
+    #[validate(length(min = "1", message = "Timezone is invalid"))]
+    pub timezone: String,
 }
 
 impl NewVenue {
@@ -105,6 +107,7 @@ impl NewVenue {
             };
             record.region_id = Some(region.id);
         }
+        record.validate()?;
 
         DatabaseError::wrap(
             ErrorCode::InsertError,
@@ -121,7 +124,7 @@ impl Venue {
         name: &str,
         region_id: Option<Uuid>,
         organization_id: Option<Uuid>,
-        timezone: Option<String>,
+        timezone: String,
     ) -> NewVenue {
         NewVenue {
             name: String::from(name),
@@ -137,6 +140,7 @@ impl Venue {
         attributes: VenueEditableAttributes,
         conn: &PgConnection,
     ) -> Result<Venue, DatabaseError> {
+        attributes.validate()?;
         DatabaseError::wrap(
             ErrorCode::UpdateError,
             "Could not update venue",
@@ -305,5 +309,5 @@ impl From<Venue> for DisplayVenue {
 pub struct VenueInfo {
     pub id: Uuid,
     pub name: String,
-    pub timezone: Option<String>,
+    pub timezone: String,
 }

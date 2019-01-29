@@ -542,6 +542,7 @@ fn search() {
         .with_venue(&venue1)
         .with_event_start(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11))
         .with_event_end(NaiveDate::from_ymd(2016, 7, 9).and_hms(9, 10, 11))
+        .with_publish_date(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11))
         .finish();
 
     event
@@ -596,11 +597,22 @@ fn search() {
         .with_event_end(NaiveDate::from_ymd(2017, 7, 9).and_hms(9, 10, 11))
         .finish();
 
+    // Event with publish date in the future, not returned except for organization user or owner
+    let event6 = project
+        .create_event()
+        .with_name("NewEventFuturePublish".into())
+        .with_status(EventStatus::Published)
+        .with_event_start(NaiveDate::from_ymd(2017, 7, 8).and_hms(9, 10, 11))
+        .with_event_end(NaiveDate::from_ymd(2017, 7, 9).and_hms(9, 10, 11))
+        .with_publish_date(NaiveDate::from_ymd(2999, 7, 8).and_hms(9, 10, 11))
+        .finish();
+
     let all_events = vec![event, event2, event3];
     let mut all_events_for_organization = all_events.clone();
     all_events_for_organization.push(event4);
     let mut all_events_for_admin = all_events_for_organization.clone();
     all_events_for_admin.push(event5);
+    all_events_for_admin.push(event6);
 
     // All events unauthorized user
     let all_found_events = Event::search(
@@ -956,6 +968,115 @@ fn search() {
     .unwrap();
     assert_eq!(all_found_events.len(), 1);
     assert_eq!(all_events[0], all_found_events[0]);
+}
+
+#[test]
+fn current_ticket_pricing_range() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let event = project
+        .create_event()
+        .with_tickets()
+        .with_ticket_type_count(2)
+        .finish();
+
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    let ticket_type2 = &event.ticket_types(true, None, connection).unwrap()[1];
+
+    // No current pricing set
+    let (min_ticket_price, max_ticket_price) = event
+        .current_ticket_pricing_range(false, connection)
+        .unwrap();
+    assert_eq!(None, min_ticket_price);
+    assert_eq!(None, max_ticket_price);
+
+    // Future pricing
+    ticket_type
+        .add_ticket_pricing(
+            "Pricing1".into(),
+            NaiveDate::from_ymd(2055, 7, 8).and_hms(7, 8, 10),
+            NaiveDate::from_ymd(9999, 7, 8).and_hms(7, 8, 10),
+            3000,
+            false,
+            None,
+            connection,
+        )
+        .unwrap();
+
+    let (min_ticket_price, max_ticket_price) = event
+        .current_ticket_pricing_range(false, connection)
+        .unwrap();
+    assert_eq!(None, min_ticket_price);
+    assert_eq!(None, max_ticket_price);
+
+    // Current pricing
+    ticket_type
+        .add_ticket_pricing(
+            "Pricing2".into(),
+            NaiveDate::from_ymd(2016, 7, 8).and_hms(7, 8, 10),
+            NaiveDate::from_ymd(9999, 7, 8).and_hms(7, 8, 10),
+            8000,
+            false,
+            None,
+            connection,
+        )
+        .unwrap();
+
+    let (min_ticket_price, max_ticket_price) = event
+        .current_ticket_pricing_range(false, connection)
+        .unwrap();
+    assert_eq!(Some(8000), min_ticket_price);
+    assert_eq!(Some(8000), max_ticket_price);
+
+    ticket_type2
+        .add_ticket_pricing(
+            "Pricing2".into(),
+            NaiveDate::from_ymd(2016, 7, 8).and_hms(7, 8, 10),
+            NaiveDate::from_ymd(9999, 7, 8).and_hms(7, 8, 10),
+            20000,
+            false,
+            None,
+            connection,
+        )
+        .unwrap();
+
+    let (min_ticket_price, max_ticket_price) = event
+        .current_ticket_pricing_range(false, connection)
+        .unwrap();
+    assert_eq!(Some(8000), min_ticket_price);
+    assert_eq!(Some(20000), max_ticket_price);
+
+    // Box office pricing, present
+    ticket_type
+        .add_ticket_pricing(
+            "Box office1".into(),
+            NaiveDate::from_ymd(2016, 7, 8).and_hms(7, 8, 10),
+            NaiveDate::from_ymd(9999, 7, 8).and_hms(7, 8, 10),
+            5000,
+            true,
+            None,
+            connection,
+        )
+        .unwrap();
+
+    // Box office pricing, date in future so won't activate
+    ticket_type2
+        .add_ticket_pricing(
+            "Box office2".into(),
+            NaiveDate::from_ymd(2055, 7, 8).and_hms(7, 8, 10),
+            NaiveDate::from_ymd(9999, 7, 8).and_hms(7, 8, 10),
+            1000,
+            true,
+            None,
+            connection,
+        )
+        .unwrap();
+
+    let (min_ticket_price, max_ticket_price) = event
+        .current_ticket_pricing_range(true, connection)
+        .unwrap();
+    assert_eq!(Some(5000), min_ticket_price);
+    assert_eq!(Some(20000), max_ticket_price);
 }
 
 #[test]

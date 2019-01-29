@@ -24,6 +24,8 @@ pub struct Asset {
 
 impl Asset {
     pub fn create(ticket_type_id: Uuid, blockchain_name: String) -> NewAsset {
+        let random_uuid = Uuid::new_v4();
+        let blockchain_name = format!("{}_{}", blockchain_name, random_uuid.to_string());
         NewAsset {
             blockchain_name,
             ticket_type_id,

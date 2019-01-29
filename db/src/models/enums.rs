@@ -79,12 +79,15 @@ string_enum! { CommunicationChannelType [Email, Sms, Push]}
 string_enum! { DomainEventTypes [
     FeeScheduleCreated,
     OrderBehalfOfUserChanged,
+    OrderStatusUpdated,
     OrganizationCreated,
     PaymentCreated,
     PaymentCompleted,
     PaymentRefund,
+    PaymentProviderIPN,
     PaymentMethodCreated,
     PaymentMethodUpdated,
+    PaymentUpdated,
     UserRegistration,
     LostPassword,
     PurchaseCompleted,
@@ -96,20 +99,23 @@ string_enum! { DomainActionTypes [
     Communication,
     // Marketing Contacts
     MarketingContactsCreateEventList,
-    MarketingContactsBulkEventFanListImport
+    MarketingContactsBulkEventFanListImport,
+    PaymentProviderIPN
+
 ]}
 string_enum! { DomainActionStatus [Pending, RetriesExceeded, Errored, Success, Cancelled]}
 string_enum! { EventStatus [Draft,Closed,Published,Offline]}
 string_enum! { EventSearchSortField [ Name, EventStart]}
 string_enum! { EventOverrideStatus [PurchaseTickets,SoldOut,OnSaleSoon,TicketsAtTheDoor,Free,Rescheduled,Cancelled,OffSale,Ended]}
+string_enum! { EventTypes [ Music, Conference]}
 string_enum! { FanSortField [FirstName, LastName, Email, Phone, Orders, FirstOrder, LastOrder, Revenue] }
 string_enum! { HistoryType [Purchase]}
 string_enum! { HoldTypes [Discount, Comp] }
-string_enum! { OrderStatus [Cancelled, Draft, Paid, PartiallyPaid] }
+string_enum! { OrderStatus [Cancelled, Draft, Paid] }
 string_enum! { OrderItemTypes [Tickets, PerUnitFees, EventFees]}
 string_enum! { OrderTypes [Cart, BackOffice] }
-string_enum! { PaymentMethods [External, CreditCard] }
-string_enum! { PaymentStatus [Authorized, Completed, Refunded] }
+string_enum! { PaymentMethods [External, CreditCard, Provider] }
+string_enum! { PaymentStatus [Authorized, Completed, Refunded, Unpaid, PendingConfirmation, Cancelled, Draft, Unknown] }
 string_enum! { PastOrUpcoming [Past,Upcoming]}
 string_enum! { Roles [Admin, OrgMember, OrgOwner, OrgAdmin, OrgBoxOffice, DoorPerson, User] }
 string_enum! { SortingDir[ Asc, Desc ] }
@@ -121,6 +127,12 @@ string_enum! { TicketTypeStatus [NoActivePricing, Published, SoldOut, Cancelled]
 impl Default for EventStatus {
     fn default() -> EventStatus {
         EventStatus::Draft
+    }
+}
+
+impl Default for EventTypes {
+    fn default() -> EventTypes {
+        EventTypes::Music
     }
 }
 

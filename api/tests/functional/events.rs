@@ -304,6 +304,7 @@ pub fn index_search_with_filter() {
         tracking_keys: TrackingKeys {
             ..Default::default()
         },
+        event_type: EventTypes::Music,
     }];
 
     let test_request = TestRequest::create_with_uri("/events?query=NewEvent1");
@@ -1181,6 +1182,7 @@ struct EventVenueEntry {
     user_is_interested: bool,
     localized_times: EventLocalizedTimeStrings,
     tracking_keys: TrackingKeys,
+    event_type: EventTypes,
 }
 
 fn event_venue_entry(
@@ -1190,6 +1192,9 @@ fn event_venue_entry(
     connection: &PgConnection,
 ) -> EventVenueEntry {
     let localized_times = event.get_all_localized_time_strings(&Some(venue.clone()));
+    let (min_ticket_price, max_ticket_price) = event
+        .current_ticket_pricing_range(false, connection)
+        .unwrap();
     EventVenueEntry {
         id: event.id,
         name: event.name.clone(),
@@ -1206,8 +1211,8 @@ fn event_venue_entry(
         age_limit: event.age_limit,
         cancelled_at: event.cancelled_at,
         venue: Some(venue.clone()),
-        min_ticket_price: event.min_ticket_price.clone(),
-        max_ticket_price: event.max_ticket_price.clone(),
+        min_ticket_price: min_ticket_price,
+        max_ticket_price: max_ticket_price,
         is_external: event.is_external.clone(),
         external_url: event.external_url.clone(),
         user_is_interested: user
@@ -1217,5 +1222,6 @@ fn event_venue_entry(
         tracking_keys: TrackingKeys {
             ..Default::default()
         },
+        event_type: event.event_type,
     }
 }

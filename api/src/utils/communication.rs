@@ -4,7 +4,6 @@ use chrono::{Duration, Utc};
 use diesel::PgConnection;
 use futures::Future;
 use tokio::prelude::*;
-use uuid::Uuid;
 
 use bigneon_db::models::enums::*;
 use bigneon_db::models::*;
@@ -106,8 +105,8 @@ impl Communication {
                 CommunicationType::Sms => Some(CommunicationChannelType::Sms),
             },
             json!(self),
-            "event".to_string(),
-            Uuid::new_v4(),
+            None,
+            None,
             Utc::now().naive_utc(),
             (Utc::now().naive_utc())
                 .checked_add_signed(Duration::days(1))

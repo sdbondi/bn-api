@@ -52,6 +52,7 @@ pub fn create(role: Roles, should_test_succeed: bool) {
 
 pub fn show_box_office_pricing(role: Roles, should_test_succeed: bool) {
     let database = TestDatabase::new();
+    let conn = database.connection.get();
     let user = database.create_user().finish();
     let organization = database.create_organization().finish();
     let auth_user =
@@ -65,10 +66,21 @@ pub fn show_box_office_pricing(role: Roles, should_test_succeed: bool) {
         .with_ticket_pricing()
         .finish();
     let event_id = event.id;
+    let ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
+    ticket_type
+        .add_ticket_pricing(
+            "Box office".into(),
+            NaiveDate::from_ymd(2016, 7, 8).and_hms(7, 8, 10),
+            NaiveDate::from_ymd(9999, 7, 8).and_hms(7, 8, 10),
+            5000,
+            true,
+            None,
+            conn,
+        )
+        .unwrap();
 
     let artist1 = database.create_artist().finish();
     let artist2 = database.create_artist().finish();
-    let conn = database.connection.get();
 
     event.add_artist(artist1.id, conn).unwrap();
     event.add_artist(artist2.id, conn).unwrap();
@@ -723,8 +735,9 @@ pub fn expected_show_json(
         external_url: Option<String>,
         override_status: Option<EventOverrideStatus>,
         limited_tickets_remaining: Vec<TicketsRemaining>,
-        localized_times: EventLocalizedTimes,
+        localized_times: EventLocalizedTimeStrings,
         tracking_keys: TrackingKeys,
+        event_type: EventTypes,
     }
 
     let fee_schedule = FeeSchedule::find(organization.fee_schedule_id, connection).unwrap();
@@ -754,7 +767,12 @@ pub fn expected_show_json(
             );
         }
     }
-    let localized_times: EventLocalizedTimes = event.get_all_localized_times(&Some(venue.clone()));
+    let localized_times: EventLocalizedTimeStrings =
+        event.get_all_localized_time_strings(&Some(venue.clone()));
+    let (min_ticket_price, max_ticket_price) = event
+        .current_ticket_pricing_range(box_office_pricing, connection)
+        .unwrap();
+
     serde_json::to_string(&R {
         id: event.id,
         name: event.name,
@@ -782,8 +800,8 @@ pub fn expected_show_json(
         ticket_types: display_ticket_types,
         total_interest: 1,
         user_is_interested: true,
-        min_ticket_price: None,
-        max_ticket_price: None,
+        min_ticket_price: min_ticket_price,
+        max_ticket_price: max_ticket_price,
         is_external: event.is_external,
         external_url: event.external_url,
         override_status: event.override_status,
@@ -792,6 +810,7 @@ pub fn expected_show_json(
         tracking_keys: TrackingKeys {
             ..Default::default()
         },
+        event_type: event.event_type,
     })
     .unwrap()
 }

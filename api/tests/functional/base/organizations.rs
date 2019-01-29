@@ -314,6 +314,7 @@ pub fn add_venue(role: Roles, should_test_succeed: bool) {
     let name = "Venue";
     let json = Json(NewVenue {
         name: name.to_string(),
+        timezone: "America/Los_Angeles".to_string(),
         ..Default::default()
     });
 

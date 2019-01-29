@@ -24,6 +24,7 @@ SELECT e.id,
        e.is_external,
        e.external_url,
        e.override_status,
+       e.event_type,
        (SELECT min(tp.start_date)
         FROM ticket_pricing tp
                INNER JOIN ticket_types t2 ON tp.ticket_type_id = t2.id

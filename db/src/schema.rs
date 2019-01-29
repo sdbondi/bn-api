@@ -57,8 +57,8 @@ table! {
         domain_action_type -> Text,
         communication_channel_type -> Nullable<Text>,
         payload -> Json,
-        main_table -> Text,
-        main_table_id -> Uuid,
+        main_table -> Nullable<Text>,
+        main_table_id -> Nullable<Uuid>,
         scheduled_at -> Timestamp,
         expires_at -> Timestamp,
         last_attempted_at -> Nullable<Timestamp>,
@@ -130,8 +130,6 @@ table! {
         top_line_info -> Nullable<Varchar>,
         cancelled_at -> Nullable<Timestamp>,
         updated_at -> Timestamp,
-        min_ticket_price_cache -> Nullable<Int8>,
-        max_ticket_price_cache -> Nullable<Int8>,
         video_url -> Nullable<Text>,
         is_external -> Bool,
         external_url -> Nullable<Text>,
@@ -141,6 +139,7 @@ table! {
         settlement_amount_in_cents -> Nullable<Int8>,
         event_end -> Nullable<Timestamp>,
         sendgrid_list_id -> Nullable<Int8>,
+        event_type -> Text,
     }
 }
 
@@ -235,6 +234,8 @@ table! {
         updated_at -> Timestamp,
         paid_at -> Nullable<Timestamp>,
         box_office_pricing -> Bool,
+        checkout_url -> Nullable<Text>,
+        checkout_url_expires -> Nullable<Timestamp>,
     }
 }
 
@@ -251,6 +252,17 @@ table! {
         updated_at -> Timestamp,
         sent_invite -> Bool,
         roles -> Array<Text>,
+    }
+}
+
+table! {
+    organization_users (id) {
+        id -> Uuid,
+        organization_id -> Uuid,
+        user_id -> Uuid,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+        role -> Array<Text>,
     }
 }
 
@@ -277,17 +289,6 @@ table! {
 }
 
 table! {
-    organization_users (id) {
-        id -> Uuid,
-        organization_id -> Uuid,
-        user_id -> Uuid,
-        created_at -> Timestamp,
-        updated_at -> Timestamp,
-        role -> Array<Text>,
-    }
-}
-
-table! {
     payment_methods (id) {
         id -> Uuid,
         user_id -> Uuid,
@@ -304,7 +305,7 @@ table! {
     payments (id) {
         id -> Uuid,
         order_id -> Uuid,
-        created_by -> Uuid,
+        created_by -> Nullable<Uuid>,
         status -> Text,
         payment_method -> Text,
         amount -> Int8,
@@ -465,7 +466,7 @@ table! {
         google_place_id -> Nullable<Text>,
         latitude -> Nullable<Float8>,
         longitude -> Nullable<Float8>,
-        timezone -> Nullable<Text>,
+        timezone -> Text,
     }
 }
 
@@ -545,8 +546,8 @@ allow_tables_to_appear_in_same_query!(
     order_items,
     orders,
     organization_invites,
-    organizations,
     organization_users,
+    organizations,
     payment_methods,
     payments,
     push_notification_tokens,

@@ -1,16 +1,64 @@
 use bigneon_db::dev::TestProject;
 use bigneon_db::prelude::*;
+use bigneon_db::utils::errors::ErrorCode::ValidationError;
 
 #[test]
 fn commit() {
     let project = TestProject::new();
     let name = "Name";
-    let venue = Venue::create(name.clone(), None, None, None)
+    let venue = Venue::create(name.clone(), None, None, "America/Los_Angeles".into())
         .commit(project.get_connection())
         .unwrap();
 
     assert_eq!(venue.name, name);
     assert_eq!(venue.id.to_string().is_empty(), false);
+}
+
+#[test]
+fn new_venue_with_validation_errors() {
+    let project = TestProject::new();
+    let name = "Name";
+    let venue = Venue::create(name.clone(), None, None, "".into());
+    let result = venue.commit(project.get_connection());
+    match result {
+        Ok(_) => {
+            panic!("Expected validation error");
+        }
+        Err(error) => match &error.error_code {
+            ValidationError { errors } => {
+                assert!(errors.contains_key("timezone"));
+                assert_eq!(errors["timezone"].len(), 1);
+                assert_eq!(errors["timezone"][0].code, "length");
+            }
+            _ => panic!("Expected validation error"),
+        },
+    }
+}
+
+#[test]
+fn update_with_validation_errors() {
+    let project = TestProject::new();
+    let venue = project.create_venue().finish();
+
+    let parameters = VenueEditableAttributes {
+        timezone: Some("".to_string()),
+        ..Default::default()
+    };
+
+    let result = venue.update(parameters, project.get_connection());
+    match result {
+        Ok(_) => {
+            panic!("Expected validation error");
+        }
+        Err(error) => match &error.error_code {
+            ValidationError { errors } => {
+                assert!(errors.contains_key("timezone"));
+                assert_eq!(errors["timezone"].len(), 1);
+                assert_eq!(errors["timezone"][0].code, "length");
+            }
+            _ => panic!("Expected validation error"),
+        },
+    }
 }
 
 #[test]

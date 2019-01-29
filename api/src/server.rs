@@ -8,6 +8,7 @@ use domain_events::DomainActionMonitor;
 use middleware::{AppVersionHeader, BigNeonLogger, DatabaseTransaction};
 use routing;
 use std::io;
+use utils::spotify;
 use utils::ServiceLocator;
 
 // Must be valid JSON
@@ -52,6 +53,11 @@ impl Server {
 
         if process_actions {
             domain_action_monitor.start()
+        }
+
+        if config.spotify_auth_token.is_some() {
+            let token = config.spotify_auth_token.clone().unwrap();
+            spotify::SINGLETON.set_auth_token(&token);
         }
 
         if process_http {

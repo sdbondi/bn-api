@@ -81,10 +81,29 @@ impl TicketPricing {
         conn: &PgConnection,
     ) -> Result<TicketPricing, DatabaseError> {
         self.validate_record(&attributes)?;
-        diesel::update(self)
-            .set((attributes, ticket_pricing::updated_at.eq(dsl::now)))
-            .get_result(conn)
-            .to_db_error(ErrorCode::UpdateError, "Could not update ticket_pricing")
+
+        if self.affected_order_count(conn)? == 0 || attributes.price_in_cents.is_none() {
+            // No orders affected or price does not change, update existing record
+            diesel::update(self)
+                .set((attributes, ticket_pricing::updated_at.eq(dsl::now)))
+                .get_result(conn)
+                .to_db_error(ErrorCode::UpdateError, "Could not update ticket_pricing")
+        } else {
+            // Orders affected, create new ticket pricing and delete old
+            let new_ticket_pricing = TicketPricing::create(
+                self.ticket_type_id,
+                attributes.name.unwrap_or(self.name.clone()),
+                attributes.start_date.unwrap_or(self.start_date),
+                attributes.end_date.unwrap_or(self.end_date),
+                attributes.price_in_cents.unwrap(),
+                attributes
+                    .is_box_office_only
+                    .unwrap_or(self.is_box_office_only),
+                Some(self.status),
+            );
+            self.destroy(conn)?;
+            new_ticket_pricing.commit(conn)
+        }
     }
 
     pub fn ticket_pricing_does_not_overlap_ticket_type_start_date(
@@ -159,14 +178,17 @@ impl TicketPricing {
         Ok(Ok(()))
     }
 
-    pub fn destroy(&self, conn: &PgConnection) -> Result<usize, DatabaseError> {
-        //Check if there is any order items linked to this ticket pricing
-        let affected_order_count: i64 = order_items::table
+    fn affected_order_count(&self, conn: &PgConnection) -> Result<i64, DatabaseError> {
+        order_items::table
             .filter(order_items::ticket_pricing_id.eq(self.id))
             .select(dsl::count(order_items::id))
             .first(conn)
-            .to_db_error(ErrorCode::QueryError, "Could not load order_items")?;
-        if affected_order_count == 0 as i64 {
+            .to_db_error(ErrorCode::QueryError, "Could not load order_items")
+    }
+
+    pub fn destroy(&self, conn: &PgConnection) -> Result<usize, DatabaseError> {
+        //Check if there is any order items linked to this ticket pricing
+        if self.affected_order_count(conn)? == 0 {
             //Ticket pricing is unused -> delete
             diesel::delete(self)
                 .execute(conn)

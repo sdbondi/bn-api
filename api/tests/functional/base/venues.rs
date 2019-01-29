@@ -64,6 +64,7 @@ pub fn create(role: Roles, should_succeed: bool) {
     let json = Json(NewVenue {
         name: name.to_string(),
         region_id: Some(region.id),
+        timezone: "America/Los_Angeles".to_string(),
         ..Default::default()
     });
 
@@ -91,6 +92,7 @@ pub fn create_with_organization(role: Roles, should_succeed: bool) {
     let json = Json(NewVenue {
         name: name.to_string(),
         organization_id: Some(organization.id),
+        timezone: "America/Los_Angeles".to_string(),
         ..Default::default()
     });
 

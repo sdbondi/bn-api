@@ -15,7 +15,7 @@ use uuid::Uuid;
 pub struct Payment {
     pub id: Uuid,
     order_id: Uuid,
-    created_by: Uuid,
+    created_by: Option<Uuid>,
     pub status: PaymentStatus,
     pub payment_method: PaymentMethods,
     pub amount: i64,
@@ -29,7 +29,7 @@ pub struct Payment {
 impl Payment {
     pub(crate) fn create(
         order_id: Uuid,
-        created_by: Uuid,
+        created_by: Option<Uuid>,
         status: PaymentStatus,
         payment_method: PaymentMethods,
         provider: String,
@@ -49,6 +49,29 @@ impl Payment {
         }
     }
 
+    pub fn find(id: Uuid, conn: &PgConnection) -> Result<Payment, DatabaseError> {
+        payments::table
+            .filter(payments::id.eq(id))
+            .first(conn)
+            .to_db_error(ErrorCode::QueryError, "Could not find payment")
+    }
+
+    pub fn find_by_order(
+        order_id: Uuid,
+        external_reference: &str,
+        conn: &PgConnection,
+    ) -> Result<Payment, DatabaseError> {
+        payments::table
+            .filter(
+                payments::order_id
+                    .eq(order_id)
+                    .and(payments::external_reference.eq(external_reference)),
+            )
+            .load(conn)
+            .to_db_error(ErrorCode::QueryError, "Could not find payment for order")
+            .expect_single()
+    }
+
     pub fn log_refund(
         &self,
         current_user_id: Uuid,
@@ -66,7 +89,7 @@ impl Payment {
             -(refund_amount as i64),
             refund_data.clone(),
         )
-        .commit(current_user_id, conn)?;
+        .commit(Some(current_user_id), conn)?;
 
         DomainEvent::create(
             DomainEventTypes::PaymentRefund,
@@ -80,13 +103,34 @@ impl Payment {
         Ok(())
     }
 
-    pub fn mark_complete(
+    pub fn add_ipn(
         &self,
+        new_status: PaymentStatus,
         raw_data: serde_json::Value,
-        current_user_id: Uuid,
+        current_user_id: Option<Uuid>,
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
-        diesel::update(
+        self.update_status(new_status, current_user_id, conn)?;
+        DomainEvent::create(
+            DomainEventTypes::PaymentProviderIPN,
+            "Payment IPN received".to_string(),
+            Tables::Payments,
+            Some(self.id),
+            current_user_id,
+            Some(raw_data),
+        )
+        .commit(conn)?;
+
+        Ok(())
+    }
+
+    fn update_status(
+        &self,
+        status: PaymentStatus,
+        current_user_id: Option<Uuid>,
+        conn: &PgConnection,
+    ) -> Result<(), DatabaseError> {
+        let rows_affected = diesel::update(
             payments::table.filter(
                 payments::id
                     .eq(self.id)
@@ -94,14 +138,42 @@ impl Payment {
             ),
         )
         .set((
-            payments::status.eq(PaymentStatus::Completed),
+            payments::status.eq(status),
             payments::updated_at.eq(dsl::now),
         ))
         .execute(conn)
         .to_db_error(
             ErrorCode::UpdateError,
-            "Could not change the status of payment to completed.",
+            "Could not change the status of payment",
         )?;
+
+        if rows_affected > 0 {
+            DomainEvent::create(
+                DomainEventTypes::PaymentUpdated,
+                format!("Payment status updated to {}", status),
+                Tables::Payments,
+                Some(self.id),
+                current_user_id,
+                Some(json!({ "new_status": status })),
+            )
+            .commit(conn)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn mark_complete(
+        &self,
+        raw_data: serde_json::Value,
+        current_user_id: Option<Uuid>,
+        conn: &PgConnection,
+    ) -> Result<(), DatabaseError> {
+        if self.status == PaymentStatus::Completed {
+            return DatabaseError::business_process_error(
+                "Payment has already been marked complete",
+            );
+        }
+        self.update_status(PaymentStatus::Completed, current_user_id, conn)?;
 
         println!("Saved payment");
         DomainEvent::create(
@@ -109,14 +181,15 @@ impl Payment {
             "Payment was completed".to_string(),
             Tables::Payments,
             Some(self.id),
-            Some(current_user_id),
+            current_user_id,
             Some(raw_data),
         )
         .commit(conn)?;
 
         println!("Domain Action created");
 
-        self.order(conn)?.complete_if_fully_paid(conn)?;
+        self.order(conn)?
+            .complete_if_fully_paid(current_user_id, conn)?;
 
         Ok(())
     }
@@ -134,7 +207,7 @@ impl Payment {
 #[table_name = "payments"]
 pub struct NewPayment {
     order_id: Uuid,
-    created_by: Uuid,
+    created_by: Option<Uuid>,
     status: PaymentStatus,
     payment_method: PaymentMethods,
     external_reference: Option<String>,
@@ -146,7 +219,7 @@ pub struct NewPayment {
 impl NewPayment {
     pub(crate) fn commit(
         self,
-        current_user_id: Uuid,
+        current_user_id: Option<Uuid>,
         conn: &PgConnection,
     ) -> Result<Payment, DatabaseError> {
         let res: Payment = diesel::insert_into(payments::table)
@@ -159,7 +232,7 @@ impl NewPayment {
             "Payment created".to_string(),
             Tables::Payments,
             Some(res.id),
-            Some(current_user_id),
+            current_user_id,
             self.raw_data,
         )
         .commit(conn)?;

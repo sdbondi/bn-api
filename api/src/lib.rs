@@ -13,8 +13,11 @@ extern crate chrono;
 extern crate diesel;
 extern crate dotenv;
 extern crate futures;
+extern crate globee;
 extern crate itertools;
 extern crate jsonwebtoken as jwt;
+#[macro_use]
+extern crate lazy_static;
 extern crate lettre;
 extern crate lettre_email;
 #[macro_use]

@@ -331,6 +331,26 @@ impl<U> Optional<U> for Result<U, DatabaseError> {
     }
 }
 
+pub trait SingleResult<T> {
+    fn expect_single(self) -> Result<T, DatabaseError>;
+}
+
+impl<T> SingleResult<T> for Result<Vec<T>, DatabaseError> {
+    fn expect_single(self) -> Result<T, DatabaseError> {
+        match self {
+            Err(e) => Err(e),
+            Ok(mut t) => match t.len() {
+                0 => DatabaseError::no_results("No results"),
+                1 => Ok(t.remove(0)),
+                _ => Err(DatabaseError::new(
+                    ErrorCode::MultipleResultsWhenOneExpected,
+                    None,
+                )),
+            },
+        }
+    }
+}
+
 #[test]
 fn error_with_unknown_code() {
     let err = DatabaseError::new(ErrorCode::Unknown, None);

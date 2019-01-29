@@ -7,7 +7,7 @@ pub struct VenueBuilder<'a> {
     region_id: Option<Uuid>,
     organization_id: Option<Uuid>,
     is_private: bool,
-    timezone: Option<String>,
+    timezone: String,
     connection: &'a PgConnection,
 }
 
@@ -19,7 +19,7 @@ impl<'a> VenueBuilder<'a> {
             region_id: None,
             is_private: false,
             organization_id: None,
-            timezone: None,
+            timezone: "America/Los_Angeles".into(),
         }
     }
 
@@ -44,7 +44,7 @@ impl<'a> VenueBuilder<'a> {
     }
 
     pub fn with_timezone(mut self, timezone: String) -> Self {
-        self.timezone = Some(timezone);
+        self.timezone = timezone;
         self
     }
 

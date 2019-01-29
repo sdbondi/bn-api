@@ -43,10 +43,6 @@ pub struct Event {
     pub top_line_info: Option<String>,
     pub cancelled_at: Option<NaiveDateTime>,
     pub updated_at: NaiveDateTime,
-    #[column_name = "min_ticket_price_cache"]
-    pub min_ticket_price: Option<i64>,
-    #[column_name = "max_ticket_price_cache"]
-    pub max_ticket_price: Option<i64>,
     pub video_url: Option<String>,
     pub is_external: bool,
     pub external_url: Option<String>,
@@ -56,6 +52,7 @@ pub struct Event {
     pub settlement_amount_in_cents: Option<i64>,
     pub event_end: Option<NaiveDateTime>,
     pub sendgrid_list_id: Option<i64>,
+    pub event_type: EventTypes,
 }
 
 #[derive(Default, Insertable, Serialize, Deserialize, Validate, Clone)]
@@ -76,8 +73,6 @@ pub struct NewEvent {
     #[serde(default, deserialize_with = "deserialize_unless_blank")]
     pub additional_info: Option<String>,
     pub age_limit: Option<i32>,
-    pub min_ticket_price_cache: Option<i64>,
-    pub max_ticket_price_cache: Option<i64>,
     #[validate(length(
         max = "100",
         message = "Top line info must be at most 100 characters long"
@@ -95,13 +90,7 @@ pub struct NewEvent {
     #[serde(default, deserialize_with = "deserialize_unless_blank")]
     pub override_status: Option<EventOverrideStatus>,
     pub event_end: Option<NaiveDateTime>,
-}
-
-#[derive(AsChangeset)]
-#[table_name = "events"]
-pub struct EventMinMaxCache {
-    pub min_ticket_price_cache: Option<i64>,
-    pub max_ticket_price_cache: Option<i64>,
+    pub event_type: EventTypes,
 }
 
 impl NewEvent {
@@ -164,6 +153,7 @@ pub struct EventEditableAttributes {
     pub override_status: Option<Option<EventOverrideStatus>>,
     pub event_end: Option<NaiveDateTime>,
     pub sendgrid_list_id: Option<i64>,
+    pub event_type: Option<EventTypes>,
 }
 
 #[derive(Debug, Default, PartialEq, Serialize)]
@@ -202,48 +192,6 @@ impl Event {
             event_end,
             ..Default::default()
         }
-    }
-
-    pub fn update_cache(&self, conn: &PgConnection) -> Result<Event, DatabaseError> {
-        let ticket_types = TicketType::find_by_event_id(self.id, true, None, conn)?;
-
-        let mut has_prices = false;
-        let mut min_ticket_price_cache: i64 = std::i64::MAX;
-        let mut max_ticket_price_cache: i64 = 0;
-        for ticket_type in ticket_types {
-            for ticket_pricing in ticket_type.valid_ticket_pricing(true, conn)? {
-                has_prices = true;
-
-                if ticket_pricing.price_in_cents < min_ticket_price_cache {
-                    min_ticket_price_cache = ticket_pricing.price_in_cents.clone();
-                }
-                if ticket_pricing.price_in_cents > max_ticket_price_cache {
-                    max_ticket_price_cache = ticket_pricing.price_in_cents.clone();
-                }
-            }
-        }
-
-        DatabaseError::wrap(
-            ErrorCode::UpdateError,
-            "Could not update event",
-            diesel::update(self)
-                .set((
-                    EventMinMaxCache {
-                        min_ticket_price_cache: if has_prices {
-                            Some(min_ticket_price_cache)
-                        } else {
-                            Some(0)
-                        },
-                        max_ticket_price_cache: if has_prices {
-                            Some(max_ticket_price_cache)
-                        } else {
-                            Some(0)
-                        },
-                    },
-                    events::updated_at.eq(dsl::now),
-                ))
-                .get_result(conn),
-        )
     }
 
     pub fn update(
@@ -293,6 +241,73 @@ impl Event {
                 .set((event, events::updated_at.eq(dsl::now)))
                 .get_result(conn),
         )
+    }
+
+    pub fn ticket_pricing_range_by_events(
+        event_ids: Vec<Uuid>,
+        box_office_pricing: bool,
+        conn: &PgConnection,
+    ) -> Result<HashMap<Uuid, (i64, i64)>, DatabaseError> {
+        #[derive(Debug, Queryable, QueryableByName)]
+        struct R {
+            #[sql_type = "sql_types::Uuid"]
+            event_id: Uuid,
+            #[sql_type = "sql_types::BigInt"]
+            min_ticket_price: i64,
+            #[sql_type = "sql_types::BigInt"]
+            max_ticket_price: i64,
+        }
+
+        let query = r#"
+            SELECT
+                tt.event_id,
+                min(tp.price_in_cents) as min_ticket_price,
+                max(tp.price_in_cents) as max_ticket_price
+            FROM ticket_types tt
+            JOIN ticket_pricing tp on tp.id = (
+                select tp.id from ticket_pricing tp
+                where tp.ticket_type_id = tt.id
+                and tp.start_date < now()
+                and tp.end_date > now()
+                and tp.status in ('Default', 'Published')
+                and tp.is_box_office_only = case when $2 = false then false else tp.is_box_office_only end
+                order by tp.is_box_office_only desc, tp.status desc -- Box Office Pricing, Published, Default
+                limit 1
+            )
+            where tt.event_id = ANY($1)
+            GROUP BY tt.event_id;
+        "#;
+
+        let results: Vec<R> = diesel::sql_query(query)
+            .bind::<diesel::pg::types::sql_types::Array<diesel::sql_types::Uuid>, _>(event_ids)
+            .bind::<diesel::sql_types::Bool, _>(box_office_pricing)
+            .get_results(conn)
+            .to_db_error(
+                ErrorCode::QueryError,
+                "Could not load ticket pricing for events",
+            )?;
+
+        let mut result = HashMap::new();
+        for r in results {
+            result.insert(r.event_id, (r.min_ticket_price, r.max_ticket_price));
+        }
+
+        Ok(result)
+    }
+
+    pub fn current_ticket_pricing_range(
+        &self,
+        box_office_pricing: bool,
+        conn: &PgConnection,
+    ) -> Result<(Option<i64>, Option<i64>), DatabaseError> {
+        if let Some((min_ticket_price, max_ticket_price)) =
+            Event::ticket_pricing_range_by_events(vec![self.id], box_office_pricing, conn)?
+                .get(&self.id)
+        {
+            Ok((Some(*min_ticket_price), Some(*max_ticket_price)))
+        } else {
+            Ok((None, None))
+        }
     }
 
     pub fn unpublish(&self, conn: &PgConnection) -> Result<Event, DatabaseError> {
@@ -417,14 +432,7 @@ impl Event {
         utc_datetime: &Option<NaiveDateTime>,
         venue: &Option<Venue>,
     ) -> Option<chrono::DateTime<Tz>> {
-        if utc_datetime.is_none() || venue.is_none() {
-            return None;
-        }
-
-        if let Some(v) = &venue {
-            return Event::localized_time(utc_datetime, &v.timezone);
-        }
-        None
+        Event::localized_time(utc_datetime, &venue.clone().map(|v| v.timezone))
     }
 
     pub fn localized_time(
@@ -597,6 +605,8 @@ impl Event {
             external_url: Option<String>,
             #[sql_type = "N<sql_types::Text>"]
             override_status: Option<EventOverrideStatus>,
+            #[sql_type = "sql_types::Text"]
+            event_type: EventTypes,
         }
 
         let query_events = include_str!("../queries/find_all_events_for_organization.sql");
@@ -630,79 +640,77 @@ impl Event {
                 "Could not load events' ticket types for organization",
             )?;
 
-        let results: Vec<EventSummaryResult> = events
-            .into_iter()
-            .map(|r| {
-                let venue = if let (Some(venue_id), Some(venue_name)) =
-                    (r.venue_id.as_ref(), r.venue_name.as_ref())
-                {
-                    Some(VenueInfo {
-                        id: *venue_id,
-                        name: venue_name.to_string(),
-                        timezone: r.venue_timezone,
-                    })
-                } else {
-                    None
-                };
+        let mut results: Vec<EventSummaryResult> = Vec::new();
+        for r in events.into_iter() {
+            let venue = if let (Some(venue_id), Some(venue_name), Some(venue_timezone)) = (
+                r.venue_id.as_ref(),
+                r.venue_name.as_ref(),
+                r.venue_timezone.as_ref(),
+            ) {
+                Some(VenueInfo {
+                    id: *venue_id,
+                    name: venue_name.to_string(),
+                    timezone: venue_timezone.to_string(),
+                })
+            } else {
+                None
+            };
 
-                let event_id = r.id;
+            let event_id = r.id;
+            let timezone = &venue.clone().map(|v| v.timezone);
+            let localized_times: EventLocalizedTimeStrings = EventLocalizedTimeStrings {
+                event_start: Event::localized_time(&r.event_start, timezone)
+                    .map(|s| s.to_rfc2822()),
+                event_end: Event::localized_time(&r.event_end, timezone).map(|s| s.to_rfc2822()),
+                door_time: Event::localized_time(&r.door_time, timezone).map(|s| s.to_rfc2822()),
+            };
 
-                let timezone = &venue.clone().map(|v| v.timezone.map(|s| s)).unwrap_or(None);
-                let localized_times: EventLocalizedTimeStrings = EventLocalizedTimeStrings {
-                    event_start: Event::localized_time(&r.event_start, timezone)
-                        .map(|s| s.to_rfc2822()),
-                    event_end: Event::localized_time(&r.event_end, timezone)
-                        .map(|s| s.to_rfc2822()),
-                    door_time: Event::localized_time(&r.door_time, timezone)
-                        .map(|s| s.to_rfc2822()),
-                };
+            let mut result = EventSummaryResult {
+                id: r.id,
+                name: r.name,
+                organization_id: r.organization_id,
+                venue,
+                created_at: r.created_at,
+                event_start: r.event_start,
+                door_time: r.door_time,
+                status: r.status,
+                promo_image_url: r.promo_image_url,
+                additional_info: r.additional_info,
+                top_line_info: r.top_line_info,
+                age_limit: r.age_limit.map(|i| i as u32),
+                cancelled_at: r.cancelled_at,
+                max_ticket_price: r.max_price.map(|i| i as u32),
+                min_ticket_price: r.min_price.map(|i| i as u32),
+                publish_date: r.publish_date,
+                on_sale: r.on_sale,
+                total_tickets: 0,
+                sold_unreserved: 0,
+                sold_held: 0,
+                tickets_open: 0,
+                tickets_held: 0,
+                sales_total_in_cents: r.sales_total_in_cents.unwrap_or(0) as u32,
+                ticket_types: vec![],
+                is_external: r.is_external,
+                external_url: r.external_url,
+                override_status: r.override_status,
+                localized_times,
+                event_type: r.event_type,
+            };
 
-                let mut result = EventSummaryResult {
-                    id: r.id,
-                    name: r.name,
-                    organization_id: r.organization_id,
-                    venue,
-                    created_at: r.created_at,
-                    event_start: r.event_start,
-                    door_time: r.door_time,
-                    status: r.status,
-                    promo_image_url: r.promo_image_url,
-                    additional_info: r.additional_info,
-                    top_line_info: r.top_line_info,
-                    age_limit: r.age_limit.map(|i| i as u32),
-                    cancelled_at: r.cancelled_at,
-                    max_ticket_price: r.max_price.map(|i| i as u32),
-                    min_ticket_price: r.min_price.map(|i| i as u32),
-                    publish_date: r.publish_date,
-                    on_sale: r.on_sale,
-                    total_tickets: 0,
-                    sold_unreserved: 0,
-                    sold_held: 0,
-                    tickets_open: 0,
-                    tickets_held: 0,
-                    sales_total_in_cents: r.sales_total_in_cents.unwrap_or(0) as u32,
-                    ticket_types: vec![],
-                    is_external: r.is_external,
-                    external_url: r.external_url,
-                    override_status: r.override_status,
-                    localized_times,
-                };
+            for ticket_type in ticket_types.iter().filter(|tt| tt.event_id == event_id) {
+                let mut ticket_type = ticket_type.clone();
+                ticket_type.sales_total_in_cents =
+                    Some(ticket_type.sales_total_in_cents.unwrap_or(0));
+                result.total_tickets += ticket_type.total as u32;
+                result.sold_unreserved += ticket_type.sold_unreserved as u32;
+                result.sold_held += ticket_type.sold_held as u32;
+                result.tickets_open += ticket_type.open as u32;
+                result.tickets_held += ticket_type.held as u32;
+                result.ticket_types.push(ticket_type);
+            }
 
-                for ticket_type in ticket_types.iter().filter(|tt| tt.event_id == event_id) {
-                    let mut ticket_type = ticket_type.clone();
-                    ticket_type.sales_total_in_cents =
-                        Some(ticket_type.sales_total_in_cents.unwrap_or(0));
-                    result.total_tickets += ticket_type.total as u32;
-                    result.sold_unreserved += ticket_type.sold_unreserved as u32;
-                    result.sold_held += ticket_type.sold_held as u32;
-                    result.tickets_open += ticket_type.open as u32;
-                    result.tickets_held += ticket_type.held as u32;
-                    result.ticket_types.push(ticket_type);
-                }
-
-                result
-            })
-            .collect();
+            results.push(result);
+        }
 
         Ok(results)
     }
@@ -862,9 +870,13 @@ impl Event {
             .filter(
                 events::name
                     .ilike(query_like.clone())
-                    .or(venues::id
-                        .is_not_null()
-                        .and(venues::name.ilike(query_like.clone())))
+                    .or(sql("(")
+                        .bind(
+                            venues::id
+                                .is_not_null()
+                                .and(venues::name.ilike(query_like.clone())),
+                        )
+                        .sql(")"))
                     .or(artists::id.is_not_null()),
             )
             .filter(events::event_start.ge(start_time.unwrap()))
@@ -879,15 +891,26 @@ impl Event {
             Some(user) => {
                 // Admin results include all drafts across organizations
                 if !user.get_global_scopes().contains(&Scopes::OrgAdmin) {
-                    query = query.filter(
-                        events::status
-                            .ne(EventStatus::Draft)
-                            .or(organization_users::user_id.eq(user.id)),
-                    );
+                    query = query
+                        .filter(
+                            events::status
+                                .ne(EventStatus::Draft)
+                                .or(organization_users::user_id.eq(user.id)),
+                        )
+                        .filter(
+                            events::publish_date
+                                .le(dsl::now.nullable())
+                                .or(events::status.ne(EventStatus::Published))
+                                .or(organization_users::user_id.eq(user.id)),
+                        );
                 }
             }
             None => {
-                query = query.filter(events::status.ne(EventStatus::Draft));
+                query = query.filter(events::status.ne(EventStatus::Draft)).filter(
+                    events::publish_date
+                        .le(dsl::now.nullable())
+                        .or(events::status.ne(EventStatus::Published)),
+                );
             }
         }
 
@@ -1099,6 +1122,8 @@ impl Event {
         let artists = self.artists(conn)?;
 
         let localized_times = self.get_all_localized_time_strings(&venue);
+        let (min_ticket_price, max_ticket_price) =
+            self.current_ticket_pricing_range(false, conn)?;
         Ok(DisplayEvent {
             id: self.id,
             name: self.name,
@@ -1109,13 +1134,14 @@ impl Event {
             top_line_info: self.top_line_info,
             artists,
             venue: display_venue,
-            max_ticket_price: self.max_ticket_price,
-            min_ticket_price: self.min_ticket_price,
+            max_ticket_price: max_ticket_price,
+            min_ticket_price: min_ticket_price,
             video_url: self.video_url,
             is_external: self.is_external,
             external_url: self.external_url,
             override_status: self.override_status,
             localized_times,
+            event_type: self.event_type,
         })
     }
 }
@@ -1138,6 +1164,7 @@ pub struct DisplayEvent {
     pub external_url: Option<String>,
     pub override_status: Option<EventOverrideStatus>,
     pub localized_times: EventLocalizedTimeStrings,
+    pub event_type: EventTypes,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -1170,6 +1197,7 @@ pub struct EventSummaryResult {
     pub external_url: Option<String>,
     pub override_status: Option<EventOverrideStatus>,
     pub localized_times: EventLocalizedTimeStrings,
+    pub event_type: EventTypes,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, QueryableByName)]

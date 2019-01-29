@@ -6,7 +6,7 @@ SELECT a.ticket_type_id                                                         
        e.organization_id                                                                                                                     AS organization_id,
 
        -- Total Ticket Count
-       CAST(COALESCE(COUNT(ti.id), 0) AS BIGINT)                                                                                             AS allocation_count,
+       CAST(COALESCE(COUNT(ti.id)  FILTER (WHERE ti.status != 'Nullified'), 0) AS BIGINT)                                                                                             AS allocation_count,
        CAST(COALESCE(COUNT(ti.id) FILTER (WHERE ti.status = 'Available'), 0) AS BIGINT)                                                      AS unpurchased_count,
        CAST(COALESCE(COUNT(ti.id) FILTER (WHERE ti.hold_id IS NULL AND ti.status = 'Available'), 0) AS BIGINT)                               AS available_count,
 

@@ -5,7 +5,7 @@ SET
     redeem_key = NULL,
     transfer_key = NULL,
     transfer_expiry_date = NULL,
-    status = 'Available',
+    status = $5,
     updated_at = now()
 WHERE id IN (SELECT t.id
              FROM ticket_instances AS t

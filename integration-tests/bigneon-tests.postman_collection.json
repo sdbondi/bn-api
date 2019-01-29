@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8d00b382-338f-4247-b8d8-bee7bc2cd44c",
+		"_postman_id": "72e5f006-8bc8-412d-9372-62d8074fb0f9",
 		"name": "bigneon-tests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -2968,7 +2968,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\"name\":\"Test venue_{{$timestamp}}\",\n\t\"address\": \"1 street street\",\n\t\"city\": \"City\",\n\t\"country\": \"Country\",\n\t\"phone\": \"5555555555\",\n\t\"google_place_id\": null,\n\t\"state\": \"California\",\n\t\"postal_code\": \"23233\"\n\t\n}"
+									"raw": "{\n\t\"name\":\"Test venue_{{$timestamp}}\",\n\t\"address\": \"1 street street\",\n\t\"city\": \"City\",\n\t\"country\": \"Country\",\n\t\"phone\": \"5555555555\",\n\t\"google_place_id\": null,\n\t\"state\": \"California\",\n\t\"postal_code\": \"23233\",\n\t\"timezone\": \"America/Los_Angeles\"\n}"
 								},
 								"url": {
 									"raw": "http://{{server}}/venues",
@@ -3026,7 +3026,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\"name\":\"Test venue_{{$timestamp}}\",\n\t\"address\": \"1 street street\",\n\t\"city\": \"City\",\n\t\"country\": \"Country\",\n\t\"organization_id\": \"{{last_org_id}}\",\n\t\"phone\": \"5555555555\",\n\t\"google_place_id\": null,\n\t\"state\": \"California\",\n\t\"postal_code\": \"23233\"\n\t\n}"
+									"raw": "{\n\t\"name\":\"Test venue_{{$timestamp}}\",\n\t\"address\": \"1 street street\",\n\t\"city\": \"City\",\n\t\"country\": \"Country\",\n\t\"organization_id\": \"{{last_org_id}}\",\n\t\"phone\": \"5555555555\",\n\t\"google_place_id\": null,\n\t\"state\": \"California\",\n\t\"postal_code\": \"23233\",\n\t\"timezone\": \"America/Los_Angeles\"\n}"
 								},
 								"url": {
 									"raw": "http://{{server}}/venues",
@@ -3078,7 +3078,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\"name\":\"Test venue_{{$timestamp}}\",\n\t\"address\": \"1 street street\",\n\t\"city\": \"City\",\n\t\"country\": \"Country\",\n\t\"organization_id\": \"{{last_org_id}}\",\n\t\"phone\": \"5555555555\",\n\t\"google_place_id\": null,\n\t\"state\": \"California\",\n\t\"postal_code\": \"23233\"\n\t\n}"
+									"raw": "{\n\t\"name\":\"Test venue_{{$timestamp}}\",\n\t\"address\": \"1 street street\",\n\t\"city\": \"City\",\n\t\"country\": \"Country\",\n\t\"organization_id\": \"{{last_org_id}}\",\n\t\"phone\": \"5555555555\",\n\t\"google_place_id\": null,\n\t\"state\": \"California\",\n\t\"postal_code\": \"23233\",\n\t\"timezone\": \"America/Los_Angeles\"\n}"
 								},
 								"url": {
 									"raw": "http://{{server}}/venues",
@@ -3779,7 +3779,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"name\": \"It's my party\",\n    \"organization_id\": \"{{last_org_id}}\",\n    \"venue_id\": \"{{last_venue_id}}\",\n    \"event_start\": \"2059-11-13T12:00:00\",\n    \"is_external\": true,\n    \"external_url\": \"https://www.eventbrite.com/e/why-cloud-why-xero-why-now-johannesburg-limited-seats-tickets-52952818305?aff=ebdshpmoodssection\"\n}"
+									"raw": "{\n    \"name\": \"It's my party\",\n    \"organization_id\": \"{{last_org_id}}\",\n    \"venue_id\": \"{{last_venue_id}}\",\n    \"event_start\": \"2059-11-13T12:00:00\",\n    \"is_external\": true,\n    \"external_url\": \"https://www.eventbrite.com/e/why-cloud-why-xero-why-now-johannesburg-limited-seats-tickets-52952818305?aff=ebdshpmoodssection\",\n    \"event_type\": \"Music\"\n}"
 								},
 								"url": {
 									"raw": "http://{{server}}/events",
@@ -3830,7 +3830,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"name\": \"It's my party\",\n    \"organization_id\": \"{{last_org_id}}\",\n    \"venue_id\": \"{{last_venue_id}}\",\n    \"event_start\": \"2059-11-13T12:00:00\",\n    \"is_external\": true,\n    \"external_url\": \"https://www.eventbrite.com/e/why-cloud-why-xero-why-now-johannesburg-limited-seats-tickets-52952818305?aff=ebdshpmoodssection\"\n}"
+									"raw": "{\n    \"name\": \"It's my party\",\n    \"organization_id\": \"{{last_org_id}}\",\n    \"venue_id\": \"{{last_venue_id}}\",\n    \"event_start\": \"2059-11-13T12:00:00\",\n    \"is_external\": true,\n    \"external_url\": \"https://www.eventbrite.com/e/why-cloud-why-xero-why-now-johannesburg-limited-seats-tickets-52952818305?aff=ebdshpmoodssection\",\n    \"event_type\": \"Music\"\n}"
 								},
 								"url": {
 									"raw": "http://{{server}}/events",
@@ -4022,7 +4022,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"name\": \"It's my party\",\n    \"organization_id\": \"{{last_org_id}}\",\n    \"venue_id\": \"{{last_venue_id}}\",\n    \"event_start\": \"2020-11-13T12:00:00\",\n    \"event_end\": \"2020-11-14T12:00:00\"\n}"
+									"raw": "{\n    \"name\": \"It's my party\",\n    \"organization_id\": \"{{last_org_id}}\",\n    \"venue_id\": \"{{last_venue_id}}\",\n    \"event_start\": \"2020-11-13T12:00:00\",\n    \"event_end\": \"2020-11-14T12:00:00\",\n    \"event_type\": \"Music\"\n}"
 								},
 								"url": {
 									"raw": "http://{{server}}/events",
@@ -4324,6 +4324,57 @@
 							"response": []
 						},
 						{
+							"name": "OrgMember  - Create Event Invalid Event Type - 5XX",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "91fe0a26-e6a0-437a-a7e7-834185ecf193",
+										"exec": [
+											"pm.test(\"should be 400\", function() {",
+											"    pm.response.to.have.status(400);",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{org_member_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"It's my party - To Un-Publish\",\n    \"organization_id\": \"{{last_org_id}}\",\n    \"venue_id\": \"{{last_venue_id}}\",\n    \"event_start\": \"2020-11-13T12:00:00\",\n    \"publish_date\": \"2019-01-01T00:00:00\",\n    \"promo_image_url\": \"http://localhost/noimg.png\",\n    \"event_type\": \"InvalidEventType\"\n}"
+								},
+								"url": {
+									"raw": "http://{{server}}/events",
+									"protocol": "http",
+									"host": [
+										"{{server}}"
+									],
+									"path": [
+										"events"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "OrgMember  - Create Event To Un-Publish",
 							"event": [
 								{
@@ -4361,7 +4412,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"name\": \"It's my party - To Un-Publish\",\n    \"organization_id\": \"{{last_org_id}}\",\n    \"venue_id\": \"{{last_venue_id}}\",\n    \"event_start\": \"2020-11-13T12:00:00\",\n    \"publish_date\": \"2019-01-01T00:00:00\",\n    \"promo_image_url\": \"http://localhost/noimg.png\"\n}"
+									"raw": "{\n    \"name\": \"It's my party - To Un-Publish\",\n    \"organization_id\": \"{{last_org_id}}\",\n    \"venue_id\": \"{{last_venue_id}}\",\n    \"event_start\": \"2020-11-13T12:00:00\",\n    \"publish_date\": \"2019-01-01T00:00:00\",\n    \"promo_image_url\": \"http://localhost/noimg.png\",\n    \"event_type\": \"Conference\"\n}"
 								},
 								"url": {
 									"raw": "http://{{server}}/events",
@@ -4753,7 +4804,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"name\": \"It's my party\",\n    \"organization_id\": \"{{last_org_id}}\",\n    \"venue_id\": \"{{last_venue_id}}\",\n    \"event_start\": \"2018-11-13T12:00:00\"\n,\n    \"event_end\": \"2018-11-14T12:00:00\"\n}"
+									"raw": "{\n    \"name\": \"It's my party\",\n    \"organization_id\": \"{{last_org_id}}\",\n    \"venue_id\": \"{{last_venue_id}}\",\n    \"event_start\": \"2018-11-13T12:00:00\",\n    \"event_end\": \"2018-11-14T12:00:00\",\n    \"event_type\": \"Music\"\n}"
 								},
 								"url": {
 									"raw": "http://{{server}}/events",
@@ -7694,7 +7745,7 @@
 			]
 		},
 		{
-			"name": "Buy Tickets",
+			"name": "Buy Tickets - Setup",
 			"item": [
 				{
 					"name": "Guest - search for event - Past",
@@ -8989,6 +9040,236 @@
 						}
 					},
 					"response": []
+				}
+			]
+		},
+		{
+			"name": "Buy Tickets - Stripe",
+			"item": [
+				{
+					"name": "User - clear cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "aadca825-5dbc-4d09-8fb8-6b9d7cbe9350",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.test(\"tickets should no longer be present\", function(){",
+									"    pm.expect(json.items.length).to.equal(0);",
+									"});",
+									"",
+									"pm.test(\"total should be correct\", function() {",
+									"    pm.expect(json.total_in_cents).to.equal(0);",
+									"})",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/cart",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - replace cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "aadca825-5dbc-4d09-8fb8-6b9d7cbe9350",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"last_cart_id\", json.cart_id);",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
+									"    pm.expect(json.items[0].quantity).to.equal(20);",
+									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
+									"    ",
+									"    pm.expect(json.items[0].ticket_type_id).to.equal(pm.environment.get(\"ga_ticket_type_id\"));",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[1].item_type).to.equal(\"PerUnitFees\");",
+									"     pm.expect(json.items[1].quantity).to.equal(20);",
+									"    pm.expect(json.items[1].unit_price_in_cents).to.equal(10);",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[2].item_type).to.equal(\"EventFees\");",
+									"    ",
+									"    pm.expect(json.items[2].unit_price_in_cents).to.equal(100);",
+									"});",
+									"",
+									"pm.test(\"total should be correct\", function() {",
+									"    pm.expect(json.total_in_cents).to.equal(60300);",
+									"})",
+									"",
+									"pm.test(\"should report 30 remaining tickets available\", function() {",
+									"    pm.expect(json.limited_tickets_remaining[0].tickets_remaining).to.equal(30);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\"items\": [{\n\"ticket_type_id\": \"{{ga_ticket_type_id}}\",\n\"quantity\":20\n}]}"
+						},
+						"url": {
+							"raw": "http://{{server}}/cart",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - view cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "069abb66-557c-4d17-855e-bfc510703605",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
+									"    pm.expect(json.items[0].quantity).to.equal(20);",
+									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
+									"",
+									"    ",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[1].item_type).to.equal(\"PerUnitFees\");",
+									"    pm.expect(json.items[0].quantity).to.equal(20);",
+									"    pm.expect(json.items[1].unit_price_in_cents).to.equal(10);",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[2].item_type).to.equal(\"EventFees\");",
+									"    ",
+									"    pm.expect(json.items[2].unit_price_in_cents).to.equal(100);",
+									"});",
+									"",
+									"pm.test(\"total should be correct\", function() {",
+									"    pm.expect(json.total_in_cents).to.equal(60300);",
+									"})",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/cart",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
 				},
 				{
 					"name": "Do STRIPE form post",
@@ -9179,7 +9460,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"amount\": 12140,\n\t\"method\": {\n\t\t\"type\" : \"Card\",\n\t\t\"provider\": \"stripe\",\n\t\t\"token\" : \"{{last_credit_card_token}}\",\n\t\t\"save_payment_method\": false,\n\t\t\"set_default\": true\n\t}\n}"
+							"raw": "{\n\t\"amount\": 60300,\n\t\"method\": {\n\t\t\"type\" : \"Card\",\n\t\t\"provider\": \"stripe\",\n\t\t\"token\" : \"{{last_credit_card_token}}\",\n\t\t\"save_payment_method\": false,\n\t\t\"set_default\": true\n\t}\n}"
 						},
 						"url": {
 							"raw": "http://{{server}}/cart/checkout",
@@ -9268,7 +9549,7 @@
 									"let json = JSON.parse(responseBody);",
 									"",
 									"pm.test(\"1 ticket should be present\", function(){",
-									"    pm.expect(json.data.length).to.equal(1);",
+									"    pm.expect(json.data.length).to.equal(20);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -9310,8 +9591,475 @@
 			]
 		},
 		{
+			"name": "Buy Tickets - Globee",
+			"item": [
+				{
+					"name": "Guest - login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d3677e01-0ed8-4cd2-9673-0e6dacae9a53",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"user_token\", json.access_token);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"email\":\"{{last_email}}\", \"password\":\"itsasecret\"\n}"
+						},
+						"url": {
+							"raw": "http://{{server}}/auth/token",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"auth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - clear cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "aadca825-5dbc-4d09-8fb8-6b9d7cbe9350",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.test(\"tickets should no longer be present\", function(){",
+									"    pm.expect(json.items.length).to.equal(0);",
+									"});",
+									"",
+									"pm.test(\"total should be correct\", function() {",
+									"    pm.expect(json.total_in_cents).to.equal(0);",
+									"})",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/cart",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - replace cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "aadca825-5dbc-4d09-8fb8-6b9d7cbe9350",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"last_cart_id\", json.id);",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
+									"    pm.expect(json.items[0].quantity).to.equal(20);",
+									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
+									"    ",
+									"    pm.expect(json.items[0].ticket_type_id).to.equal(pm.environment.get(\"ga_ticket_type_id\"));",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[1].item_type).to.equal(\"PerUnitFees\");",
+									"     pm.expect(json.items[1].quantity).to.equal(20);",
+									"    pm.expect(json.items[1].unit_price_in_cents).to.equal(10);",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[2].item_type).to.equal(\"EventFees\");",
+									"    ",
+									"    pm.expect(json.items[2].unit_price_in_cents).to.equal(100);",
+									"});",
+									"",
+									"pm.test(\"total should be correct\", function() {",
+									"    pm.expect(json.total_in_cents).to.equal(60300);",
+									"})",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\"items\": [{\n\"ticket_type_id\": \"{{ga_ticket_type_id}}\",\n\"quantity\":20\n}]}"
+						},
+						"url": {
+							"raw": "http://{{server}}/cart",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - view cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "069abb66-557c-4d17-855e-bfc510703605",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
+									"    pm.expect(json.items[0].quantity).to.equal(20);",
+									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
+									"",
+									"    ",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[1].item_type).to.equal(\"PerUnitFees\");",
+									"    pm.expect(json.items[0].quantity).to.equal(20);",
+									"    pm.expect(json.items[1].unit_price_in_cents).to.equal(10);",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[2].item_type).to.equal(\"EventFees\");",
+									"    ",
+									"    pm.expect(json.items[2].unit_price_in_cents).to.equal(100);",
+									"});",
+									"",
+									"pm.test(\"total should be correct\", function() {",
+									"    pm.expect(json.total_in_cents).to.equal(60300);",
+									"})",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/cart",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - checkout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ecf814e4-aad0-4e95-9a7c-7e0f6ff4f53b",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"amount\": 60300,\n\t\"method\": {\n\t\t\"type\" : \"Provider\",\n\t\t\"provider\": \"globee\"\n\t}\n}"
+						},
+						"url": {
+							"raw": "http://{{server}}/cart/checkout",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"cart",
+								"checkout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Globee - IPN",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"ZbWyAR2VwO4a3BYN063nJ7\",\n    \"status\": \"paid\",\n    \"total\": \"603.00\",\n    \"adjusted_total\": \"603.00\",\n    \"currency\": \"USD\",\n    \"custom_payment_id\": \"{{last_cart_id}}\",\n    \"custom_store_reference\": null,\n    \"callback_data\": null,\n    \"customer\": {\n        \"name\": null,\n        \"email\": \"mike1547729521787@tari.com\"\n    },\n    \"payment_details\": {\n        \"currency\": \"BTC\",\n        \"received_amount\": \"603.00\",\n        \"received_difference\": \"0\"\n    },\n    \"redirect_url\": \"https://test.globee.com/payment-request/ZbWyAR2VwO4a3BYN063nJ7\",\n    \"success_url\": null,\n    \"cancel_url\": null,\n    \"ipn_url\": \"https://f7dac315.ngrok.io/ipns/globee\",\n    \"notification_email\": null,\n    \"confirmation_speed\": \"medium\",\n    \"expires_at\": \"2019-01-17 13:07:13\",\n    \"created_at\": \"2019-01-17 12:52:13\"\n}"
+						},
+						"url": {
+							"raw": "http://{{server}}/ipns/globee",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"ipns",
+								"globee"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Buy Tickets Saved Method",
 			"item": [
+				{
+					"name": "Guest - register and login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3e16f515-b7c5-4312-b241-2d72c62323f0",
+								"exec": [
+									"pm.test(\"should be 201\", function() {",
+									"    pm.response.to.have.status(201);",
+									"})",
+									"pm.test(\"should have token response\", function() {",
+									"\tlet json = JSON.parse(responseBody);",
+									"\tpm.expect(json).to.have.property(\"access_token\");",
+									"\tpm.expect(json).to.have.property(\"refresh_token\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9c70409f-473d-4a08-94e7-b32f606b85a7",
+								"exec": [
+									"",
+									"pm.environment.set(\"last_email\", \"mike\" + (new Date()).getTime() + \"@tari.com\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"first_name\":\"Mike\",\n\t\"last_name\":\"Surname\",\n\t\"email\":\"{{last_email}}\",\n\t\"phone\":\"555\",\n\t\"password\": \"itsasecret\"\n}"
+						},
+						"url": {
+							"raw": "http://{{server}}/users",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Guest - login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d3677e01-0ed8-4cd2-9673-0e6dacae9a53",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"user_token\", json.access_token);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"email\":\"{{last_email}}\", \"password\":\"itsasecret\"\n}"
+						},
+						"url": {
+							"raw": "http://{{server}}/auth/token",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"auth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "User - add to cart new order",
 					"event": [
@@ -9424,9 +10172,6 @@
 									"    pm.expect(json.total_in_cents).to.equal(6120);",
 									"})",
 									"",
-									"pm.test(\"should report 47 remaining tickets available\", function() {",
-									"    pm.expect(json.limited_tickets_remaining[0].tickets_remaining).to.equal(47);",
-									"});",
 									""
 								],
 								"type": "text/javascript"
@@ -9804,7 +10549,7 @@
 									"let json = JSON.parse(responseBody);",
 									"",
 									"pm.test(\"tickets should be present\", function(){",
-									"    pm.expect(json.data.length).to.equal(3);",
+									"    pm.expect(json.data.length).to.equal(2);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -10100,7 +10845,7 @@
 									"let json = JSON.parse(responseBody);",
 									"",
 									"pm.test(\"tickets should be present\", function(){",
-									"    pm.expect(json.data.length).to.equal(5);",
+									"    pm.expect(json.data.length).to.equal(4);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -10397,7 +11142,7 @@
 									"",
 									"pm.test(\"tickets should be present\", function(){",
 									"    let length = json.data.length;",
-									"    pm.expect(length).to.equal(7);",
+									"    pm.expect(length).to.equal(6);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -10439,941 +11184,334 @@
 			]
 		},
 		{
-			"name": "Refund Tickets",
-			"item": [
-				{
-					"name": "User - add to cart new order",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "aadca825-5dbc-4d09-8fb8-6b9d7cbe9350",
-								"exec": [
-									"pm.test(\"should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"})",
-									"",
-									"let json = JSON.parse(responseBody);",
-									"",
-									"pm.environment.set(\"last_cart_id\", json.id);",
-									"",
-									"pm.test(\"tickets should be present\", function(){",
-									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
-									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
-									"});",
-									"",
-									"pm.test(\"fees should be present\", function(){",
-									"    pm.expect(json.items[1].item_type).to.equal(\"PerUnitFees\");",
-									"    pm.expect(json.items[0].quantity).to.equal(2);",
-									"    pm.expect(json.items[1].unit_price_in_cents).to.equal(10);",
-									"});",
-									"",
-									"pm.test(\"fees should be present\", function(){",
-									"    pm.expect(json.items[2].item_type).to.equal(\"EventFees\");",
-									"    ",
-									"    pm.expect(json.items[2].unit_price_in_cents).to.equal(100);",
-									"});",
-									"",
-									"pm.test(\"total should be correct\", function() {",
-									"    pm.expect(json.total_in_cents).to.equal(6120);",
-									"})",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{user_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\"items\": [{\n\"ticket_type_id\": \"{{last_ticket_type_id}}\",\n\"quantity\":2\n}]}"
-						},
-						"url": {
-							"raw": "http://{{server}}/cart",
-							"protocol": "http",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"cart"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "User - view cart new order",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "5631a4d6-d4ae-4d22-8919-d51cdf511d27",
-								"exec": [
-									"pm.test(\"should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"})",
-									"",
-									"let json = JSON.parse(responseBody);",
-									"",
-									"pm.test(\"tickets should be present\", function(){",
-									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
-									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
-									"});",
-									"",
-									"pm.test(\"fees should be present\", function(){",
-									"    pm.expect(json.items[1].item_type).to.equal(\"PerUnitFees\");",
-									"    pm.expect(json.items[0].quantity).to.equal(2);",
-									"    pm.expect(json.items[1].unit_price_in_cents).to.equal(10);",
-									"});",
-									"",
-									"pm.test(\"fees should be present\", function(){",
-									"    pm.expect(json.items[2].item_type).to.equal(\"EventFees\");",
-									"    ",
-									"    pm.expect(json.items[2].unit_price_in_cents).to.equal(100);",
-									"});",
-									"",
-									"pm.test(\"total should be correct\", function() {",
-									"    pm.expect(json.total_in_cents).to.equal(6120);",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{user_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "http://{{server}}/cart",
-							"protocol": "http",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"cart"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Do STRIPE form post new order",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "bf1ae8f4-683d-4b15-8362-773405313887",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"})",
-									"",
-									"let json = JSON.parse(responseBody);",
-									"pm.environment.set(\"last_credit_card_token\", json.id);"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "origin",
-								"value": "https://checkout.stripe.com"
-							},
-							{
-								"key": "accept-encoding",
-								"value": "gzip, deflate, br"
-							},
-							{
-								"key": "accept-language",
-								"value": "en-GB"
-							},
-							{
-								"key": "user-agent",
-								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36"
-							},
-							{
-								"key": "content-type",
-								"value": "application/x-www-form-urlencoded"
-							},
-							{
-								"key": "accept",
-								"value": "application/json"
-							},
-							{
-								"key": "referer",
-								"value": "https://checkout.stripe.com/m/v3/index-f925604dd4aa6c77a2d874f2507bf975.html?distinct_id=84c5f1db-c2d7-f3f1-1c85-7eca6a669c36"
-							},
-							{
-								"key": "authority",
-								"value": "api.stripe.com"
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "email",
-									"value": "test%40test.com",
-									"type": "text"
-								},
-								{
-									"key": "validation_type",
-									"value": "card",
-									"type": "text"
-								},
-								{
-									"key": "payment_user_agent",
-									"value": "Stripe+Checkout+v3+checkout-manhattan+(stripe.js%2Fe64eb2a)",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "referrer",
-									"value": "https%3A%2F%2Fstripe.com%2Fdocs%2Fquickstart",
-									"type": "text"
-								},
-								{
-									"key": "card[number]",
-									"value": "4242424242424242",
-									"type": "text"
-								},
-								{
-									"key": "card[exp_month]",
-									"value": "12",
-									"type": "text"
-								},
-								{
-									"key": "card[exp_year]",
-									"value": "19",
-									"type": "text"
-								},
-								{
-									"key": "card[cvc]",
-									"value": "001",
-									"type": "text"
-								},
-								{
-									"key": "card[name]",
-									"value": "test%40test.com",
-									"type": "text"
-								},
-								{
-									"key": "time_on_page",
-									"value": "51111",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "guid",
-									"value": "3018e293-d38a-400a-a476-c10c6c52bc25",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "muid",
-									"value": "f43260bf-02c5-4e56-a691-8b1083a9f910",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "sid",
-									"value": "157d6b7b-b4bd-4628-a78c-df66c576f2e5",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "key",
-									"value": "pk_test_nJGSQo5LQ7i8h8OkEjYeCqVc",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "https://api.stripe.com/v1/tokens",
-							"protocol": "https",
-							"host": [
-								"api",
-								"stripe",
-								"com"
-							],
-							"path": [
-								"v1",
-								"tokens"
-							]
-						},
-						"description": "Generated from a curl request: \ncurl 'https://api.stripe.com/v1/tokens' -H 'origin: https://checkout.stripe.com' -H 'accept-encoding: gzip, deflate, br' -H 'accept-language: en-GB' -H 'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36' -H 'content-type: application/x-www-form-urlencoded' -H 'accept: application/json' -H 'referer: https://checkout.stripe.com/m/v3/index-f925604dd4aa6c77a2d874f2507bf975.html?distinct_id=84c5f1db-c2d7-f3f1-1c85-7eca6a669c36' -H 'authority: api.stripe.com' --data 'email=test%40test.com&validation_type=card&payment_user_agent=Stripe+Checkout+v3+checkout-manhattan+(stripe.js%2Fe64eb2a)&referrer=https%3A%2F%2Fstripe.com%2Fdocs%2Fquickstart&card[number]=4242424242424242&card[exp_month]=12&card[exp_year]=19&card[cvc]=001&card[name]=test%40test.com&time_on_page=51111&guid=3018e293-d38a-400a-a476-c10c6c52bc25&muid=f43260bf-02c5-4e56-a691-8b1083a9f910&sid=157d6b7b-b4bd-4628-a78c-df66c576f2e5&key=pk_test_nJGSQo5LQ7i8h8OkEjYeCqVc' --compressed"
-					},
-					"response": []
-				},
-				{
-					"name": "User - checkout new order",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "ecf814e4-aad0-4e95-9a7c-7e0f6ff4f53b",
-								"exec": [
-									"pm.test(\"should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"})",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{user_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"amount\": 6120,\n\t\"method\": {\n\t\t\"type\" : \"Card\",\n\t\t\"provider\": \"stripe\",\n\t\t\"token\" : \"{{last_credit_card_token}}\",\n\t\t\"save_payment_method\": false,\n\t\t\"set_default\": false\n\t}\n}"
-						},
-						"url": {
-							"raw": "http://{{server}}/cart/checkout",
-							"protocol": "http",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"cart",
-								"checkout"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Admin - view order details",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "5631a4d6-d4ae-4d22-8919-d51cdf511d27",
-								"exec": [
-									"pm.test(\"should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"})",
-									"",
-									"let json = JSON.parse(responseBody);",
-									"",
-									"pm.test(\"no tickets from other organizations\", function(){",
-									"    pm.expect(json.order_contains_tickets_for_other_organizations).to.equal(false);",
-									"});",
-									"",
-									"pm.test(\"correct number of order items\", function(){",
-									"    pm.expect(json.items.length).to.equal(3);",
-									"});",
-									"",
-									"pm.test(\"tickets should be present\", function(){",
-									"    pm.expect(json.items[0].ticket_price_in_cents).to.equal(3000);",
-									"    pm.expect(json.items[0].fees_price_in_cents).to.equal(10);",
-									"    pm.expect(json.items[0].total_price_in_cents).to.equal(3010);",
-									"    pm.expect(json.items[0].status).to.equal('Purchased');",
-									"    pm.expect(json.items[0].refundable).to.equal(true);",
-									"    pm.environment.set(\"ticket_instance_id\", json.items[0].ticket_instance_id);",
-									"    pm.environment.set(\"order_item_id\", json.items[0].order_item_id);",
-									"    ",
-									"    pm.expect(json.items[1].ticket_price_in_cents).to.equal(3000);",
-									"    pm.expect(json.items[1].fees_price_in_cents).to.equal(10);",
-									"    pm.expect(json.items[1].total_price_in_cents).to.equal(3010);",
-									"    pm.expect(json.items[1].status).to.equal('Purchased');",
-									"    pm.expect(json.items[1].refundable).to.equal(true);",
-									"    pm.environment.set(\"ticket_instance_id2\", json.items[1].ticket_instance_id);",
-									"});",
-									"",
-									"pm.test(\"event fees should be present\", function(){",
-									"    pm.expect(json.items[2].ticket_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[2].fees_price_in_cents).to.equal(100);",
-									"    pm.expect(json.items[2].total_price_in_cents).to.equal(100);",
-									"    pm.expect(json.items[2].status).to.equal('Purchased');",
-									"    pm.expect(json.items[2].refundable).to.equal(true);",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "http://{{server}}/orders/{{last_cart_id}}/details",
-							"protocol": "http",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"orders",
-								"{{last_cart_id}}",
-								"details"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Admin - refund one ticket",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "5631a4d6-d4ae-4d22-8919-d51cdf511d27",
-								"exec": [
-									"pm.test(\"should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"})",
-									"",
-									"let json = JSON.parse(responseBody);",
-									"",
-									"pm.test(\"no tickets from other organizations\", function(){",
-									"    pm.expect(json.amount_refunded).to.equal(3010);",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\"items\": [{\n\"order_item_id\": \"{{order_item_id}}\",\n\"ticket_instance_id\": \"{{ticket_instance_id}}\"\n}]\n}"
-						},
-						"url": {
-							"raw": "http://{{server}}/orders/{{last_cart_id}}/refund",
-							"protocol": "http",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"orders",
-								"{{last_cart_id}}",
-								"refund"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Admin - view order details after ticket refunded",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "5631a4d6-d4ae-4d22-8919-d51cdf511d27",
-								"exec": [
-									"pm.test(\"should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"})",
-									"",
-									"let json = JSON.parse(responseBody);",
-									"",
-									"pm.test(\"no tickets from other organizations\", function(){",
-									"    pm.expect(json.order_contains_tickets_for_other_organizations).to.equal(false);",
-									"});",
-									"",
-									"pm.test(\"correct number of order items\", function(){",
-									"    pm.expect(json.items.length).to.equal(3);",
-									"});",
-									"",
-									"pm.test(\"tickets should be present\", function(){",
-									"    pm.expect(json.items[0].ticket_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[0].fees_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[0].total_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[0].status).to.equal('Refunded');",
-									"    pm.expect(json.items[0].refundable).to.equal(false);",
-									"    ",
-									"    pm.expect(json.items[1].ticket_price_in_cents).to.equal(3000);",
-									"    pm.expect(json.items[1].fees_price_in_cents).to.equal(10);",
-									"    pm.expect(json.items[1].total_price_in_cents).to.equal(3010);",
-									"    pm.expect(json.items[1].status).to.equal('Purchased');",
-									"    pm.expect(json.items[1].refundable).to.equal(true);",
-									"});",
-									"",
-									"pm.test(\"event fees should be present\", function(){",
-									"    pm.expect(json.items[2].ticket_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[2].fees_price_in_cents).to.equal(100);",
-									"    pm.expect(json.items[2].total_price_in_cents).to.equal(100);",
-									"    pm.expect(json.items[2].status).to.equal('Purchased');",
-									"    pm.expect(json.items[2].refundable).to.equal(true);",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "http://{{server}}/orders/{{last_cart_id}}/details",
-							"protocol": "http",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"orders",
-								"{{last_cart_id}}",
-								"details"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Admin - refund remaining ticket",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "5631a4d6-d4ae-4d22-8919-d51cdf511d27",
-								"exec": [
-									"pm.test(\"should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"})",
-									"",
-									"let json = JSON.parse(responseBody);",
-									"",
-									"pm.test(\"no tickets from other organizations\", function(){",
-									"    pm.expect(json.amount_refunded).to.equal(3110);",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\"items\": [{\n\"order_item_id\": \"{{order_item_id}}\",\n\"ticket_instance_id\": \"{{ticket_instance_id2}}\"\n}]\n}"
-						},
-						"url": {
-							"raw": "http://{{server}}/orders/{{last_cart_id}}/refund",
-							"protocol": "http",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"orders",
-								"{{last_cart_id}}",
-								"refund"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Admin - view order details all refunded",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "5631a4d6-d4ae-4d22-8919-d51cdf511d27",
-								"exec": [
-									"pm.test(\"should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"})",
-									"",
-									"let json = JSON.parse(responseBody);",
-									"",
-									"pm.test(\"no tickets from other organizations\", function(){",
-									"    pm.expect(json.order_contains_tickets_for_other_organizations).to.equal(false);",
-									"});",
-									"",
-									"pm.test(\"correct number of order items\", function(){",
-									"    pm.expect(json.items.length).to.equal(3);",
-									"});",
-									"",
-									"pm.test(\"tickets should be present\", function(){",
-									"    pm.expect(json.items[0].ticket_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[0].fees_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[0].total_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[0].status).to.equal('Refunded');",
-									"    pm.expect(json.items[0].refundable).to.equal(false);",
-									"    ",
-									"    pm.expect(json.items[1].ticket_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[1].fees_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[1].total_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[1].status).to.equal('Refunded');",
-									"    pm.expect(json.items[1].refundable).to.equal(false);",
-									"});",
-									"",
-									"pm.test(\"event fees should be present\", function(){",
-									"    pm.expect(json.items[2].ticket_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[2].fees_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[2].total_price_in_cents).to.equal(0);",
-									"    pm.expect(json.items[2].status).to.equal('Refunded');",
-									"    pm.expect(json.items[2].refundable).to.equal(false);",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "http://{{server}}/orders/{{last_cart_id}}/details",
-							"protocol": "http",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"orders",
-								"{{last_cart_id}}",
-								"details"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "My orders",
-			"item": [
-				{
-					"name": "User - Current Me",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "d3677e01-0ed8-4cd2-9673-0e6dacae9a53",
-								"exec": [
-									"pm.test(\"should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"})",
-									"",
-									"let json = JSON.parse(responseBody);",
-									"",
-									"pm.environment.set(\"last_user_id\", json.user.id);",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{user_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "http://{{server}}/users/me",
-							"protocol": "http",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"users",
-								"me"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "User - My Orders",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "9f69f3a0-d8e6-439d-a830-1ed7453baa77",
-								"exec": [
-									"pm.test(\"should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"})",
-									"",
-									"let json = JSON.parse(responseBody);",
-									"",
-									"",
-									"pm.test(\"tickets should be present\", function(){",
-									"    pm.expect(json.data[0].items[0].item_type).to.equal(\"Tickets\");",
-									"    pm.expect(json.data[0].items[0].unit_price_in_cents).to.equal(3000);",
-									"});",
-									"",
-									"",
-									"pm.environment.set(\"last_order_id\", json.data[0].id);",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{user_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "http://{{server}}/orders",
-							"protocol": "http",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"orders"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "User - Order Details",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "3a10ac6c-523b-43ac-b5d4-5bea60b5618b",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"})",
-									"",
-									"let json = JSON.parse(responseBody);",
-									"",
-									"",
-									"pm.test(\"tickets should be present\", function(){",
-									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
-									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{user_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "http://{{server}}/orders/{{last_order_id}}",
-							"protocol": "http",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"orders",
-								"{{last_order_id}}"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
 			"name": "Transfer Tickets",
 			"item": [
 				{
 					"name": "Via QR",
 					"item": [
+						{
+							"name": "Guest - register and login",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "3e16f515-b7c5-4312-b241-2d72c62323f0",
+										"exec": [
+											"pm.test(\"should be 201\", function() {",
+											"    pm.response.to.have.status(201);",
+											"})",
+											"pm.test(\"should have token response\", function() {",
+											"\tlet json = JSON.parse(responseBody);",
+											"\tpm.expect(json).to.have.property(\"access_token\");",
+											"\tpm.expect(json).to.have.property(\"refresh_token\");",
+											"});",
+											"",
+											"let json = JSON.parse(responseBody);",
+											"",
+											"pm.environment.set(\"user_token\", json.access_token);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "9c70409f-473d-4a08-94e7-b32f606b85a7",
+										"exec": [
+											"",
+											"pm.environment.set(\"last_email\", \"mike\" + (new Date()).getTime() + \"@tari.com\");"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"first_name\":\"Mike\",\n\t\"last_name\":\"Surname\",\n\t\"email\":\"{{last_email}}\",\n\t\"phone\":\"555\",\n\t\"password\": \"itsasecret\"\n}"
+								},
+								"url": {
+									"raw": "http://{{server}}/users",
+									"protocol": "http",
+									"host": [
+										"{{server}}"
+									],
+									"path": [
+										"users"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "User - add to cart new order",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "aadca825-5dbc-4d09-8fb8-6b9d7cbe9350",
+										"exec": [
+											"pm.test(\"should be 200\", function() {",
+											"    pm.response.to.have.status(200);",
+											"})",
+											"",
+											"let json = JSON.parse(responseBody);",
+											"",
+											"pm.environment.set(\"last_cart_id\", json.id);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{user_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\"items\": [{\n\"ticket_type_id\": \"{{last_ticket_type_id}}\",\n\"quantity\":6\n}]}"
+								},
+								"url": {
+									"raw": "http://{{server}}/cart",
+									"protocol": "http",
+									"host": [
+										"{{server}}"
+									],
+									"path": [
+										"cart"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Do STRIPE form post new order",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "bf1ae8f4-683d-4b15-8362-773405313887",
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"should be 200\", function() {",
+											"    pm.response.to.have.status(200);",
+											"})",
+											"",
+											"let json = JSON.parse(responseBody);",
+											"pm.environment.set(\"last_credit_card_token\", json.id);"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "origin",
+										"value": "https://checkout.stripe.com"
+									},
+									{
+										"key": "accept-encoding",
+										"value": "gzip, deflate, br"
+									},
+									{
+										"key": "accept-language",
+										"value": "en-GB"
+									},
+									{
+										"key": "user-agent",
+										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36"
+									},
+									{
+										"key": "content-type",
+										"value": "application/x-www-form-urlencoded"
+									},
+									{
+										"key": "accept",
+										"value": "application/json"
+									},
+									{
+										"key": "referer",
+										"value": "https://checkout.stripe.com/m/v3/index-f925604dd4aa6c77a2d874f2507bf975.html?distinct_id=84c5f1db-c2d7-f3f1-1c85-7eca6a669c36"
+									},
+									{
+										"key": "authority",
+										"value": "api.stripe.com"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "email",
+											"value": "test%40test.com",
+											"type": "text"
+										},
+										{
+											"key": "validation_type",
+											"value": "card",
+											"type": "text"
+										},
+										{
+											"key": "payment_user_agent",
+											"value": "Stripe+Checkout+v3+checkout-manhattan+(stripe.js%2Fe64eb2a)",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "referrer",
+											"value": "https%3A%2F%2Fstripe.com%2Fdocs%2Fquickstart",
+											"type": "text"
+										},
+										{
+											"key": "card[number]",
+											"value": "4242424242424242",
+											"type": "text"
+										},
+										{
+											"key": "card[exp_month]",
+											"value": "12",
+											"type": "text"
+										},
+										{
+											"key": "card[exp_year]",
+											"value": "19",
+											"type": "text"
+										},
+										{
+											"key": "card[cvc]",
+											"value": "001",
+											"type": "text"
+										},
+										{
+											"key": "card[name]",
+											"value": "test%40test.com",
+											"type": "text"
+										},
+										{
+											"key": "time_on_page",
+											"value": "51111",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "guid",
+											"value": "3018e293-d38a-400a-a476-c10c6c52bc25",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "muid",
+											"value": "f43260bf-02c5-4e56-a691-8b1083a9f910",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "sid",
+											"value": "157d6b7b-b4bd-4628-a78c-df66c576f2e5",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "key",
+											"value": "pk_test_nJGSQo5LQ7i8h8OkEjYeCqVc",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "https://api.stripe.com/v1/tokens",
+									"protocol": "https",
+									"host": [
+										"api",
+										"stripe",
+										"com"
+									],
+									"path": [
+										"v1",
+										"tokens"
+									]
+								},
+								"description": "Generated from a curl request: \ncurl 'https://api.stripe.com/v1/tokens' -H 'origin: https://checkout.stripe.com' -H 'accept-encoding: gzip, deflate, br' -H 'accept-language: en-GB' -H 'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36' -H 'content-type: application/x-www-form-urlencoded' -H 'accept: application/json' -H 'referer: https://checkout.stripe.com/m/v3/index-f925604dd4aa6c77a2d874f2507bf975.html?distinct_id=84c5f1db-c2d7-f3f1-1c85-7eca6a669c36' -H 'authority: api.stripe.com' --data 'email=test%40test.com&validation_type=card&payment_user_agent=Stripe+Checkout+v3+checkout-manhattan+(stripe.js%2Fe64eb2a)&referrer=https%3A%2F%2Fstripe.com%2Fdocs%2Fquickstart&card[number]=4242424242424242&card[exp_month]=12&card[exp_year]=19&card[cvc]=001&card[name]=test%40test.com&time_on_page=51111&guid=3018e293-d38a-400a-a476-c10c6c52bc25&muid=f43260bf-02c5-4e56-a691-8b1083a9f910&sid=157d6b7b-b4bd-4628-a78c-df66c576f2e5&key=pk_test_nJGSQo5LQ7i8h8OkEjYeCqVc' --compressed"
+							},
+							"response": []
+						},
+						{
+							"name": "User - checkout new order",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "ecf814e4-aad0-4e95-9a7c-7e0f6ff4f53b",
+										"exec": [
+											"pm.test(\"should be 200\", function() {",
+											"    pm.response.to.have.status(200);",
+											"})",
+											"",
+											"pm.environment.set(\"last_cart_id\", JSON.parse(responseBody).id)"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{user_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"amount\": 18160,\n\t\"method\": {\n\t\t\"type\" : \"Card\",\n\t\t\"provider\": \"stripe\",\n\t\t\"token\" : \"{{last_credit_card_token}}\",\n\t\t\"save_payment_method\": false,\n\t\t\"set_default\": false\n\t}\n}"
+								},
+								"url": {
+									"raw": "http://{{server}}/cart/checkout",
+									"protocol": "http",
+									"host": [
+										"{{server}}"
+									],
+									"path": [
+										"cart",
+										"checkout"
+									]
+								}
+							},
+							"response": []
+						},
 						{
 							"name": "User - Get tickets",
 							"event": [
@@ -11960,6 +12098,998 @@
 			]
 		},
 		{
+			"name": "Refund Tickets",
+			"item": [
+				{
+					"name": "Guest - register and login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3e16f515-b7c5-4312-b241-2d72c62323f0",
+								"exec": [
+									"pm.test(\"should be 201\", function() {",
+									"    pm.response.to.have.status(201);",
+									"})",
+									"pm.test(\"should have token response\", function() {",
+									"\tlet json = JSON.parse(responseBody);",
+									"\tpm.expect(json).to.have.property(\"access_token\");",
+									"\tpm.expect(json).to.have.property(\"refresh_token\");",
+									"});",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"user_token\", json.access_token);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9c70409f-473d-4a08-94e7-b32f606b85a7",
+								"exec": [
+									"",
+									"pm.environment.set(\"last_email\", \"mike\" + (new Date()).getTime() + \"@tari.com\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"first_name\":\"Mike\",\n\t\"last_name\":\"Surname\",\n\t\"email\":\"{{last_email}}\",\n\t\"phone\":\"555\",\n\t\"password\": \"itsasecret\"\n}"
+						},
+						"url": {
+							"raw": "http://{{server}}/users",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - add to cart new order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "aadca825-5dbc-4d09-8fb8-6b9d7cbe9350",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"last_cart_id\", json.id);",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
+									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[1].item_type).to.equal(\"PerUnitFees\");",
+									"    pm.expect(json.items[0].quantity).to.equal(2);",
+									"    pm.expect(json.items[1].unit_price_in_cents).to.equal(10);",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[2].item_type).to.equal(\"EventFees\");",
+									"    ",
+									"    pm.expect(json.items[2].unit_price_in_cents).to.equal(100);",
+									"});",
+									"",
+									"pm.test(\"total should be correct\", function() {",
+									"    pm.expect(json.total_in_cents).to.equal(6120);",
+									"})",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\"items\": [{\n\"ticket_type_id\": \"{{last_ticket_type_id}}\",\n\"quantity\":2\n}]}"
+						},
+						"url": {
+							"raw": "http://{{server}}/cart",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - view cart new order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5631a4d6-d4ae-4d22-8919-d51cdf511d27",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
+									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[1].item_type).to.equal(\"PerUnitFees\");",
+									"    pm.expect(json.items[0].quantity).to.equal(2);",
+									"    pm.expect(json.items[1].unit_price_in_cents).to.equal(10);",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[2].item_type).to.equal(\"EventFees\");",
+									"    ",
+									"    pm.expect(json.items[2].unit_price_in_cents).to.equal(100);",
+									"});",
+									"",
+									"pm.test(\"total should be correct\", function() {",
+									"    pm.expect(json.total_in_cents).to.equal(6120);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/cart",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Do STRIPE form post new order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bf1ae8f4-683d-4b15-8362-773405313887",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"pm.environment.set(\"last_credit_card_token\", json.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "origin",
+								"value": "https://checkout.stripe.com"
+							},
+							{
+								"key": "accept-encoding",
+								"value": "gzip, deflate, br"
+							},
+							{
+								"key": "accept-language",
+								"value": "en-GB"
+							},
+							{
+								"key": "user-agent",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36"
+							},
+							{
+								"key": "content-type",
+								"value": "application/x-www-form-urlencoded"
+							},
+							{
+								"key": "accept",
+								"value": "application/json"
+							},
+							{
+								"key": "referer",
+								"value": "https://checkout.stripe.com/m/v3/index-f925604dd4aa6c77a2d874f2507bf975.html?distinct_id=84c5f1db-c2d7-f3f1-1c85-7eca6a669c36"
+							},
+							{
+								"key": "authority",
+								"value": "api.stripe.com"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "email",
+									"value": "test%40test.com",
+									"type": "text"
+								},
+								{
+									"key": "validation_type",
+									"value": "card",
+									"type": "text"
+								},
+								{
+									"key": "payment_user_agent",
+									"value": "Stripe+Checkout+v3+checkout-manhattan+(stripe.js%2Fe64eb2a)",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "referrer",
+									"value": "https%3A%2F%2Fstripe.com%2Fdocs%2Fquickstart",
+									"type": "text"
+								},
+								{
+									"key": "card[number]",
+									"value": "4242424242424242",
+									"type": "text"
+								},
+								{
+									"key": "card[exp_month]",
+									"value": "12",
+									"type": "text"
+								},
+								{
+									"key": "card[exp_year]",
+									"value": "19",
+									"type": "text"
+								},
+								{
+									"key": "card[cvc]",
+									"value": "001",
+									"type": "text"
+								},
+								{
+									"key": "card[name]",
+									"value": "test%40test.com",
+									"type": "text"
+								},
+								{
+									"key": "time_on_page",
+									"value": "51111",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "guid",
+									"value": "3018e293-d38a-400a-a476-c10c6c52bc25",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "muid",
+									"value": "f43260bf-02c5-4e56-a691-8b1083a9f910",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "sid",
+									"value": "157d6b7b-b4bd-4628-a78c-df66c576f2e5",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "key",
+									"value": "pk_test_nJGSQo5LQ7i8h8OkEjYeCqVc",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://api.stripe.com/v1/tokens",
+							"protocol": "https",
+							"host": [
+								"api",
+								"stripe",
+								"com"
+							],
+							"path": [
+								"v1",
+								"tokens"
+							]
+						},
+						"description": "Generated from a curl request: \ncurl 'https://api.stripe.com/v1/tokens' -H 'origin: https://checkout.stripe.com' -H 'accept-encoding: gzip, deflate, br' -H 'accept-language: en-GB' -H 'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36' -H 'content-type: application/x-www-form-urlencoded' -H 'accept: application/json' -H 'referer: https://checkout.stripe.com/m/v3/index-f925604dd4aa6c77a2d874f2507bf975.html?distinct_id=84c5f1db-c2d7-f3f1-1c85-7eca6a669c36' -H 'authority: api.stripe.com' --data 'email=test%40test.com&validation_type=card&payment_user_agent=Stripe+Checkout+v3+checkout-manhattan+(stripe.js%2Fe64eb2a)&referrer=https%3A%2F%2Fstripe.com%2Fdocs%2Fquickstart&card[number]=4242424242424242&card[exp_month]=12&card[exp_year]=19&card[cvc]=001&card[name]=test%40test.com&time_on_page=51111&guid=3018e293-d38a-400a-a476-c10c6c52bc25&muid=f43260bf-02c5-4e56-a691-8b1083a9f910&sid=157d6b7b-b4bd-4628-a78c-df66c576f2e5&key=pk_test_nJGSQo5LQ7i8h8OkEjYeCqVc' --compressed"
+					},
+					"response": []
+				},
+				{
+					"name": "User - checkout new order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ecf814e4-aad0-4e95-9a7c-7e0f6ff4f53b",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"pm.environment.set(\"last_cart_id\", JSON.parse(responseBody).id)"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"amount\": 6120,\n\t\"method\": {\n\t\t\"type\" : \"Card\",\n\t\t\"provider\": \"stripe\",\n\t\t\"token\" : \"{{last_credit_card_token}}\",\n\t\t\"save_payment_method\": false,\n\t\t\"set_default\": false\n\t}\n}"
+						},
+						"url": {
+							"raw": "http://{{server}}/cart/checkout",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"cart",
+								"checkout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OrgAdmin - view order details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5631a4d6-d4ae-4d22-8919-d51cdf511d27",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.test(\"no tickets from other organizations\", function(){",
+									"    pm.expect(json.order_contains_tickets_for_other_organizations).to.equal(false);",
+									"});",
+									"",
+									"pm.test(\"correct number of order items\", function(){",
+									"    pm.expect(json.items.length).to.equal(3);",
+									"});",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].ticket_price_in_cents).to.equal(3000);",
+									"    pm.expect(json.items[0].fees_price_in_cents).to.equal(10);",
+									"    pm.expect(json.items[0].total_price_in_cents).to.equal(3010);",
+									"    pm.expect(json.items[0].status).to.equal('Purchased');",
+									"    pm.expect(json.items[0].refundable).to.equal(true);",
+									"    pm.environment.set(\"ticket_instance_id\", json.items[0].ticket_instance_id);",
+									"    pm.environment.set(\"order_item_id\", json.items[0].order_item_id);",
+									"    ",
+									"    pm.expect(json.items[1].ticket_price_in_cents).to.equal(3000);",
+									"    pm.expect(json.items[1].fees_price_in_cents).to.equal(10);",
+									"    pm.expect(json.items[1].total_price_in_cents).to.equal(3010);",
+									"    pm.expect(json.items[1].status).to.equal('Purchased');",
+									"    pm.expect(json.items[1].refundable).to.equal(true);",
+									"    pm.environment.set(\"ticket_instance_id2\", json.items[1].ticket_instance_id);",
+									"});",
+									"",
+									"pm.test(\"event fees should be present\", function(){",
+									"    pm.expect(json.items[2].ticket_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[2].fees_price_in_cents).to.equal(100);",
+									"    pm.expect(json.items[2].total_price_in_cents).to.equal(100);",
+									"    pm.expect(json.items[2].status).to.equal('Purchased');",
+									"    pm.expect(json.items[2].refundable).to.equal(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{org_admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/orders/{{last_cart_id}}/details",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"orders",
+								"{{last_cart_id}}",
+								"details"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OrgAdmin - refund one ticket",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5631a4d6-d4ae-4d22-8919-d51cdf511d27",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.test(\"no tickets from other organizations\", function(){",
+									"    pm.expect(json.amount_refunded).to.equal(3010);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{org_admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\"items\": [{\n\"order_item_id\": \"{{order_item_id}}\",\n\"ticket_instance_id\": \"{{ticket_instance_id}}\"\n}]\n}"
+						},
+						"url": {
+							"raw": "http://{{server}}/orders/{{last_cart_id}}/refund",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"orders",
+								"{{last_cart_id}}",
+								"refund"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Admin - view order details after ticket refunded",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5631a4d6-d4ae-4d22-8919-d51cdf511d27",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.test(\"no tickets from other organizations\", function(){",
+									"    pm.expect(json.order_contains_tickets_for_other_organizations).to.equal(false);",
+									"});",
+									"",
+									"pm.test(\"correct number of order items\", function(){",
+									"    pm.expect(json.items.length).to.equal(3);",
+									"});",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].ticket_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[0].fees_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[0].total_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[0].status).to.equal('Refunded');",
+									"    pm.expect(json.items[0].refundable).to.equal(false);",
+									"    ",
+									"    pm.expect(json.items[1].ticket_price_in_cents).to.equal(3000);",
+									"    pm.expect(json.items[1].fees_price_in_cents).to.equal(10);",
+									"    pm.expect(json.items[1].total_price_in_cents).to.equal(3010);",
+									"    pm.expect(json.items[1].status).to.equal('Purchased');",
+									"    pm.expect(json.items[1].refundable).to.equal(true);",
+									"});",
+									"",
+									"pm.test(\"event fees should be present\", function(){",
+									"    pm.expect(json.items[2].ticket_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[2].fees_price_in_cents).to.equal(100);",
+									"    pm.expect(json.items[2].total_price_in_cents).to.equal(100);",
+									"    pm.expect(json.items[2].status).to.equal('Purchased');",
+									"    pm.expect(json.items[2].refundable).to.equal(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/orders/{{last_cart_id}}/details",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"orders",
+								"{{last_cart_id}}",
+								"details"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Admin - refund remaining ticket",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5631a4d6-d4ae-4d22-8919-d51cdf511d27",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.test(\"no tickets from other organizations\", function(){",
+									"    pm.expect(json.amount_refunded).to.equal(3110);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\"items\": [{\n\"order_item_id\": \"{{order_item_id}}\",\n\"ticket_instance_id\": \"{{ticket_instance_id2}}\"\n}]\n}"
+						},
+						"url": {
+							"raw": "http://{{server}}/orders/{{last_cart_id}}/refund",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"orders",
+								"{{last_cart_id}}",
+								"refund"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Admin - view order details all refunded",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5631a4d6-d4ae-4d22-8919-d51cdf511d27",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.test(\"no tickets from other organizations\", function(){",
+									"    pm.expect(json.order_contains_tickets_for_other_organizations).to.equal(false);",
+									"});",
+									"",
+									"pm.test(\"correct number of order items\", function(){",
+									"    pm.expect(json.items.length).to.equal(3);",
+									"});",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].ticket_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[0].fees_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[0].total_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[0].status).to.equal('Refunded');",
+									"    pm.expect(json.items[0].refundable).to.equal(false);",
+									"    ",
+									"    pm.expect(json.items[1].ticket_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[1].fees_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[1].total_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[1].status).to.equal('Refunded');",
+									"    pm.expect(json.items[1].refundable).to.equal(false);",
+									"});",
+									"",
+									"pm.test(\"event fees should be present\", function(){",
+									"    pm.expect(json.items[2].ticket_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[2].fees_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[2].total_price_in_cents).to.equal(0);",
+									"    pm.expect(json.items[2].status).to.equal('Refunded');",
+									"    pm.expect(json.items[2].refundable).to.equal(false);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/orders/{{last_cart_id}}/details",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"orders",
+								"{{last_cart_id}}",
+								"details"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "My orders",
+			"item": [
+				{
+					"name": "User - Current Me",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d3677e01-0ed8-4cd2-9673-0e6dacae9a53",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"last_user_id\", json.user.id);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/users/me",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"users",
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - My Orders",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "9f69f3a0-d8e6-439d-a830-1ed7453baa77",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.data[0].items[0].item_type).to.equal(\"Tickets\");",
+									"    pm.expect(json.data[0].items[0].unit_price_in_cents).to.equal(3000);",
+									"});",
+									"",
+									"",
+									"pm.environment.set(\"last_order_id\", json.data[0].id);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/orders",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - Order Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3a10ac6c-523b-43ac-b5d4-5bea60b5618b",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
+									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/orders/{{last_order_id}}",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"orders",
+								"{{last_order_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Redeeming",
 			"item": [
 				{
@@ -11976,8 +13106,8 @@
 									"",
 									"let json = JSON.parse(responseBody);",
 									"",
-									"pm.test(\"7 guests should be present\", function(){",
-									"    pm.expect(json.data.length).to.equal(37);",
+									"pm.test(\"guests should be present\", function(){",
+									"    pm.expect(json.data.length).to.be.greaterThan(10);",
 									"    pm.environment.set(\"last_ticket_instance_id\", json.data[0].id);",
 									"    pm.environment.set(\"last_ticket_instance_redeem_key\", json.data[0].redeem_key);",
 									"});"
@@ -12858,6 +13988,352 @@
 			"name": "Dashboards",
 			"item": [
 				{
+					"name": "Guest - register and login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3e16f515-b7c5-4312-b241-2d72c62323f0",
+								"exec": [
+									"pm.test(\"should be 201\", function() {",
+									"    pm.response.to.have.status(201);",
+									"})",
+									"pm.test(\"should have token response\", function() {",
+									"\tlet json = JSON.parse(responseBody);",
+									"\tpm.expect(json).to.have.property(\"access_token\");",
+									"\tpm.expect(json).to.have.property(\"refresh_token\");",
+									"});",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"user_token\", json.access_token);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9c70409f-473d-4a08-94e7-b32f606b85a7",
+								"exec": [
+									"",
+									"pm.environment.set(\"last_email\", \"mike\" + (new Date()).getTime() + \"@tari.com\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"first_name\":\"Mike\",\n\t\"last_name\":\"Surname\",\n\t\"email\":\"{{last_email}}\",\n\t\"phone\":\"555\",\n\t\"password\": \"itsasecret\"\n}"
+						},
+						"url": {
+							"raw": "http://{{server}}/users",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User - add to cart new order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "aadca825-5dbc-4d09-8fb8-6b9d7cbe9350",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"last_cart_id\", json.id);",
+									"pm.environment.set(\"last_user_id\", json.user_id);",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
+									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[1].item_type).to.equal(\"PerUnitFees\");",
+									"    pm.expect(json.items[0].quantity).to.equal(2);",
+									"    pm.expect(json.items[1].unit_price_in_cents).to.equal(10);",
+									"});",
+									"",
+									"pm.test(\"fees should be present\", function(){",
+									"    pm.expect(json.items[2].item_type).to.equal(\"EventFees\");",
+									"    ",
+									"    pm.expect(json.items[2].unit_price_in_cents).to.equal(100);",
+									"});",
+									"",
+									"pm.test(\"total should be correct\", function() {",
+									"    pm.expect(json.total_in_cents).to.equal(6120);",
+									"})",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\"items\": [{\n\"ticket_type_id\": \"{{last_ticket_type_id}}\",\n\"quantity\":2\n}]}"
+						},
+						"url": {
+							"raw": "http://{{server}}/cart",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Do STRIPE form post new order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bf1ae8f4-683d-4b15-8362-773405313887",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"pm.environment.set(\"last_credit_card_token\", json.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "origin",
+								"value": "https://checkout.stripe.com"
+							},
+							{
+								"key": "accept-encoding",
+								"value": "gzip, deflate, br"
+							},
+							{
+								"key": "accept-language",
+								"value": "en-GB"
+							},
+							{
+								"key": "user-agent",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36"
+							},
+							{
+								"key": "content-type",
+								"value": "application/x-www-form-urlencoded"
+							},
+							{
+								"key": "accept",
+								"value": "application/json"
+							},
+							{
+								"key": "referer",
+								"value": "https://checkout.stripe.com/m/v3/index-f925604dd4aa6c77a2d874f2507bf975.html?distinct_id=84c5f1db-c2d7-f3f1-1c85-7eca6a669c36"
+							},
+							{
+								"key": "authority",
+								"value": "api.stripe.com"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "email",
+									"value": "test%40test.com",
+									"type": "text"
+								},
+								{
+									"key": "validation_type",
+									"value": "card",
+									"type": "text"
+								},
+								{
+									"key": "payment_user_agent",
+									"value": "Stripe+Checkout+v3+checkout-manhattan+(stripe.js%2Fe64eb2a)",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "referrer",
+									"value": "https%3A%2F%2Fstripe.com%2Fdocs%2Fquickstart",
+									"type": "text"
+								},
+								{
+									"key": "card[number]",
+									"value": "4242424242424242",
+									"type": "text"
+								},
+								{
+									"key": "card[exp_month]",
+									"value": "12",
+									"type": "text"
+								},
+								{
+									"key": "card[exp_year]",
+									"value": "19",
+									"type": "text"
+								},
+								{
+									"key": "card[cvc]",
+									"value": "001",
+									"type": "text"
+								},
+								{
+									"key": "card[name]",
+									"value": "test%40test.com",
+									"type": "text"
+								},
+								{
+									"key": "time_on_page",
+									"value": "51111",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "guid",
+									"value": "3018e293-d38a-400a-a476-c10c6c52bc25",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "muid",
+									"value": "f43260bf-02c5-4e56-a691-8b1083a9f910",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "sid",
+									"value": "157d6b7b-b4bd-4628-a78c-df66c576f2e5",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "key",
+									"value": "pk_test_nJGSQo5LQ7i8h8OkEjYeCqVc",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://api.stripe.com/v1/tokens",
+							"protocol": "https",
+							"host": [
+								"api",
+								"stripe",
+								"com"
+							],
+							"path": [
+								"v1",
+								"tokens"
+							]
+						},
+						"description": "Generated from a curl request: \ncurl 'https://api.stripe.com/v1/tokens' -H 'origin: https://checkout.stripe.com' -H 'accept-encoding: gzip, deflate, br' -H 'accept-language: en-GB' -H 'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36' -H 'content-type: application/x-www-form-urlencoded' -H 'accept: application/json' -H 'referer: https://checkout.stripe.com/m/v3/index-f925604dd4aa6c77a2d874f2507bf975.html?distinct_id=84c5f1db-c2d7-f3f1-1c85-7eca6a669c36' -H 'authority: api.stripe.com' --data 'email=test%40test.com&validation_type=card&payment_user_agent=Stripe+Checkout+v3+checkout-manhattan+(stripe.js%2Fe64eb2a)&referrer=https%3A%2F%2Fstripe.com%2Fdocs%2Fquickstart&card[number]=4242424242424242&card[exp_month]=12&card[exp_year]=19&card[cvc]=001&card[name]=test%40test.com&time_on_page=51111&guid=3018e293-d38a-400a-a476-c10c6c52bc25&muid=f43260bf-02c5-4e56-a691-8b1083a9f910&sid=157d6b7b-b4bd-4628-a78c-df66c576f2e5&key=pk_test_nJGSQo5LQ7i8h8OkEjYeCqVc' --compressed"
+					},
+					"response": []
+				},
+				{
+					"name": "User - checkout new order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ecf814e4-aad0-4e95-9a7c-7e0f6ff4f53b",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"pm.environment.set(\"last_cart_id\", JSON.parse(responseBody).id)"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"amount\": 6120,\n\t\"method\": {\n\t\t\"type\" : \"Card\",\n\t\t\"provider\": \"stripe\",\n\t\t\"token\" : \"{{last_credit_card_token}}\",\n\t\t\"save_payment_method\": false,\n\t\t\"set_default\": false\n\t}\n}"
+						},
+						"url": {
+							"raw": "http://{{server}}/cart/checkout",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"cart",
+								"checkout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "OrgAdmin - View Event Dashboard",
 					"event": [
 						{
@@ -12924,14 +14400,19 @@
 									"let json = JSON.parse(responseBody);",
 									"",
 									"pm.test(\"fans should be present\", function(){",
-									"    pm.expect(json.data.length).to.equal(3);",
+									"    pm.expect(json.data.length).to.be.greaterThan(3);",
 									"});",
 									"",
 									"pm.test(\"last user fan data should be present\", function(){",
 									"    let user_id = pm.environment.get(\"last_user_id\");",
-									"    pm.expect([json.data[0].user_id, json.data[1].user_id,  json.data[2].user_id]).to.include(user_id);",
-									"    pm.expect([json.data[0].first_name, json.data[1].first_name, json.data[2].first_name]).to.include(\"Mike\");",
-									"    pm.expect([json.data[0].last_name, json.data[1].last_name,  json.data[2].last_name]).to.include(\"Surname\");",
+									"    let found = false;",
+									"    for(let i=0; i< json.data.length;i++) {",
+									"        if (json.data[i].user_id === user_id ){",
+									"            found = true;",
+									"            break;",
+									"        }",
+									"    }",
+									"    pm.expect(found).to.be.true;",
 									"});"
 								],
 								"type": "text/javascript"
@@ -13007,8 +14488,6 @@
 									"    pm.expect(json.last_name).to.equal(\"Surname\");",
 									"    pm.expect(json.facebook_linked).to.equal(false);",
 									"    pm.expect(json.event_count).to.equal(1);",
-									"    pm.expect(json.revenue_in_cents).to.equal(21470);",
-									"    pm.expect(json.ticket_sales).to.equal(7);",
 									"    pm.expect(json.thumb_profile_pic_url).to.equal(null);",
 									"    pm.expect(json.cover_photo_url).to.equal(null);",
 									"});"
@@ -13065,35 +14544,16 @@
 									"let json = JSON.parse(responseBody);",
 									"",
 									"pm.test(\"orders should be present\", function(){",
-									"    pm.expect(json.data.length).to.equal(5);",
+									"    pm.expect(json.data.length).to.equal(1);",
 									"});",
 									"",
 									"pm.test(\"orders should have correct information\", function(){",
 									"    // Refunded order",
-									"    pm.expect(json.data[0].revenue_in_cents).to.equal(0);",
+									"    pm.expect(json.data[0].revenue_in_cents).to.equal(6120);",
 									"    pm.expect(json.data[0].event_name).to.equal(\"It's my party\");",
-									"    pm.expect(json.data[0].ticket_sales).to.equal(0);",
+									"    pm.expect(json.data[0].ticket_sales).to.equal(2);",
 									"    pm.expect(json.data[0].type).to.equal(\"Purchase\");",
 									"    ",
-									"    pm.expect(json.data[1].revenue_in_cents).to.equal(6120);",
-									"    pm.expect(json.data[1].event_name).to.equal(\"It's my party\");",
-									"    pm.expect(json.data[1].ticket_sales).to.equal(2);",
-									"    pm.expect(json.data[1].type).to.equal(\"Purchase\");",
-									"    ",
-									"    pm.expect(json.data[2].revenue_in_cents).to.equal(6120);",
-									"    pm.expect(json.data[2].event_name).to.equal(\"It's my party\");",
-									"    pm.expect(json.data[2].ticket_sales).to.equal(2);",
-									"    pm.expect(json.data[2].type).to.equal(\"Purchase\");",
-									"    ",
-									"    pm.expect(json.data[3].revenue_in_cents).to.equal(6120);",
-									"    pm.expect(json.data[3].event_name).to.equal(\"It's my party\");",
-									"    pm.expect(json.data[3].ticket_sales).to.equal(2);",
-									"    pm.expect(json.data[3].type).to.equal(\"Purchase\");",
-									"    ",
-									"    pm.expect(json.data[4].revenue_in_cents).to.equal(3110);",
-									"    pm.expect(json.data[4].event_name).to.equal(\"It's my party\");",
-									"    pm.expect(json.data[4].ticket_sales).to.equal(1);",
-									"    pm.expect(json.data[4].type).to.equal(\"Purchase\");",
 									"});",
 									""
 								],
@@ -13136,6 +14596,62 @@
 					"response": []
 				},
 				{
+					"name": "OrgAdmin - View Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d481afe5-174e-4720-914d-483d6b75535e",
+								"exec": [
+									"pm.test(\"should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"let json = JSON.parse(responseBody);",
+									"",
+									"pm.expect(json.items.length).to.equal(3);",
+									"",
+									"pm.test(\"tickets should be present\", function(){",
+									"    pm.expect(json.items[0].item_type).to.equal(\"Tickets\");",
+									"    pm.expect(json.items[0].unit_price_in_cents).to.equal(3000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{org_admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://{{server}}/orders/{{last_cart_id}}",
+							"protocol": "http",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"orders",
+								"{{last_cart_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "OrgAdmin - Event Fans",
 					"event": [
 						{
@@ -13151,7 +14667,7 @@
 									"const items = json.data;",
 									"",
 									"pm.test(\"fans should be present\", function() {",
-									"    pm.expect(items.length).to.equal(4);",
+									"    pm.expect(items.length).to.be.greaterThan(0);",
 									"});",
 									"",
 									"pm.test(\"last user fan data should be present\", function() {",
@@ -14178,6 +15694,153 @@
 										{
 											"key": "report",
 											"value": "event_summary"
+										},
+										{
+											"key": "event_id",
+											"value": "{{last_event_id}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Event Audit Report",
+					"item": [
+						{
+							"name": "OrgMember - Audit Report - 401",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "6ba3137a-44b4-4df4-a044-9435b7a0b652",
+										"exec": [
+											"pm.test(\"should be 401\", function() {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{org_member_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://{{server}}/reports/{{last_org_id}}?report=audit_report&event_id={{last_event_id}}",
+									"protocol": "http",
+									"host": [
+										"{{server}}"
+									],
+									"path": [
+										"reports",
+										"{{last_org_id}}"
+									],
+									"query": [
+										{
+											"key": "report",
+											"value": "audit_report"
+										},
+										{
+											"key": "event_id",
+											"value": "{{last_event_id}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "OrgAdmin - Audit Report",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "8d593ad4-0921-4427-9a81-4a4b3b46a72e",
+										"exec": [
+											"pm.test(\"should be 200\", function() {",
+											"    pm.response.to.have.status(200);",
+											"})",
+											"pm.test(\"should not be empty\", function() {",
+											"\tlet json = JSON.parse(responseBody);",
+											"\t",
+											"\tpm.expect(json.all_sales).to.have.all.keys('event_id', 'sales', 'ticket_fees', 'other_fees');",
+											"\tpm.expect(json.all_sales.sales).to.not.be.empty;",
+											"\tpm.expect(json.all_sales.ticket_fees).to.not.be.empty;",
+											"\tpm.expect(json.all_sales.other_fees).to.not.be.empty;",
+											"\t",
+											"\tpm.expect(json.end_date_sales).to.have.all.keys('event_id', 'sales', 'ticket_fees', 'other_fees');",
+											"\tpm.expect(json.end_date_sales.sales).to.not.be.empty;",
+											"\tpm.expect(json.end_date_sales.ticket_fees).to.not.be.empty;",
+											"\tpm.expect(json.end_date_sales.other_fees).to.not.be.empty;",
+											"\t",
+											"\tpm.expect(json.inventory).to.not.be.empty;",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{org_admin_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://{{server}}/reports/{{last_org_id}}?report=audit_report&event_id={{last_event_id}}",
+									"protocol": "http",
+									"host": [
+										"{{server}}"
+									],
+									"path": [
+										"reports",
+										"{{last_org_id}}"
+									],
+									"query": [
+										{
+											"key": "report",
+											"value": "audit_report"
 										},
 										{
 											"key": "event_id",

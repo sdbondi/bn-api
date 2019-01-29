@@ -134,7 +134,90 @@ fn find_for_user_for_display() {
 }
 
 #[test]
+fn ticket_type() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let event = project
+        .create_event()
+        .with_ticket_pricing()
+        .with_ticket_type_count(1)
+        .finish();
+    let ticket_type = event
+        .ticket_types(true, None, connection)
+        .unwrap()
+        .remove(0);
+    let user = project.create_user().finish();
+    project
+        .create_order()
+        .for_event(&event)
+        .for_user(&user)
+        .quantity(1)
+        .is_paid()
+        .finish();
+    let ticket = TicketInstance::find_for_user(user.id, connection)
+        .unwrap()
+        .remove(0);
+    assert_eq!(ticket_type, ticket.ticket_type(connection).unwrap());
+}
+
+#[test]
 fn release() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let creator = project.create_user().finish();
+    let organization = project
+        .create_organization()
+        .with_fee_schedule(&project.create_fee_schedule().finish(creator.id))
+        .finish();
+    let event = project
+        .create_event()
+        .with_organization(&organization)
+        .with_ticket_pricing()
+        .with_a_specific_number_of_tickets(1)
+        .finish();
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    let user = project.create_user().finish();
+    project
+        .create_order()
+        .for_event(&event)
+        .for_user(&user)
+        .quantity(1)
+        .is_paid()
+        .finish();
+    let ticket = TicketInstance::find_for_user(user.id, connection)
+        .unwrap()
+        .remove(0);
+    assert_eq!(ticket.status, TicketInstanceStatus::Purchased);
+    TicketInstance::authorize_ticket_transfer(user.id, vec![ticket.id], 3600, connection).unwrap();
+    assert!(ticket.release(connection).is_ok());
+
+    // Reload ticket
+    let ticket = TicketInstance::find(ticket.id, connection).unwrap();
+    assert!(ticket.order_item_id.is_none());
+    assert!(ticket.transfer_key.is_none());
+    assert!(ticket.transfer_expiry_date.is_none());
+    assert_eq!(ticket.status, TicketInstanceStatus::Available);
+
+    // Cart adds ticket type (which only had 1 ticket) setting this to Reserved
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    cart.update_quantities(
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 1,
+            redemption_code: None,
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    let ticket = TicketInstance::find(ticket.id, connection).unwrap();
+    assert!(ticket.order_item_id.is_some());
+    assert_eq!(ticket.status, TicketInstanceStatus::Reserved);
+}
+
+#[test]
+fn release_for_cancelled_ticket_type() {
     let project = TestProject::new();
     let connection = project.get_connection();
     let creator = project.create_user().finish();
@@ -159,6 +242,9 @@ fn release() {
         .unwrap()
         .remove(0);
     assert_eq!(ticket.status, TicketInstanceStatus::Purchased);
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    ticket_type.cancel(connection).unwrap();
+
     TicketInstance::authorize_ticket_transfer(user.id, vec![ticket.id], 3600, connection).unwrap();
     assert!(ticket.release(connection).is_ok());
 
@@ -167,7 +253,7 @@ fn release() {
     assert!(ticket.order_item_id.is_none());
     assert!(ticket.transfer_key.is_none());
     assert!(ticket.transfer_expiry_date.is_none());
-    assert_eq!(ticket.status, TicketInstanceStatus::Available);
+    assert_eq!(ticket.status, TicketInstanceStatus::Nullified);
 }
 
 #[test]

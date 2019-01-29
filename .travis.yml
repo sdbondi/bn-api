@@ -77,3 +77,6 @@ env:
   - TWILIO_ACCOUNT_ID=" "
   - TWILIO_API_KEY=" "
   - API_KEYS_ENCRYPTION_KEY="test_key"
+  - GLOBEE_API_KEY="GDFOzMkPAw79a8TCAHKkiknJB6bEYgbb"
+  - GLOBEE_BASE_URL="https://test.globee.com/payment-api/v1/"
+  - IPN_BASE_URL="http://localhost"

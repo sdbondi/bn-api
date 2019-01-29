@@ -1,7 +1,5 @@
 use bigneon_db::dev::TestProject;
-use bigneon_db::models::{
-    TicketPricing, TicketPricingEditableAttributes, TicketPricingStatus, TicketType,
-};
+use bigneon_db::models::*;
 use bigneon_db::utils::errors::ErrorCode::ValidationError;
 use chrono::NaiveDate;
 
@@ -341,7 +339,7 @@ fn update() {
     )
     .commit(connection)
     .unwrap();
-    //Change editable parameter and submit ticket pricing update request
+    //Change editable parameters and submit ticket pricing update request
     let update_name = String::from("updated_event_name");
     let update_price_in_cents: i64 = 200;
     let update_start_date = NaiveDate::from_ymd(2018, 4, 23).and_hms(5, 14, 18);
@@ -361,6 +359,100 @@ fn update() {
     assert_eq!(updated_ticket_pricing.price_in_cents, update_price_in_cents);
     assert_eq!(updated_ticket_pricing.start_date, update_start_date);
     assert_eq!(updated_ticket_pricing.end_date, update_end_date);
+    assert_eq!(updated_ticket_pricing.is_box_office_only, false);
+    assert_eq!(
+        updated_ticket_pricing.ticket_type_id,
+        ticket_pricing.ticket_type_id
+    );
+}
+
+#[test]
+fn update_with_affected_orders() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let event = project.create_event().with_tickets().finish();
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    let start_date = NaiveDate::from_ymd(2016, 7, 8).and_hms(4, 10, 11);
+    let end_date = NaiveDate::from_ymd(2088, 7, 9).and_hms(4, 10, 11);
+    let ticket_pricing = TicketPricing::create(
+        ticket_type.id,
+        "Early Bird".to_string(),
+        start_date,
+        end_date,
+        100,
+        false,
+        None,
+    )
+    .commit(connection)
+    .unwrap();
+
+    let user = project.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    cart.update_quantities(
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 10,
+            redemption_code: None,
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    let items = cart.items(&connection).unwrap();
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type.id))
+        .unwrap();
+    assert_eq!(order_item.ticket_pricing_id, Some(ticket_pricing.id));
+
+    //Change editable parameters and submit ticket pricing update request
+    let update_name = String::from("updated_event_name");
+    let update_price_in_cents: i64 = 200;
+    let update_start_date = NaiveDate::from_ymd(2018, 4, 23).and_hms(5, 14, 18);
+    let update_end_date = NaiveDate::from_ymd(2018, 6, 1).and_hms(8, 5, 34);
+    let update_parameters = TicketPricingEditableAttributes {
+        name: Some(update_name.clone()),
+        price_in_cents: Some(update_price_in_cents),
+        start_date: Some(update_start_date),
+        end_date: Some(update_end_date),
+        is_box_office_only: Some(false),
+    };
+    let updated_ticket_pricing = ticket_pricing
+        .update(update_parameters, connection)
+        .unwrap();
+
+    // ID should be new but everything else should match updated logic
+    assert_ne!(updated_ticket_pricing.id, ticket_pricing.id);
+    assert_eq!(updated_ticket_pricing.name, update_name);
+    assert_eq!(updated_ticket_pricing.price_in_cents, update_price_in_cents);
+    assert_eq!(updated_ticket_pricing.start_date, update_start_date);
+    assert_eq!(updated_ticket_pricing.end_date, update_end_date);
+    assert_eq!(updated_ticket_pricing.is_box_office_only, false);
+    assert_eq!(
+        updated_ticket_pricing.ticket_type_id,
+        ticket_pricing.ticket_type_id
+    );
+
+    // Reloading existing should show nothing has changed but status is now deleted
+    let old_ticket_pricing = TicketPricing::find(ticket_pricing.id, connection).unwrap();
+    assert_eq!(old_ticket_pricing.id, ticket_pricing.id);
+    assert_eq!(old_ticket_pricing.name, ticket_pricing.name);
+    assert_eq!(
+        old_ticket_pricing.price_in_cents,
+        ticket_pricing.price_in_cents
+    );
+    assert_eq!(old_ticket_pricing.start_date, ticket_pricing.start_date);
+    assert_eq!(old_ticket_pricing.end_date, ticket_pricing.end_date);
+    assert_eq!(
+        old_ticket_pricing.is_box_office_only,
+        ticket_pricing.is_box_office_only
+    );
+    assert_eq!(
+        old_ticket_pricing.ticket_type_id,
+        ticket_pricing.ticket_type_id
+    );
+    assert_eq!(old_ticket_pricing.status, TicketPricingStatus::Deleted);
 }
 
 #[test]
