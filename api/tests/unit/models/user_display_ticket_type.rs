@@ -1,4 +1,5 @@
 use bigneon_api::models::{DisplayTicketPricing, UserDisplayTicketType};
+use bigneon_db::dev::times;
 use bigneon_db::prelude::*;
 use chrono::prelude::*;
 use chrono::Duration;
@@ -231,25 +232,34 @@ fn from_ticket_type() {
     );
 
     // Below min fee = 0
-    let event = database
-        .create_event()
-        .with_organization(&organization)
-        .with_ticket_pricing()
-        .finish();
-    let event = database.create_event().with_tickets().finish();
+
+    let event = database.create_event().finish();
+    event
+        .add_ticket_type(
+            "Free tickets".to_string(),
+            None,
+            10,
+            times::zero(),
+            times::infinity(),
+            event.issuer_wallet(conn).unwrap().id,
+            None,
+            10,
+            0,
+            conn,
+        )
+        .unwrap();
     let ticket_type = event.ticket_types(true, None, conn).unwrap().remove(0);
-    let pricing =
-    let display_ticket_type =
-        UserDisplayTicketType::from_ticket_type(&ticket_type, &fee_schedule, false, None, conn)
-            .unwrap();
-    assert_eq!(display_ticket_type.available, 100);
-    assert_eq!(
-        display_ticket_type.status,
-        TicketTypeStatus::NoActivePricing
-    );
 
+    println!("{:?}", ticket_type);
+    let display_ticket_type = UserDisplayTicketType::from_ticket_type(
+        &ticket_type,
+        &FeeSchedule::find(event.organization(conn).unwrap().fee_schedule_id, conn).unwrap(),
+        false,
+        None,
+        conn,
+    )
+    .unwrap();
 
-    assert_eq!(false, "must create min fee")
-
-
+    println!("{:?}", display_ticket_type);
+    assert_eq!(display_ticket_type.ticket_pricing.unwrap().fee_in_cents, 0);
 }

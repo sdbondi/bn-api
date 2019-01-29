@@ -6,8 +6,8 @@ use chrono::prelude::*;
 use diesel;
 use diesel::prelude::*;
 use time::Duration;
-use uuid::Uuid;
 use unit::times;
+use uuid::Uuid;
 
 #[test]
 fn create() {
@@ -120,18 +120,20 @@ fn add_tickets_below_min_fee() {
         .with_organization(&organization)
         .finish();
 
-    let ticket_type = event.add_ticket_type(
-        "Free Tix".to_string(),
-        None,
-        10,
-        times::zero(),
-        times::infinity(),
-        event.issuer_wallet(connection).unwrap().id,
-        Some(1),
-        10,
-        0,connection
-    )
-    .unwrap();
+    let ticket_type = event
+        .add_ticket_type(
+            "Free Tix".to_string(),
+            None,
+            10,
+            times::zero(),
+            times::infinity(),
+            event.issuer_wallet(connection).unwrap().id,
+            Some(1),
+            10,
+            0,
+            connection,
+        )
+        .unwrap();
 
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
@@ -153,18 +155,12 @@ fn add_tickets_below_min_fee() {
         .find(|i| i.ticket_type_id == Some(ticket_type.id))
         .unwrap();
 
-    assert_eq!(
-        order_item.unit_price_in_cents,
-      0
-    );
-    assert_eq!(
-        items.len(), 1
-    );
+    assert_eq!(order_item.unit_price_in_cents, 0);
+    assert_eq!(items.len(), 1);
 
     let fee_item = order_item.find_fee_item(connection).unwrap();
 
     assert_eq!(fee_item, None);
-
 }
 
 #[test]

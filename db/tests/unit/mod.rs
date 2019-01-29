@@ -25,6 +25,5 @@ pub mod ticket_instances;
 pub mod ticket_pricing;
 pub mod ticket_type_codes;
 pub mod ticket_types;
-pub mod times;
 pub mod users;
 pub mod venues;
