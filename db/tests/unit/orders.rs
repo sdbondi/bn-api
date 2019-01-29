@@ -1,3 +1,4 @@
+use bigneon_db::dev::times;
 use bigneon_db::dev::TestProject;
 use bigneon_db::models::*;
 use bigneon_db::schema::orders;
@@ -6,7 +7,6 @@ use chrono::prelude::*;
 use diesel;
 use diesel::prelude::*;
 use time::Duration;
-use unit::times;
 use uuid::Uuid;
 
 #[test]
