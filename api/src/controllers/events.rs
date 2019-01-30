@@ -1,7 +1,8 @@
-use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Path, Query, State};
+use actix_web::{http::StatusCode, HttpResponse, Path, Query, State};
 use auth::user::User;
 use bigneon_db::models::*;
 use bigneon_db::utils::errors::{DatabaseError, ErrorCode};
+use bigneon_http::caching::{CacheControl, CacheDirective, CacheHeaders};
 use chrono::prelude::*;
 use chrono::Duration;
 use db::Connection;
@@ -14,7 +15,6 @@ use serde_with::{self, CommaSeparator};
 use server::AppState;
 use std::collections::HashMap;
 use utils::marketing_contacts;
-use bigneon_http::caching::{ToETag, CacheHeaders, CacheControl, CacheDirective};
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -86,12 +86,11 @@ pub fn checkins(
 }
 
 pub fn index(
-    (state, connection, query, auth_user, http_request): (
+    (state, connection, query, auth_user): (
         State<AppState>,
         Connection,
         Query<SearchParameters>,
         OptionalUser,
-	HttpRequest<AppState>,
     ),
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = connection.get();
@@ -225,6 +224,7 @@ pub fn index(
                 ..Default::default()
             })
             .clone();
+
         results.push(EventVenueEntry {
             venue,
             id: event.id,
@@ -260,32 +260,11 @@ pub fn index(
     payload.paging.limit = 100;
 
     let http_caching = CacheHeaders(
-       CacheControl(vec![
-	   CacheDirective::MaxAge(100u32),
-	   CacheDirective::Public,
-       ]),
-       Some(payload.to_etag()),
+	CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+	Some(payload.to_etag()),
     );
 
-    Ok(http_caching.into_response(&http_request).json(&payload))
-
-//    let mut builder = HttpResponse::Ok();
-//    let cache_headers = CacheHeaders::from(payload, CacheInfo {
-//        max_age: 100u32,
-//        public: true,
-//    });
-//
-//    Ok(cache_headers.response(http_request))
-
-//    if cache_headers.is_stale(http_request) {
-//        Ok(HttpResponse::Ok().json(&payload))
-//    } else {
-//        Ok(cache_headers.response())
-//    }
-//
-//    builder.set(cache_headers.cache_control());
-//    builder.set(cache_headers.etag());
-//    Ok(cache_headers.response().json(&payload))
+    Ok(http_caching.into_ok_response().json(&payload))
 }
 
 #[derive(Deserialize)]
@@ -399,7 +378,7 @@ pub fn show(
     let (min_ticket_price, max_ticket_price) =
         event.current_ticket_pricing_range(box_office_pricing, connection)?;
 
-    #[derive(Serialize)]
+    #[derive(Serialize, ToETag)]
     struct R {
         id: Uuid,
         name: String,
@@ -435,7 +414,7 @@ pub fn show(
         event_type: EventTypes,
     }
 
-    Ok(HttpResponse::Ok().json(&R {
+    let payload = &R {
         id: event.id,
         name: event.name,
         organization_id: event.organization_id,
@@ -471,7 +450,14 @@ pub fn show(
         localized_times,
         tracking_keys,
         event_type: event.event_type,
-    }))
+    };
+
+    let http_caching = CacheHeaders(
+	CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+	Some(payload.to_etag()),
+    );
+
+    Ok(http_caching.into_ok_response().json(&payload))
 }
 
 pub fn publish(

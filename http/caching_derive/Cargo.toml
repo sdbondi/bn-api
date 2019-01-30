@@ -1,13 +1,20 @@
-[lib]
-proc-macro = true
-
 [package]
 name = "bigneon_caching_derive"
 version = "0.1.0"
 authors = ["Stan <sdbondi@users.noreply.github.com>"]
 edition = "2018"
 
+[lib]
+proc-macro = true
+
 [dependencies]
 syn = "0.15.26"
 quote = "0.6.11"
-#bigneon_http = { path = ".." }
+ring = "0.13.5"
+
+[dev-dependencies]
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+serde_with = "0.2"
+bigneon_http = {path = ".."}

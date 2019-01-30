@@ -3,7 +3,8 @@ pub mod sha1 {
 
     pub fn digest(s: &str) -> String {
 	let sha = digest::digest(&digest::SHA1, s.as_bytes());
-	sha.as_ref().iter()
+	sha.as_ref()
+	    .iter()
 	    .map(|b| format!("{:02x}", b))
 	    .collect::<Vec<String>>()
 	    .join("")

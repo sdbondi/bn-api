@@ -6,9 +6,6 @@ edition = "2018"
 
 [dependencies]
 actix-web = "0.7"
+ring = "0.13.5"
 
-[dev-dependencies]
-bigneon_caching_derive = { path = "caching_derive" }
-serde = "1.0"
-serde_derive = "1.0"
-serde_json = "1.0"
+
