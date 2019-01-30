@@ -53,7 +53,7 @@ FROM events e
 WHERE e.organization_id = $1
   AND CASE
         WHEN $2 IS NULL THEN TRUE -- All events
-        WHEN $2 THEN e.event_start >= now() -- upcoming
+        WHEN $2 THEN e.event_start >= now() OR e.event_end > now() -- upcoming
         ELSE e.event_end <= now() END -- past
   AND ($5 IS NULL OR e.id = $5)
 ORDER BY CASE WHEN $2 THEN e.event_start END ASC, CASE WHEN NOT $2 THEN e.event_start END DESC

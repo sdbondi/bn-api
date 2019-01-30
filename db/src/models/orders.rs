@@ -365,9 +365,11 @@ impl Order {
     /// to reflect the new expiry
     pub fn set_expiry(
         &mut self,
+        current_user_id: Option<Uuid>,
         expires_at: Option<NaiveDateTime>,
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
+        let old_expiry = self.expires_at;
         let expires_at = if expires_at.is_some() {
             expires_at.unwrap()
         } else {
@@ -393,6 +395,22 @@ impl Order {
         if affected_rows != 1 {
             return DatabaseError::concurrency_error("Could not update expiry time.");
         }
+
+        DomainEvent::create(
+            DomainEventTypes::OrderUpdated,
+            format!(
+                "Order expiry time updated from {:?} to {:?}",
+                &old_expiry, &expires_at
+            ),
+            Tables::Orders,
+            Some(self.id),
+            current_user_id,
+            Some(json!({
+                "old_expires_at": &old_expiry,
+                "new_expires_at": &expires_at
+            })),
+        )
+        .commit(conn)?;
 
         // Extend the tickets expiry
         let order_items = OrderItem::find_for_order(self.id, conn)?;
@@ -474,6 +492,7 @@ impl Order {
 
     pub fn update_quantities(
         &mut self,
+        current_user_id: Uuid,
         items: &[UpdateOrderItem],
         box_office_pricing: bool,
         remove_others: bool,
@@ -672,7 +691,7 @@ impl Order {
 
         // Set cart expiration time if not currently set (empty carts have no expiration)
         if self.expires_at.is_none() {
-            self.set_expiry(None, conn)?;
+            self.set_expiry(Some(current_user_id), None, conn)?;
         }
 
         for match_data in mapped {
@@ -1122,13 +1141,13 @@ impl Order {
 
     pub fn add_checkout_url(
         &mut self,
-        _current_user_id: Uuid,
+        current_user_id: Uuid,
         checkout_url: String,
         expires: NaiveDateTime,
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
         self.checkout_url = Some(checkout_url);
-        self.set_expiry(Some(expires), conn)?;
+        self.set_expiry(Some(current_user_id), Some(expires), conn)?;
         diesel::update(&*self)
             .set((
                 orders::checkout_url.eq(&self.checkout_url),
@@ -1149,15 +1168,28 @@ impl Order {
     ) -> Result<Payment, DatabaseError> {
         match self.status {
             OrderStatus::Paid => {
-                return DatabaseError::business_process_error("This order has already been paid");
+                // still store the payment.
             }
             // orders can only expire if the order is in draft
-            OrderStatus::Draft => (),
-            _ => {
-                return DatabaseError::business_process_error(&format!(
-                    "Order was in unexpected state when trying to make a payment: {}",
-                    self.status
-                ));
+            OrderStatus::Draft => {
+                // This allows users to lock tickets for a period while they are paying
+                // but for now it allows us some time to manage payment details
+                if payment.status == PaymentStatus::Requested {
+                    self.update_status(current_user_id, OrderStatus::PendingPayment, conn)?;
+                    self.set_expiry(
+                        current_user_id,
+                        Some(Utc::now().naive_utc() + Duration::minutes(120)),
+                        conn,
+                    )?;
+                }
+            }
+            OrderStatus::PendingPayment => {
+
+                // Will be checked for completion later
+            }
+            OrderStatus::Cancelled => {
+
+                // Still accept the payment so that the user's account can be credited
             }
         }
 
@@ -1167,6 +1199,7 @@ impl Order {
         }
 
         let p = payment.commit(current_user_id, conn)?;
+        self.clear_user_cart(conn)?;
         self.complete_if_fully_paid(current_user_id, conn)?;
         Ok(p)
     }
@@ -1183,18 +1216,21 @@ impl Order {
             for item in &order_items {
                 TicketInstance::mark_as_purchased(item, self.user_id, conn)?;
             }
-            let cart_user: Option<User> = users::table
-                .filter(users::last_cart_id.eq(self.id))
-                .get_result(conn)
-                .to_db_error(
-                    ErrorCode::QueryError,
-                    "Could not find user attached to this cart",
-                )
-                .optional()?;
+        }
+        Ok(())
+    }
 
-            if let Some(user) = cart_user {
-                user.update_last_cart(None, conn)?;
-            }
+    fn clear_user_cart(&mut self, conn: &PgConnection) -> Result<(), DatabaseError> {
+        let cart_user: Option<User> = users::table
+            .filter(users::last_cart_id.eq(self.id))
+            .get_result(conn)
+            .to_db_error(
+                ErrorCode::QueryError,
+                "Could not find user attached to this cart",
+            )
+            .optional()?;
+        if let Some(user) = cart_user {
+            user.update_last_cart(None, conn)?;
         }
         Ok(())
     }

@@ -1,0 +1,12 @@
+[package]
+name = "embed_dirs_derive"
+version = "0.1.0"
+authors = ["Stan <sdbondi@users.noreply.github.com>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "0.6.11"
+syn = "0.15.26"

@@ -88,6 +88,7 @@ fn from_ticket_type() {
     // Remaining tickets sold
     order
         .update_quantities(
+            admin.id,
             &[UpdateOrderItem {
                 ticket_type_id: ticket_type.id,
                 quantity: 100,
@@ -107,6 +108,7 @@ fn from_ticket_type() {
     // Release some tickets
     order
         .update_quantities(
+            admin.id,
             &[UpdateOrderItem {
                 ticket_type_id: ticket_type.id,
                 quantity: 90,

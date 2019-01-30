@@ -34,6 +34,7 @@ pub fn profile(role: Roles, should_test_true: bool) {
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let mut cart = Order::find_or_create_cart(&user2, connection).unwrap();
     cart.update_quantities(
+        user2.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 10,
@@ -103,6 +104,7 @@ pub fn history(role: Roles, should_test_true: bool) {
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let mut cart = Order::find_or_create_cart(&user2, connection).unwrap();
     cart.update_quantities(
+        user2.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 10,

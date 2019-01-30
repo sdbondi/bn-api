@@ -118,6 +118,7 @@ fn destroy() {
     // Cart has existing items
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &vec![UpdateOrderItem {
             ticket_type_id: ticket_type_id,
             quantity: 10,
@@ -488,6 +489,7 @@ fn reduce() {
     let user = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id,
             quantity: 10,
@@ -569,6 +571,7 @@ fn remove() {
     let user = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id,
             quantity: 10,
@@ -647,6 +650,7 @@ fn remove_with_increment() {
     let user = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id,
             quantity: 12,
@@ -737,6 +741,7 @@ fn remove_with_increment_failure_invalid_quantity() {
     let user = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id,
             quantity: 12,

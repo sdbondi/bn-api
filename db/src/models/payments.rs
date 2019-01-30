@@ -162,6 +162,36 @@ impl Payment {
         Ok(())
     }
 
+    pub fn update_amount(
+        &self,
+        current_user_id: Option<Uuid>,
+        amount: i64,
+        conn: &PgConnection,
+    ) -> Result<(), DatabaseError> {
+        let old_amount = self.amount;
+
+        diesel::update(self)
+            .set((
+                payments::amount.eq(&amount),
+                payments::updated_at.eq(dsl::now),
+            ))
+            .execute(conn)
+            .to_db_error(ErrorCode::UpdateError, "Could not update amount on payment")?;
+        DomainEvent::create(
+            DomainEventTypes::PaymentUpdated,
+            "Payment Amount was updated".to_string(),
+            Tables::Payments,
+            Some(self.id),
+            current_user_id,
+            Some(json!({
+            "old_amount": old_amount, "new_amount": amount
+            })),
+        )
+        .commit(conn)?;
+
+        Ok(())
+    }
+
     pub fn mark_complete(
         &self,
         raw_data: serde_json::Value,
@@ -208,7 +238,7 @@ impl Payment {
 pub struct NewPayment {
     order_id: Uuid,
     created_by: Option<Uuid>,
-    status: PaymentStatus,
+    pub status: PaymentStatus,
     payment_method: PaymentMethods,
     external_reference: Option<String>,
     amount: i64,

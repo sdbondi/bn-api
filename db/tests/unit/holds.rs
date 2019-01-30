@@ -220,6 +220,7 @@ fn update_with_validation_errors() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &vec![UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 10,
@@ -268,6 +269,7 @@ fn remove_available_quantity() {
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &vec![
             UpdateOrderItem {
                 ticket_type_id: ticket_type.id,
@@ -292,6 +294,7 @@ fn remove_available_quantity() {
     // Add additional cart item from existing unsold quantity (is removed from hold)
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &vec![UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,

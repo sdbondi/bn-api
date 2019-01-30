@@ -12,6 +12,7 @@
 #![recursion_limit = "256"]
 #[macro_use]
 extern crate diesel;
+extern crate diesel_migrations;
 
 extern crate argon2rs;
 extern crate backtrace;
@@ -25,6 +26,8 @@ extern crate log;
 extern crate logging;
 extern crate rand;
 extern crate ring;
+#[macro_use]
+extern crate embed_dirs_derive;
 extern crate time;
 extern crate uuid;
 #[macro_use]

@@ -24,7 +24,7 @@ FROM ticket_instances ti
 WHERE e.organization_id = $1
   AND CASE
         WHEN $2 IS NULL THEN TRUE -- All events
-        WHEN $2 THEN e.event_start >= now() -- upcoming
+        WHEN $2 THEN e.event_start >= now() OR e.event_end > now() -- upcoming
         ELSE e.event_end <= now() END -- past
   AND ($3 IS NULL or e.id = $3)
   AND ti.status <> 'Nullified'

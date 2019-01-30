@@ -110,6 +110,7 @@ impl TestDatabase {
     ) -> Vec<TicketInstance> {
         let mut cart = Order::find_or_create_cart(user, self.connection.get()).unwrap();
         cart.update_quantities(
+            user.id,
             &[UpdateOrderItem {
                 ticket_type_id,
                 quantity,

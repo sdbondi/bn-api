@@ -81,6 +81,11 @@ impl ProcessPaymentIPNExecutor {
             };
 
         if status == PaymentStatus::Completed {
+            payment.update_amount(
+                None,
+                (ipn.payment_details.received_amount.unwrap_or(0f64) * 100f64) as i64,
+                connection,
+            )?;
             payment.mark_complete(json!(ipn), None, connection)?;
         } else {
             payment.add_ipn(status, json!(ipn), None, connection)?;

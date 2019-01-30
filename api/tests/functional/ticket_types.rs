@@ -690,6 +690,7 @@ pub fn cancel_with_sold_tickets_and_hold() {
     let user2 = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user2, conn).unwrap();
     cart.update_quantities(
+        user2.id,
         &vec![
             UpdateOrderItem {
                 ticket_type_id: created_ticket_type.id,

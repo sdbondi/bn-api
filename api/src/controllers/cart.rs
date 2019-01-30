@@ -83,7 +83,13 @@ pub fn update_cart(
                 .json(json!({"error": "Event has not been published.".to_string()})));
         }
     }
-    cart.update_quantities(&order_items, box_office_pricing, false, connection)?;
+    cart.update_quantities(
+        user.id(),
+        &order_items,
+        box_office_pricing,
+        false,
+        connection,
+    )?;
 
     Ok(HttpResponse::Ok().json(Order::find(cart.id, connection)?.for_display(None, connection)?))
 }
@@ -93,7 +99,7 @@ pub fn destroy((connection, user): (Connection, User)) -> Result<HttpResponse, B
 
     // Find the current cart of the user, if it exists.
     let mut cart = Order::find_or_create_cart(&user.user, connection)?;
-    cart.update_quantities(&[], false, true, connection)?;
+    cart.update_quantities(user.id(), &[], false, true, connection)?;
 
     Ok(HttpResponse::Ok().json(Order::find(cart.id, connection)?.for_display(None, connection)?))
 }
@@ -145,7 +151,13 @@ pub fn replace_cart(
         }
     }
 
-    cart.update_quantities(&order_items, box_office_pricing, true, connection)?;
+    cart.update_quantities(
+        user.id(),
+        &order_items,
+        box_office_pricing,
+        true,
+        connection,
+    )?;
 
     Ok(HttpResponse::Ok().json(Order::find(cart.id, connection)?.for_display(None, connection)?))
 }
@@ -677,8 +689,24 @@ fn redirect_to_payment_page(
 
     jlog!(Info, &format!("{} payment created", client.name()), {"order_id": order.id, "payment_provider_id": response.id});
 
-    order.add_checkout_url(user.id, response.redirect_url, response.expires_at, conn)?;
+    order.add_checkout_url(
+        user.id,
+        response.redirect_url.clone(),
+        response.expires_at,
+        conn,
+    )?;
 
+    let external_reference = format!("globee-{:?}", response.id);
+
+    order.add_provider_payment(
+        Some(external_reference),
+        client.name(),
+        Some(user.id),
+        req.amount,
+        PaymentStatus::Requested,
+        json!(response.clone()),
+        conn,
+    )?;
     let order = Order::find(order.id, conn)?;
     Ok(HttpResponse::Ok().json(json!(order.for_display(None, conn)?)))
 }

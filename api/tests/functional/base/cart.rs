@@ -117,6 +117,7 @@ pub fn replace_box_office_pricing(role: Roles, should_test_succeed: bool) {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     // Add normal tickets to cart (box_office_pricing = false)
     cart.update_quantities(
+        user.id,
         &vec![UpdateOrderItem {
             ticket_type_id: old_ticket_type.id,
             quantity: 10,

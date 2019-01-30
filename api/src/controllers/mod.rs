@@ -16,6 +16,7 @@ pub mod redemption_codes;
 pub mod regions;
 pub mod reports;
 pub mod stages;
+pub mod status;
 pub mod ticket_types;
 pub mod tickets;
 pub mod user_invites;

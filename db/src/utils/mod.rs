@@ -1,6 +1,7 @@
 pub mod encryption;
 pub mod errors;
 mod math;
+pub mod migration;
 pub mod passwords;
 pub mod rand;
 pub mod text;

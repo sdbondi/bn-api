@@ -48,6 +48,7 @@ pub fn index() {
     let ticket_type2 = &event2.ticket_types(true, None, conn).unwrap()[0];
     let ticket_pricing2 = ticket_type2.current_ticket_pricing(false, conn).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,
@@ -60,6 +61,7 @@ pub fn index() {
     .unwrap();
 
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type2.id,
             quantity: 1,
@@ -200,6 +202,7 @@ pub fn show() {
     let ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     let ticket_pricing = ticket_type.current_ticket_pricing(false, conn).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,
@@ -363,6 +366,7 @@ fn ticket_transfer_authorization() {
     let ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
 
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 5,
@@ -443,6 +447,7 @@ fn receive_ticket_transfer() {
     let ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
 
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 5,

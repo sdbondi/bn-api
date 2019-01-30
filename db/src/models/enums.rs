@@ -80,6 +80,7 @@ string_enum! { DomainEventTypes [
     FeeScheduleCreated,
     OrderBehalfOfUserChanged,
     OrderStatusUpdated,
+    OrderUpdated,
     OrganizationCreated,
     PaymentCreated,
     PaymentCompleted,
@@ -92,7 +93,8 @@ string_enum! { DomainEventTypes [
     LostPassword,
     PurchaseCompleted,
     TransferTicketStarted,
-    TransferTicketCompleted
+    TransferTicketCompleted,
+    TicketInstancePurchased
 ]}
 string_enum! { DomainActionTypes [
     // Email/SMS/Push Communication
@@ -111,11 +113,11 @@ string_enum! { EventTypes [ Music, Conference]}
 string_enum! { FanSortField [FirstName, LastName, Email, Phone, Orders, FirstOrder, LastOrder, Revenue] }
 string_enum! { HistoryType [Purchase]}
 string_enum! { HoldTypes [Discount, Comp] }
-string_enum! { OrderStatus [Cancelled, Draft, Paid] }
+string_enum! { OrderStatus [Cancelled, Draft, Paid, PendingPayment] }
 string_enum! { OrderItemTypes [Tickets, PerUnitFees, EventFees]}
 string_enum! { OrderTypes [Cart, BackOffice] }
 string_enum! { PaymentMethods [External, CreditCard, Provider] }
-string_enum! { PaymentStatus [Authorized, Completed, Refunded, Unpaid, PendingConfirmation, Cancelled, Draft, Unknown] }
+string_enum! { PaymentStatus [Authorized, Completed, Requested, Refunded, Unpaid, PendingConfirmation, Cancelled, Draft, Unknown] }
 string_enum! { PastOrUpcoming [Past,Upcoming]}
 string_enum! { Roles [Admin, OrgMember, OrgOwner, OrgAdmin, OrgBoxOffice, DoorPerson, User] }
 string_enum! { SortingDir[ Asc, Desc ] }
