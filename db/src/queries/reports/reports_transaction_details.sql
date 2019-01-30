@@ -28,13 +28,15 @@ SELECT e.name                                                                   
        orders.user_id,
        CAST(
              (oi.quantity - oi.refunded_quantity) * oi.unit_price_in_cents +
-             (COALESCE(oi_fees.quantity, 0) - COALESCE(oi_fees.refunded_quantity, 0)) * COALESCE(oi_fees.unit_price_in_cents, 0) +
-             (COALESCE(oi_event_fees.quantity, 0) - COALESCE(oi_event_fees.refunded_quantity, 0)) * COALESCE(oi_event_fees.unit_price_in_cents, 0)
+             (COALESCE(oi_fees.quantity, 0) - COALESCE(oi_fees.refunded_quantity, 0)) *
+             COALESCE(oi_fees.unit_price_in_cents, 0) +
+             (COALESCE(oi_event_fees.quantity, 0) - COALESCE(oi_event_fees.refunded_quantity, 0)) *
+             COALESCE(oi_event_fees.unit_price_in_cents, 0)
          AS BIGINT)                                                                                                     AS gross,
-       u.last_name                                                                                                      AS last_name,
-       u.first_name                                                                                                     AS first_name,
-       u.phone                                                                                                          AS phone,
-       u.email                                                                                                          AS email
+       COALESCE(u.first_name, '')                                                                                       AS first_name,
+       COALESCE(u.last_name, '')                                                                                        AS last_name,
+       COALESCE(u.phone, '')                                                                                            AS phone,
+       COALESCE(u.email, '')                                                                                            AS email
 FROM orders
        LEFT JOIN order_items oi on (orders.id = oi.order_id AND oi.item_type = 'Tickets')
        LEFT JOIN order_items oi_fees on oi.id = oi_fees.parent_id

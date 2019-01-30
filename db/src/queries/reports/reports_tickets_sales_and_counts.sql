@@ -1,11 +1,11 @@
 ---
---- Data per ticket_type if $5 === false
+--- Data per event if $5 === false && $6 === false
 --- Data per ticket_pricing if $5 === true
---- Data per event if $6 === false
+--- Data per ticket_type if $6 === true
 ---
 SELECT tt.id                                                                                                                                                                                                                                                   AS ticket_type_id,
        tt.name                                                                                                                                                                                                                                                 AS ticket_name,
-       tt.status                                                                                                                                                                                                                                               AS ticket_stats,
+       tt.status                                                                                                                                                                                                                                               AS ticket_status,
        e.id                                                                                                                                                                                                                                                    AS event_id,
        e.name                                                                                                                                                                                                                                                  AS event_name,
        e.organization_id                                                                                                                                                                                                                                       AS organization_id,
@@ -57,7 +57,6 @@ SELECT tt.id                                                                    
        CAST(COALESCE(SUM(oi.quantity) FILTER (WHERE h.hold_type = 'Comp' AND o.status = 'Paid'), 0) AS BIGINT)                                                                                                                                                 AS comp_sale_count,
 
        --Refunded
-       --We can use AVG here because we aggregate the values in the sub-query below so we only return a single value
        CAST(COUNT(rt.id) AS BIGINT)                                                                                                                                                                                                                            AS total_refunded_count,
 
        CAST(COALESCE(SUM((oi_t_fees.unit_price_in_cents * (oi_t_fees.quantity - oi_t_fees.refunded_quantity)) + (oi_e_fees.unit_price_in_cents * (oi_e_fees.quantity - oi_e_fees.refunded_quantity))) FILTER (WHERE p.is_box_office IS TRUE), 0) AS BIGINT)    AS total_box_office_fees_in_cents,
