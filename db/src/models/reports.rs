@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use diesel;
 use diesel::prelude::*;
-use diesel::sql_types::{BigInt, Nullable, Text, Timestamp, Uuid as dUuid, Bool};
+use diesel::sql_types::{BigInt, Bool, Nullable, Text, Timestamp, Uuid as dUuid};
 use itertools::Itertools;
 use models::*;
 use std::collections::HashMap;
@@ -9,7 +9,6 @@ use utils::errors::*;
 use uuid::Uuid;
 
 pub struct Report {}
-
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Queryable, QueryableByName)]
 pub struct TicketSalesAndCountsRow {
@@ -92,7 +91,6 @@ pub struct TicketSalesAndCountsRow {
     #[sql_type = "BigInt"]
     pub client_online_fees_in_cents: i64,
 }
-
 
 #[derive(Serialize, Deserialize, PartialEq, Queryable, QueryableByName)]
 pub struct TransactionReportRow {
@@ -379,7 +377,6 @@ impl Report {
         Ok(result)
     }
 
-
     pub fn ticket_count_report(
         event_id: Option<Uuid>,
         organization_id: Option<Uuid>,
@@ -410,7 +407,8 @@ impl Report {
         per_ticket_pricing: bool,
         conn: &PgConnection,
     ) -> Result<Vec<TicketSalesAndCountsRow>, DatabaseError> {
-        let query_ticket_sales_and_counts = include_str!("../queries/reports/reports_tickets_sales_and_counts.sql");
+        let query_ticket_sales_and_counts =
+            include_str!("../queries/reports/reports_tickets_sales_and_counts.sql");
         let q = diesel::sql_query(query_ticket_sales_and_counts)
             .bind::<Nullable<dUuid>, _>(event_id)
             .bind::<Nullable<dUuid>, _>(organization_id)
