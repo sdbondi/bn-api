@@ -130,34 +130,26 @@ impl Payment {
         current_user_id: Option<Uuid>,
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
-        let rows_affected = diesel::update(
-            payments::table.filter(
-                payments::id
-                    .eq(self.id)
-                    .and(payments::updated_at.eq(self.updated_at)),
-            ),
-        )
-        .set((
-            payments::status.eq(status),
-            payments::updated_at.eq(dsl::now),
-        ))
-        .execute(conn)
-        .to_db_error(
-            ErrorCode::UpdateError,
-            "Could not change the status of payment",
-        )?;
+        diesel::update(payments::table.filter(payments::id.eq(self.id)))
+            .set((
+                payments::status.eq(status),
+                payments::updated_at.eq(dsl::now),
+            ))
+            .execute(conn)
+            .to_db_error(
+                ErrorCode::UpdateError,
+                "Could not change the status of payment",
+            )?;
 
-        if rows_affected > 0 {
-            DomainEvent::create(
-                DomainEventTypes::PaymentUpdated,
-                format!("Payment status updated to {}", status),
-                Tables::Payments,
-                Some(self.id),
-                current_user_id,
-                Some(json!({ "new_status": status })),
-            )
-            .commit(conn)?;
-        }
+        DomainEvent::create(
+            DomainEventTypes::PaymentUpdated,
+            format!("Payment status updated to {}", status),
+            Tables::Payments,
+            Some(self.id),
+            current_user_id,
+            Some(json!({ "new_status": status })),
+        )
+        .commit(conn)?;
 
         Ok(())
     }

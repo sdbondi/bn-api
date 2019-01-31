@@ -274,6 +274,7 @@ table! {
         fee_schedule_id -> Uuid,
         client_event_fee_in_cents -> Int8,
         company_event_fee_in_cents -> Int8,
+        allowed_payment_providers -> Array<Text>,
     }
 }
 
