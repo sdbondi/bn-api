@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "72e5f006-8bc8-412d-9372-62d8074fb0f9",
+		"_postman_id": "9bdeb5cf-0459-4330-8c7b-b1453261b602",
 		"name": "bigneon-tests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -15933,19 +15933,8 @@
 											"})",
 											"let json = JSON.parse(responseBody);",
 											"pm.test(\"should not be empty\", function() {",
-											"\tpm.expect(json).to.be.a('object');",
-											"\t",
-											"\t",
-											"});",
-											"pm.test(\"Nested elements should have sales / totals\", function () {",
-											"    for (let org_id in json) {",
-											"\t    for (let event_id in json[org_id]) {",
-											"\t        for (let ticket_type_id in json[org_id][event_id]) {",
-											"\t            pm.expect(json[org_id][event_id][ticket_type_id]).to.have.keys('sales', 'totals');",
-											"\t        }",
-											"\t    }",
-											"\t}",
-											"})"
+											"\tpm.expect(json).to.be.a('array');",
+											"});"
 										],
 										"type": "text/javascript"
 									}

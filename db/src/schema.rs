@@ -256,17 +256,6 @@ table! {
 }
 
 table! {
-    organization_users (id) {
-        id -> Uuid,
-        organization_id -> Uuid,
-        user_id -> Uuid,
-        created_at -> Timestamp,
-        updated_at -> Timestamp,
-        role -> Array<Text>,
-    }
-}
-
-table! {
     organizations (id) {
         id -> Uuid,
         name -> Text,
@@ -285,6 +274,17 @@ table! {
         fee_schedule_id -> Uuid,
         client_event_fee_in_cents -> Int8,
         company_event_fee_in_cents -> Int8,
+    }
+}
+
+table! {
+    organization_users (id) {
+        id -> Uuid,
+        organization_id -> Uuid,
+        user_id -> Uuid,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+        role -> Array<Text>,
     }
 }
 
@@ -546,8 +546,8 @@ allow_tables_to_appear_in_same_query!(
     order_items,
     orders,
     organization_invites,
-    organization_users,
     organizations,
+    organization_users,
     payment_methods,
     payments,
     push_notification_tokens,
