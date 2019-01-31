@@ -168,7 +168,9 @@ mod test {
         let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd123".to_string())]);
         let test_request = test::TestRequest::with_hdr(hdr).finish();
 
-        let resp = subject.into_response_builder(&test_request).finish();
+        let (is_stale, mut builder) = subject.into_response_builder(&test_request);
+        let resp = builder.finish();
+        assert!(!is_stale);
 
         assert_eq!(resp.status().as_u16(), 304);
 
@@ -177,6 +179,7 @@ mod test {
         let cache_control_header = headers.entry("Cache-Control");
         assert!(cache_control_header.is_ok());
 
+        let mut headers = resp.headers().clone();
         let etag_header = headers.entry("ETag");
         assert!(etag_header.is_ok());
     }
@@ -192,7 +195,9 @@ mod test {
         let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd124".to_string())]);
         let test_request = test::TestRequest::with_hdr(hdr).finish();
 
-        let resp = subject.into_response_builder(&test_request).finish();
+        let (is_stale, mut builder) = subject.into_response_builder(&test_request);
+        let resp = builder.finish();
+        assert!(is_stale);
 
         assert_eq!(resp.status().as_u16(), 200u16);
 
@@ -201,6 +206,7 @@ mod test {
         let cache_control_header = headers.entry("Cache-Control");
         assert!(cache_control_header.is_ok());
 
+        let mut headers = resp.headers().clone();
         let etag_header = headers.entry("ETag");
         assert!(etag_header.is_ok());
     }
