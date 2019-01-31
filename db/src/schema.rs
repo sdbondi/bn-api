@@ -290,17 +290,6 @@ table! {
 }
 
 table! {
-    organization_users (id) {
-        id -> Uuid,
-        organization_id -> Uuid,
-        user_id -> Uuid,
-        created_at -> Timestamp,
-        updated_at -> Timestamp,
-        role -> Array<Text>,
-    }
-}
-
-table! {
     payment_methods (id) {
         id -> Uuid,
         user_id -> Uuid,
