@@ -36,21 +36,21 @@ fn impl_to_etag(ast: &syn::DeriveInput) -> TokenStream {
 
     let name_str = format!("{}", name);
     let convert_to_etag_code = quote! {
-    {
-    let mut s = format!("{}{}", #name_str, json!(self));
-    ::bigneon_http::caching::etag_hash(&s)
-    }
+	{
+	    let mut s = format!("{}{}", #name_str, json!(self));
+	    ::bigneon_http::caching::etag_hash(&s)
+	}
     };
 
     let gen = quote! {
-    use bigneon_http::caching::{ETag, ToETag, EntityTag};
+	use bigneon_http::caching::{ETag, ToETag, EntityTag};
 
-    impl ToETag for #name {
-    fn to_etag(&self) -> ETag {
-    let etag = #convert_to_etag_code;
-    ETag(EntityTag::weak(etag))
-    }
-    }
+	impl ToETag for #name {
+	    fn to_etag(&self) -> ETag {
+		let etag = #convert_to_etag_code;
+		ETag(EntityTag::weak(etag))
+	    }
+	}
     };
     gen.into()
 }
