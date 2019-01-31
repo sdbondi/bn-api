@@ -17,13 +17,6 @@ impl CacheHeaders {
 	&self.1
     }
 
-    //    pub fn into_ok_response(self) -> HttpResponseBuilder {
-    //        let mut builder = HttpResponse::Ok();
-    //
-    //        self.set_headers(&mut builder);
-    //        builder
-    //    }
-
     pub fn into_response_json<T, P: Serialize>(
 	self,
 	req: &HttpRequest<T>,
