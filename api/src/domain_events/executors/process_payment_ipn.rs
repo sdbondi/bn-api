@@ -3,6 +3,7 @@ use config::Config;
 use db::Connection;
 use domain_events::executor_future::ExecutorFuture;
 use domain_events::routing::DomainActionExecutor;
+use errors::ApplicationError;
 use errors::BigNeonError;
 use futures::future;
 use globee::GlobeeClient;
@@ -12,6 +13,7 @@ use uuid::Uuid;
 pub struct ProcessPaymentIPNExecutor {
     globee_api_key: String,
     globee_base_url: String,
+    donot_verify_ipn: bool,
 }
 
 impl DomainActionExecutor for ProcessPaymentIPNExecutor {
@@ -28,20 +30,26 @@ impl ProcessPaymentIPNExecutor {
         ProcessPaymentIPNExecutor {
             globee_api_key: config.globee_api_key.clone(),
             globee_base_url: config.globee_base_url.clone(),
+            donot_verify_ipn: config.ipn_base_url.to_lowercase() == "test",
         }
     }
 
     fn perform_job(&self, action: &DomainAction, conn: &Connection) -> Result<(), BigNeonError> {
-        let ipn: GlobeeIpnRequest = serde_json::from_value(action.payload.clone())?;
+        let mut ipn: GlobeeIpnRequest = serde_json::from_value(action.payload.clone())?;
         if ipn.custom_payment_id.is_none() {
             // TODO: Return failed?
             return Ok(());
         }
-        let _client = GlobeeClient::new(self.globee_api_key.clone(), self.globee_base_url.clone());
+        let client = GlobeeClient::new(self.globee_api_key.clone(), self.globee_base_url.clone());
 
-        // TODO: Check with Globee server to verify that IPN is valid
+        if !self.donot_verify_ipn {
+            ipn = client.get_payment_request(&ipn.id)?;
+        }
 
-        let order_id = Uuid::parse_str(ipn.custom_payment_id.as_ref().unwrap())?;
+        let order_id =
+            Uuid::parse_str(ipn.custom_payment_id.as_ref().ok_or(ApplicationError::new(
+                "Globee response did not include a custom_payment_id".to_string(),
+            ))?)?;
         let connection = conn.get();
         let mut order = Order::find(order_id, connection)?;
 

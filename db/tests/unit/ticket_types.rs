@@ -537,7 +537,12 @@ pub fn remaining_ticket_count() {
         .remove(0);
     let mut order = project.create_order().for_event(&event).finish();
     let user_id = order.user_id;
-    assert_eq!(90, ticket_type.remaining_ticket_count(connection).unwrap());
+    assert_eq!(
+        90,
+        ticket_type
+            .valid_available_ticket_count(connection)
+            .unwrap()
+    );
 
     order
         .update_quantities(
@@ -552,7 +557,12 @@ pub fn remaining_ticket_count() {
             connection,
         )
         .unwrap();
-    assert_eq!(80, ticket_type.remaining_ticket_count(connection).unwrap());
+    assert_eq!(
+        80,
+        ticket_type
+            .valid_available_ticket_count(connection)
+            .unwrap()
+    );
 
     order
         .update_quantities(
@@ -567,7 +577,12 @@ pub fn remaining_ticket_count() {
             connection,
         )
         .unwrap();
-    assert_eq!(84, ticket_type.remaining_ticket_count(connection).unwrap());
+    assert_eq!(
+        84,
+        ticket_type
+            .valid_available_ticket_count(connection)
+            .unwrap()
+    );
 }
 
 #[test]

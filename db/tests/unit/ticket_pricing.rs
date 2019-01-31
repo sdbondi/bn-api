@@ -577,7 +577,7 @@ fn get_current_ticket_capacity() {
     assert_eq!(ticket_types.len(), 1);
 
     let ticket_capacity = ticket_types[0]
-        .ticket_capacity(project.get_connection())
+        .valid_ticket_count(project.get_connection())
         .unwrap();
     assert_eq!(ticket_capacity, 100);
 }

@@ -28,7 +28,7 @@ impl UserDisplayTicketType {
         conn: &PgConnection,
     ) -> Result<UserDisplayTicketType, DatabaseError> {
         let mut status = ticket_type.status;
-        let available = ticket_type.remaining_ticket_count(conn)?;
+        let available = ticket_type.valid_available_ticket_count(conn)?;
 
         let ticket_pricing = match ticket_type
             .current_ticket_pricing(box_office_pricing, conn)

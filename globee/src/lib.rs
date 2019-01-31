@@ -24,11 +24,10 @@ use reqwest::StatusCode;
 use serde::Deserialize;
 use std::error::Error as StdError;
 use std::fmt;
-use url::Url;
 
 #[derive(Serialize, Deserialize)]
 pub struct GlobeeIpnRequest {
-    pub id: Option<String>,
+    pub id: String,
     pub status: Option<String>,
     pub total: Option<String>,
     pub adjusted_total: Option<String>,
@@ -93,6 +92,45 @@ impl GlobeeClient {
         let value: serde_json::Value = resp.json()?;
         jlog!(Debug, "Response from Globee", { "response": &value });
         let value: GlobeeResponse<PaymentResponse> = serde_json::from_value(value)?;
+
+        if value.success {
+            match value.data {
+                Some(data) => Ok(data),
+                None => Err(GlobeeError::UnexpectedResponseError(
+                    "API did not return a response that was expected".to_string(),
+                )),
+            }
+        } else {
+            match value.errors {
+                Some(errors) => Err(GlobeeError::ValidationError(Errors(errors))),
+                None => Err(GlobeeError::UnexpectedResponseError(
+                    "API did not return a response that was expected".to_string(),
+                )),
+            }
+        }
+    }
+    pub fn get_payment_request(&self, id: &str) -> Result<GlobeeIpnRequest, GlobeeError> {
+        let client = reqwest::Client::new();
+        jlog!(Debug, "Retrieving payment request from Globee", {
+            "id": id
+        });
+
+        let mut resp = client
+            .get(&format!("{}payment-request/{}", &self.base_url, id))
+            .header(HeaderName::from_static("x-auth-key"), self.key.as_str())
+            .send()?;
+        let status = resp.status();
+        if status != StatusCode::UNPROCESSABLE_ENTITY && status != StatusCode::OK {
+            return Err(resp.error_for_status().err().map(|e| e.into()).unwrap_or(
+                GlobeeError::UnexpectedResponseError(format!(
+                    "Unexpected status code from Globee: {}",
+                    status
+                )),
+            ));
+        };
+        let value: serde_json::Value = resp.json()?;
+        jlog!(Debug, "Response from Globee", { "response": &value });
+        let value: GlobeeResponse<GlobeeIpnRequest> = serde_json::from_value(value)?;
 
         if value.success {
             match value.data {
@@ -190,6 +228,7 @@ pub struct PaymentResponse {
     pub id: String,
     pub status: String,
     pub adjusted_total: Option<String>,
+
     #[serde(flatten)]
     pub request: PaymentRequest,
     pub redirect_url: String,

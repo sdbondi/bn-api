@@ -199,13 +199,19 @@ impl Payment {
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
         if self.status == PaymentStatus::Completed {
-            return DatabaseError::business_process_error(
-                "Payment has already been marked complete",
-            );
+            DomainEvent::create(
+                DomainEventTypes::PaymentCompleted,
+                "Payment was completed".to_string(),
+                Tables::Payments,
+                Some(self.id),
+                current_user_id,
+                Some(raw_data),
+            )
+            .commit(conn)?;
+            return Ok(());
         }
         self.update_status(PaymentStatus::Completed, current_user_id, conn)?;
 
-        println!("Saved payment");
         DomainEvent::create(
             DomainEventTypes::PaymentCompleted,
             "Payment was completed".to_string(),
@@ -215,8 +221,6 @@ impl Payment {
             Some(raw_data),
         )
         .commit(conn)?;
-
-        println!("Domain Action created");
 
         self.order(conn)?
             .complete_if_fully_paid(current_user_id, conn)?;

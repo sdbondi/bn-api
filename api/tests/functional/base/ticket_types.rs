@@ -87,7 +87,7 @@ pub fn update(role: Roles, should_test_succeed: bool) {
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
     let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
-    let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
+    let created_ticket_capacity = created_ticket_type.valid_ticket_count(conn).unwrap();
     let created_ticket_pricing = created_ticket_type.ticket_pricing(conn).unwrap();
 
     //Construct update request
@@ -144,7 +144,7 @@ pub fn update(role: Roles, should_test_succeed: bool) {
 
     //Check if fields have been updated by retrieving the ticket type and pricing
     let updated_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
-    let updated_ticket_capacity = updated_ticket_type.ticket_capacity(conn).unwrap();
+    let updated_ticket_capacity = updated_ticket_type.valid_ticket_count(conn).unwrap();
     let updated_ticket_pricing = updated_ticket_type.ticket_pricing(conn).unwrap();
     let mut new_ticket_pricing: Vec<UpdateTicketPricingRequest> = Vec::new();
     new_ticket_pricing.reserve(updated_ticket_pricing.len());

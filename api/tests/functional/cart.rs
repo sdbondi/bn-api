@@ -815,7 +815,6 @@ fn checkout_external() {
     let request = TestRequest::create();
 
     let input = Json(cart::CheckoutCartRequest {
-        amount: 100,
         method: PaymentRequest::External {
             reference: Some("TestRef".to_string()),
             first_name: "First".to_string(),
@@ -860,7 +859,6 @@ fn checkout_free() {
     let request = TestRequest::create();
 
     let input = Json(cart::CheckoutCartRequest {
-        amount: 0,
         method: PaymentRequest::Free,
     });
 
@@ -900,7 +898,6 @@ fn checkout_free_for_paid_items() {
     let request = TestRequest::create();
 
     let input = Json(cart::CheckoutCartRequest {
-        amount: 0,
         method: PaymentRequest::Free,
     });
 

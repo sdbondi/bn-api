@@ -7,6 +7,7 @@ use diesel::PgConnection;
 use errors::*;
 use extractors::*;
 use helpers::application;
+use log::Level::Debug;
 use models::{AdminDisplayTicketType, EventTicketPathParameters, PathParameters};
 use server::AppState;
 use tari_client::MessagePayloadCreateAsset as TariNewAsset;
@@ -214,11 +215,15 @@ pub fn update(
     let connection = connection.get();
     let event = Event::find(path.event_id, connection)?;
     let organization = event.organization(connection)?;
+    let fee_schedule_id = organization.fee_schedule_id;
     user.requires_scope_for_organization(Scopes::EventWrite, &organization, connection)?;
 
+    let data = data.into_inner();
+    jlog!(Debug, "Updating ticket type", {"ticket_type_id": path.ticket_type_id, "event_id":event.id, "request": &data});
     let ticket_type = TicketType::find(path.ticket_type_id, connection)?;
     if let Some(requested_capacity) = data.capacity {
         let valid_ticket_count = ticket_type.valid_ticket_count(connection)?;
+        jlog!(Debug, "Update ticket type: Capacity changed", {"ticket_type_id": path.ticket_type_id, "new_capacity": requested_capacity, "old_capacity": valid_ticket_count});
         if valid_ticket_count < requested_capacity {
             let starting_tari_id = ticket_type.ticket_count(connection)?;
             let additional_ticket_count = requested_capacity - valid_ticket_count;
@@ -336,7 +341,13 @@ pub fn update(
         updated_ticket_type.validate_ticket_pricing(connection)?;
     }
 
-    Ok(HttpResponse::Ok().finish())
+    let result = AdminDisplayTicketType::from_ticket_type(
+        &(TicketType::find(path.ticket_type_id, connection)?),
+        &FeeSchedule::find(fee_schedule_id, connection)?,
+        connection,
+    )?;
+
+    Ok(HttpResponse::Ok().json(result))
 }
 
 fn nullify_tickets(

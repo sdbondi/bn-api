@@ -3,6 +3,7 @@ use bigneon_db::utils::errors::ErrorCode::ValidationError;
 use bigneon_db::utils::errors::*;
 use diesel::result::Error as DieselError;
 use errors::*;
+use globee::GlobeeError;
 use jwt::errors::{Error as JwtError, ErrorKind as JwtErrorKind};
 use lettre::smtp::error::Error as SmtpError;
 use lettre_email::error::Error as EmailBuilderError;
@@ -61,6 +62,12 @@ impl ConvertToWebError for DieselError {
 impl ConvertToWebError for r2d2::Error {
     fn to_response(&self) -> HttpResponse {
         error!("R2D2 error: {}", self);
+        internal_error("Internal error")
+    }
+}
+impl ConvertToWebError for GlobeeError {
+    fn to_response(&self) -> HttpResponse {
+        error!("Globee error: {}", self);
         internal_error("Internal error")
     }
 }
