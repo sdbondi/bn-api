@@ -103,26 +103,26 @@ where
     T: ToETag,
 {
     fn to_etag(&self) -> ETag {
-	// Get each payload etag
-	let etag_strs = self
-	    .data
-	    .iter()
-	    .map(|d| format!("{}", d.to_etag()))
-	    .collect::<Vec<String>>()
-	    .join("");
+        // Get each payload etag
+        let etag_strs = self
+            .data
+            .iter()
+            .map(|d| format!("{}", d.to_etag()))
+            .collect::<Vec<String>>()
+            .join("");
 
-	let tag_str = self
-	    .paging
-	    .tags
-	    .iter()
-	    .fold("".to_string(), |mut acc, (k, v)| {
-		acc.push_str(&format!("{}{}", k, v));
-		acc
-	    });
+        let tag_str = self
+            .paging
+            .tags
+            .iter()
+            .fold("".to_string(), |mut acc, (k, v)| {
+                acc.push_str(&format!("{}{}", k, v));
+                acc
+            });
 
-	// Hash the resultant string
-	let sha = sha1::digest(&format!("{}{}", etag_strs, tag_str));
-	ETag(EntityTag::weak(sha.to_string()))
+        // Hash the resultant string
+        let sha = sha1::digest(&format!("{}{}", etag_strs, tag_str));
+        ETag(EntityTag::weak(sha.to_string()))
     }
 }
 
