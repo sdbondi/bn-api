@@ -1,5 +1,6 @@
 pub use actix_web::http::header::{CacheControl, CacheDirective, ETag, EntityTag};
 use actix_web::{dev::HttpResponseBuilder, http::header, HttpRequest, HttpResponse};
+use serde::Serialize;
 
 pub struct CacheHeaders(pub header::CacheControl, pub Option<ETag>);
 
@@ -16,25 +17,39 @@ impl CacheHeaders {
 	&self.1
     }
 
-    pub fn into_ok_response(self) -> HttpResponseBuilder {
-	let mut builder = HttpResponse::Ok();
+    //    pub fn into_ok_response(self) -> HttpResponseBuilder {
+    //        let mut builder = HttpResponse::Ok();
+    //
+    //        self.set_headers(&mut builder);
+    //        builder
+    //    }
 
-	self.set_headers(&mut builder);
-	builder
+    pub fn into_response_json<T, P: Serialize>(
+	self,
+	req: &HttpRequest<T>,
+	payload: &P,
+    ) -> HttpResponse {
+	let (is_stale, mut builder) = self.into_response_builder(req);
+
+	if is_stale {
+	    builder.json(payload)
+	} else {
+	    builder.finish()
+	}
     }
 
-    /// Returns a HTTP 200 for stale requests, otherwise an HTTP 302 (Found) for
+    /// Returns a HTTP 200 for stale requests, otherwise an HTTP 304 (NotModified) for
     /// requests where If-None-Match headers weakly match the ETag
-    pub fn into_response<T>(self, req: &HttpRequest<T>) -> HttpResponseBuilder {
+    pub fn into_response_builder<T>(self, req: &HttpRequest<T>) -> (bool, HttpResponseBuilder) {
 	let is_stale = self.is_stale(req);
 	let mut builder = if is_stale {
 	    HttpResponse::Ok()
 	} else {
-	    HttpResponse::Found()
+	    HttpResponse::NotModified()
 	};
 
 	self.set_headers(&mut builder);
-	builder
+	(is_stale, builder)
     }
 
     pub fn set_headers(&self, builder: &mut HttpResponseBuilder) {
@@ -84,5 +99,116 @@ pub mod sha1 {
     fn sha1_digest() {
 	let sha = digest("testme");
 	assert_eq!(sha, "3abef1a14ccecd20d6ce892cbe042ae6d74946c8");
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use actix_web::test;
+    use std::collections::hash_map::HashMap;
+
+    type State = HashMap<String, String>;
+
+    #[test]
+    fn is_stale_no_etag() {
+	let subject = CacheHeaders(
+	    CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+	    Some(ETag(EntityTag::weak("abcd123".to_string()))),
+	);
+
+	let test_request = test::TestRequest::with_state(State::new()).finish();
+
+	assert!(subject.is_stale(&test_request));
+    }
+
+    #[test]
+    fn is_stale_etag_match_any() {
+	let etag = ETag(EntityTag::weak("abcd123".to_string()));
+	let subject = CacheHeaders(
+	    CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+	    Some(etag),
+	);
+
+	let hdr = header::IfNoneMatch::Any;
+	let test_request = test::TestRequest::with_hdr(hdr).finish();
+
+	assert!(subject.is_stale(&test_request));
+    }
+
+    #[test]
+    fn is_stale_etag_mismatch() {
+	let etag = ETag(EntityTag::weak("abcd123".to_string()));
+	let subject = CacheHeaders(
+	    CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+	    Some(etag),
+	);
+
+	let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd124".to_string())]);
+	let test_request = test::TestRequest::with_hdr(hdr).finish();
+
+	assert!(subject.is_stale(&test_request));
+    }
+
+    #[test]
+    fn is_stale_etag_matches() {
+	let etag = ETag(EntityTag::weak("abcd123".to_string()));
+	let subject = CacheHeaders(
+	    CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+	    Some(etag),
+	);
+
+	let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd123".to_string())]);
+	let test_request = test::TestRequest::with_hdr(hdr).finish();
+
+	assert!(!subject.is_stale(&test_request));
+    }
+
+    #[test]
+    fn into_response_found_304() {
+	let etag = ETag(EntityTag::weak("abcd123".to_string()));
+	let subject = CacheHeaders(
+	    CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+	    Some(etag),
+	);
+
+	let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd123".to_string())]);
+	let test_request = test::TestRequest::with_hdr(hdr).finish();
+
+	let resp = subject.into_response_builder(&test_request).finish();
+
+	assert_eq!(resp.status().as_u16(), 304);
+
+	let mut headers = resp.headers().clone();
+
+	let cache_control_header = headers.entry("Cache-Control");
+	assert!(cache_control_header.is_ok());
+
+	let etag_header = headers.entry("ETag");
+	assert!(etag_header.is_ok());
+    }
+
+    #[test]
+    fn into_response_ok() {
+	let etag = ETag(EntityTag::weak("abcd123".to_string()));
+	let subject = CacheHeaders(
+	    CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+	    Some(etag),
+	);
+
+	let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd124".to_string())]);
+	let test_request = test::TestRequest::with_hdr(hdr).finish();
+
+	let resp = subject.into_response_builder(&test_request).finish();
+
+	assert_eq!(resp.status().as_u16(), 200u16);
+
+	let mut headers = resp.headers().clone();
+
+	let cache_control_header = headers.entry("Cache-Control");
+	assert!(cache_control_header.is_ok());
+
+	let etag_header = headers.entry("ETag");
+	assert!(etag_header.is_ok());
     }
 }

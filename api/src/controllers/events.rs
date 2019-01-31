@@ -1,4 +1,4 @@
-use actix_web::{http::StatusCode, HttpResponse, Path, Query, State};
+use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Path, Query, State};
 use auth::user::User;
 use bigneon_db::models::*;
 use bigneon_db::utils::errors::{DatabaseError, ErrorCode};
@@ -86,11 +86,12 @@ pub fn checkins(
 }
 
 pub fn index(
-    (state, connection, query, auth_user): (
+    (state, connection, query, auth_user, http_request): (
         State<AppState>,
         Connection,
         Query<SearchParameters>,
         OptionalUser,
+	HttpRequest<AppState>,
     ),
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = connection.get();
@@ -197,7 +198,7 @@ pub fn index(
     )?;
 
     let event_interest = match user {
-        Some(u) => EventInterest::find_interest_by_event_ids_for_user(
+	Some(ref u) => EventInterest::find_interest_by_event_ids_for_user(
             events.iter().map(|e| e.id).collect::<Vec<Uuid>>(),
             u.id,
             connection,
@@ -260,11 +261,18 @@ pub fn index(
     payload.paging.limit = 100;
 
     let http_caching = CacheHeaders(
-	CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+	CacheControl(vec![
+	    CacheDirective::SMaxAge(60),
+	    if user.is_some() {
+		CacheDirective::Private
+	    } else {
+		CacheDirective::Public
+	    },
+	]),
 	Some(payload.to_etag()),
     );
 
-    Ok(http_caching.into_ok_response().json(&payload))
+    Ok(http_caching.into_response_json(&http_request, &payload))
 }
 
 #[derive(Deserialize)]
@@ -274,12 +282,13 @@ pub struct EventParameters {
 }
 
 pub fn show(
-    (state, connection, parameters, query, user): (
+    (state, connection, parameters, query, user, http_request): (
         State<AppState>,
         Connection,
         Path<PathParameters>,
         Query<EventParameters>,
         OptionalUser,
+	HttpRequest<AppState>,
     ),
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = connection.get();
@@ -351,7 +360,7 @@ pub fn show(
 
     let mut limited_tickets_remaining: Vec<TicketsRemaining> = Vec::new();
 
-    if let Some(u) = user {
+    if let Some(ref u) = user {
         let tickets_bought = Order::quantity_for_user_for_event(&u.id(), &event.id, connection)?;
         for (tt_id, num) in tickets_bought {
             let limit = TicketType::find(tt_id, connection)?.limit_per_person;
@@ -453,11 +462,18 @@ pub fn show(
     };
 
     let http_caching = CacheHeaders(
-	CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+	CacheControl(vec![
+	    CacheDirective::SMaxAge(60),
+	    if user.is_some() {
+		CacheDirective::Private
+	    } else {
+		CacheDirective::Public
+	    },
+	]),
 	Some(payload.to_etag()),
     );
 
-    Ok(http_caching.into_ok_response().json(&payload))
+    Ok(http_caching.into_response_json(&http_request, &payload))
 }
 
 pub fn publish(

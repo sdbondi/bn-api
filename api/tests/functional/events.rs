@@ -70,8 +70,14 @@ pub fn index() {
         },
     };
     let expected_json = serde_json::to_string(&wrapped_expected_events).unwrap();
+
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(body, expected_json);
+
+    // cache headers
+    let mut headers = response.headers().clone();
+    let cache_control_headers = headers.entry("Cache-Control");
+    assert!(cache_control_headers.is_ok());
 }
 
 #[test]
