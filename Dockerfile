@@ -18,6 +18,7 @@ ADD tari-client ./tari-client/
 ADD stripe ./stripe/
 ADD logging ./logging/
 ADD globee ./globee/
+ADD embed_dirs_derive ./embed_dirs_derive/
 ADD Cargo.lock Cargo.toml ./
 
 RUN cargo build --release
