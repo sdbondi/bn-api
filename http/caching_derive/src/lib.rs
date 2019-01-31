@@ -30,8 +30,8 @@ fn impl_to_etag(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
 
     match &ast.data {
-	Data::Struct(_) => {}
-	_ => help("must be used on a struct"),
+        Data::Struct(_) => {}
+        _ => help("must be used on a struct"),
     }
 
     let name_str = format!("{}", name);

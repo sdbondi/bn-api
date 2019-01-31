@@ -10,13 +10,13 @@ extern crate serde;
 fn to_etag_json() {
     #[derive(ToETag, Serialize)]
     struct T {
-	a: u32,
-	b: String,
+        a: u32,
+        b: String,
     }
 
     let mut t = T {
-	a: 123,
-	b: "123".to_string(),
+        a: 123,
+        b: "123".to_string(),
     };
     let etag = t.to_etag();
 

@@ -10,65 +10,65 @@ pub trait ToETag {
 
 impl CacheHeaders {
     pub fn cache_control(&self) -> &header::CacheControl {
-	&self.0
+        &self.0
     }
 
     pub fn etag(&self) -> &Option<ETag> {
-	&self.1
+        &self.1
     }
 
     pub fn into_response_json<T, P: Serialize>(
-	self,
-	req: &HttpRequest<T>,
-	payload: &P,
+        self,
+        req: &HttpRequest<T>,
+        payload: &P,
     ) -> HttpResponse {
-	let (is_stale, mut builder) = self.into_response_builder(req);
+        let (is_stale, mut builder) = self.into_response_builder(req);
 
-	if is_stale {
-	    builder.json(payload)
-	} else {
-	    builder.finish()
-	}
+        if is_stale {
+            builder.json(payload)
+        } else {
+            builder.finish()
+        }
     }
 
     /// Returns a HTTP 200 for stale requests, otherwise an HTTP 304 (NotModified) for
     /// requests where If-None-Match headers weakly match the ETag
     pub fn into_response_builder<T>(self, req: &HttpRequest<T>) -> (bool, HttpResponseBuilder) {
-	let is_stale = self.is_stale(req);
-	let mut builder = if is_stale {
-	    HttpResponse::Ok()
-	} else {
-	    HttpResponse::NotModified()
-	};
+        let is_stale = self.is_stale(req);
+        let mut builder = if is_stale {
+            HttpResponse::Ok()
+        } else {
+            HttpResponse::NotModified()
+        };
 
-	self.set_headers(&mut builder);
-	(is_stale, builder)
+        self.set_headers(&mut builder);
+        (is_stale, builder)
     }
 
     pub fn set_headers(&self, builder: &mut HttpResponseBuilder) {
-	builder.set(self.cache_control().clone());
-	if let Some(etag) = self.etag() {
-	    builder.set(etag.clone());
-	}
+        builder.set(self.cache_control().clone());
+        if let Some(etag) = self.etag() {
+            builder.set(etag.clone());
+        }
     }
 
     pub fn is_stale<T>(&self, req: &HttpRequest<T>) -> bool {
-	let if_none_match: Result<header::IfNoneMatch, _> = header::Header::parse(req);
-	let if_none_match = if_none_match.ok();
+        let if_none_match: Result<header::IfNoneMatch, _> = header::Header::parse(req);
+        let if_none_match = if_none_match.ok();
 
-	let etag = self.etag();
-	let etag = match etag {
-	    Some(e) => e,
-	    None => return true,
-	};
+        let etag = self.etag();
+        let etag = match etag {
+            Some(e) => e,
+            None => return true,
+        };
 
-	match if_none_match {
-	    Some(h) => match h {
-		header::IfNoneMatch::Items(entities) => !entities.iter().any(|e| etag.weak_eq(e)),
-		header::IfNoneMatch::Any => true,
-	    },
-	    None => true,
-	}
+        match if_none_match {
+            Some(h) => match h {
+                header::IfNoneMatch::Items(entities) => !entities.iter().any(|e| etag.weak_eq(e)),
+                header::IfNoneMatch::Any => true,
+            },
+            None => true,
+        }
     }
 }
 
@@ -80,18 +80,18 @@ pub mod sha1 {
     use ring::digest;
 
     pub fn digest(s: &str) -> String {
-	let sha = digest::digest(&digest::SHA1, s.as_bytes());
-	sha.as_ref()
-	    .iter()
-	    .map(|b| format!("{:02x}", b))
-	    .collect::<Vec<String>>()
-	    .join("")
+        let sha = digest::digest(&digest::SHA1, s.as_bytes());
+        sha.as_ref()
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<Vec<String>>()
+            .join("")
     }
 
     #[test]
     fn sha1_digest() {
-	let sha = digest("testme");
-	assert_eq!(sha, "3abef1a14ccecd20d6ce892cbe042ae6d74946c8");
+        let sha = digest("testme");
+        assert_eq!(sha, "3abef1a14ccecd20d6ce892cbe042ae6d74946c8");
     }
 }
 
@@ -105,103 +105,103 @@ mod test {
 
     #[test]
     fn is_stale_no_etag() {
-	let subject = CacheHeaders(
-	    CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
-	    Some(ETag(EntityTag::weak("abcd123".to_string()))),
-	);
+        let subject = CacheHeaders(
+            CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+            Some(ETag(EntityTag::weak("abcd123".to_string()))),
+        );
 
-	let test_request = test::TestRequest::with_state(State::new()).finish();
+        let test_request = test::TestRequest::with_state(State::new()).finish();
 
-	assert!(subject.is_stale(&test_request));
+        assert!(subject.is_stale(&test_request));
     }
 
     #[test]
     fn is_stale_etag_match_any() {
-	let etag = ETag(EntityTag::weak("abcd123".to_string()));
-	let subject = CacheHeaders(
-	    CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
-	    Some(etag),
-	);
+        let etag = ETag(EntityTag::weak("abcd123".to_string()));
+        let subject = CacheHeaders(
+            CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+            Some(etag),
+        );
 
-	let hdr = header::IfNoneMatch::Any;
-	let test_request = test::TestRequest::with_hdr(hdr).finish();
+        let hdr = header::IfNoneMatch::Any;
+        let test_request = test::TestRequest::with_hdr(hdr).finish();
 
-	assert!(subject.is_stale(&test_request));
+        assert!(subject.is_stale(&test_request));
     }
 
     #[test]
     fn is_stale_etag_mismatch() {
-	let etag = ETag(EntityTag::weak("abcd123".to_string()));
-	let subject = CacheHeaders(
-	    CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
-	    Some(etag),
-	);
+        let etag = ETag(EntityTag::weak("abcd123".to_string()));
+        let subject = CacheHeaders(
+            CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+            Some(etag),
+        );
 
-	let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd124".to_string())]);
-	let test_request = test::TestRequest::with_hdr(hdr).finish();
+        let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd124".to_string())]);
+        let test_request = test::TestRequest::with_hdr(hdr).finish();
 
-	assert!(subject.is_stale(&test_request));
+        assert!(subject.is_stale(&test_request));
     }
 
     #[test]
     fn is_stale_etag_matches() {
-	let etag = ETag(EntityTag::weak("abcd123".to_string()));
-	let subject = CacheHeaders(
-	    CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
-	    Some(etag),
-	);
+        let etag = ETag(EntityTag::weak("abcd123".to_string()));
+        let subject = CacheHeaders(
+            CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+            Some(etag),
+        );
 
-	let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd123".to_string())]);
-	let test_request = test::TestRequest::with_hdr(hdr).finish();
+        let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd123".to_string())]);
+        let test_request = test::TestRequest::with_hdr(hdr).finish();
 
-	assert!(!subject.is_stale(&test_request));
+        assert!(!subject.is_stale(&test_request));
     }
 
     #[test]
     fn into_response_found_304() {
-	let etag = ETag(EntityTag::weak("abcd123".to_string()));
-	let subject = CacheHeaders(
-	    CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
-	    Some(etag),
-	);
+        let etag = ETag(EntityTag::weak("abcd123".to_string()));
+        let subject = CacheHeaders(
+            CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+            Some(etag),
+        );
 
-	let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd123".to_string())]);
-	let test_request = test::TestRequest::with_hdr(hdr).finish();
+        let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd123".to_string())]);
+        let test_request = test::TestRequest::with_hdr(hdr).finish();
 
-	let resp = subject.into_response_builder(&test_request).finish();
+        let resp = subject.into_response_builder(&test_request).finish();
 
-	assert_eq!(resp.status().as_u16(), 304);
+        assert_eq!(resp.status().as_u16(), 304);
 
-	let mut headers = resp.headers().clone();
+        let mut headers = resp.headers().clone();
 
-	let cache_control_header = headers.entry("Cache-Control");
-	assert!(cache_control_header.is_ok());
+        let cache_control_header = headers.entry("Cache-Control");
+        assert!(cache_control_header.is_ok());
 
-	let etag_header = headers.entry("ETag");
-	assert!(etag_header.is_ok());
+        let etag_header = headers.entry("ETag");
+        assert!(etag_header.is_ok());
     }
 
     #[test]
     fn into_response_ok() {
-	let etag = ETag(EntityTag::weak("abcd123".to_string()));
-	let subject = CacheHeaders(
-	    CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
-	    Some(etag),
-	);
+        let etag = ETag(EntityTag::weak("abcd123".to_string()));
+        let subject = CacheHeaders(
+            CacheControl(vec![CacheDirective::MaxAge(60u32), CacheDirective::Public]),
+            Some(etag),
+        );
 
-	let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd124".to_string())]);
-	let test_request = test::TestRequest::with_hdr(hdr).finish();
+        let hdr = header::IfNoneMatch::Items(vec![EntityTag::weak("abcd124".to_string())]);
+        let test_request = test::TestRequest::with_hdr(hdr).finish();
 
-	let resp = subject.into_response_builder(&test_request).finish();
+        let resp = subject.into_response_builder(&test_request).finish();
 
-	assert_eq!(resp.status().as_u16(), 200u16);
+        assert_eq!(resp.status().as_u16(), 200u16);
 
-	let mut headers = resp.headers().clone();
+        let mut headers = resp.headers().clone();
 
-	let cache_control_header = headers.entry("Cache-Control");
-	assert!(cache_control_header.is_ok());
+        let cache_control_header = headers.entry("Cache-Control");
+        assert!(cache_control_header.is_ok());
 
-	let etag_header = headers.entry("ETag");
-	assert!(etag_header.is_ok());
+        let etag_header = headers.entry("ETag");
+        assert!(etag_header.is_ok());
     }
 }
