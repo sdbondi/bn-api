@@ -14,6 +14,7 @@ RUN rm src/*.rs
 # Add the actual source code
 ADD api ./api/
 ADD db ./db/
+ADD http ./http/
 ADD tari-client ./tari-client/
 ADD stripe ./stripe/
 ADD logging ./logging/
