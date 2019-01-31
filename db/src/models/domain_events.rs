@@ -111,7 +111,7 @@ impl NewDomainEvent {
             self.display_text, self.main_table, self.main_id.map(|i| i.to_string()).unwrap_or_default()),{"domain_event_id": result.id,
 
 
-            "event_type": self.event_type.clone(), "main_table": self.main_table.clone(), "main_id": self.main_id});
+            "event_type": self.event_type.clone(), "main_table": self.main_table.clone(), "main_id": self.main_id, "event_data": self.event_data });
 
         Ok(result)
     }
