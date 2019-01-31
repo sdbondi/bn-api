@@ -51,6 +51,7 @@ pub fn index() {
         database.connection.clone().into(),
         parameters,
         OptionalUser(None),
+        test_request.request,
     ))
     .into();
 
@@ -118,6 +119,7 @@ pub fn index_for_user() {
         database.connection.clone().into(),
         parameters,
         OptionalUser(Some(auth_user)),
+        test_request.request,
     ))
     .into();
 
@@ -184,6 +186,7 @@ pub fn index_with_draft_for_organization_user() {
         database.connection.clone().into(),
         parameters,
         OptionalUser(Some(auth_user)),
+        test_request.request,
     ))
     .into();
 
@@ -243,6 +246,7 @@ pub fn index_with_draft_for_user_ignores_drafts() {
         database.connection.clone().into(),
         parameters,
         OptionalUser(Some(auth_user)),
+        test_request.request,
     ))
     .into();
 
@@ -320,6 +324,7 @@ pub fn index_search_with_filter() {
         database.connection.into(),
         parameters,
         OptionalUser(None),
+        test_request.request,
     ))
     .into();
 
@@ -380,6 +385,7 @@ fn show() {
         path,
         query_parameters,
         OptionalUser(Some(auth_user)),
+        test_request.request,
     ))
     .into();
     let body = support::unwrap_body_to_string(&response).unwrap();
@@ -429,6 +435,7 @@ fn show_with_cancelled_ticket_type() {
         path,
         query_parameters,
         OptionalUser(Some(auth_user)),
+        test_request.request,
     ))
     .into();
     let body = support::unwrap_body_to_string(&response).unwrap();
@@ -493,6 +500,7 @@ fn show_with_access_restricted_ticket_type_and_no_code() {
         path,
         query_parameters,
         OptionalUser(Some(auth_user)),
+        test_request.request,
     ))
     .into();
     let body = support::unwrap_body_to_string(&response).unwrap();
@@ -560,6 +568,7 @@ fn show_with_access_restricted_ticket_type_and_access_code() {
         path,
         query_parameters,
         OptionalUser(Some(auth_user)),
+        test_request.request,
     ))
     .into();
     let body = support::unwrap_body_to_string(&response).unwrap();

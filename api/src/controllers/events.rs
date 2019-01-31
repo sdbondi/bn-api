@@ -91,7 +91,7 @@ pub fn index(
         Connection,
         Query<SearchParameters>,
         OptionalUser,
-	HttpRequest<AppState>,
+        HttpRequest<AppState>,
     ),
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = connection.get();
@@ -198,7 +198,7 @@ pub fn index(
     )?;
 
     let event_interest = match user {
-	Some(ref u) => EventInterest::find_interest_by_event_ids_for_user(
+        Some(ref u) => EventInterest::find_interest_by_event_ids_for_user(
             events.iter().map(|e| e.id).collect::<Vec<Uuid>>(),
             u.id,
             connection,
@@ -261,15 +261,15 @@ pub fn index(
     payload.paging.limit = 100;
 
     let http_caching = CacheHeaders(
-	CacheControl(vec![
-	    CacheDirective::SMaxAge(60),
-	    if user.is_some() {
-		CacheDirective::Private
-	    } else {
-		CacheDirective::Public
-	    },
-	]),
-	Some(payload.to_etag()),
+        CacheControl(vec![
+            CacheDirective::SMaxAge(60),
+            if user.is_some() {
+                CacheDirective::Private
+            } else {
+                CacheDirective::Public
+            },
+        ]),
+        Some(payload.to_etag()),
     );
 
     Ok(http_caching.into_response_json(&http_request, &payload))
@@ -288,7 +288,7 @@ pub fn show(
         Path<PathParameters>,
         Query<EventParameters>,
         OptionalUser,
-	HttpRequest<AppState>,
+        HttpRequest<AppState>,
     ),
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = connection.get();
@@ -462,15 +462,15 @@ pub fn show(
     };
 
     let http_caching = CacheHeaders(
-	CacheControl(vec![
-	    CacheDirective::SMaxAge(60),
-	    if user.is_some() {
-		CacheDirective::Private
-	    } else {
-		CacheDirective::Public
-	    },
-	]),
-	Some(payload.to_etag()),
+        CacheControl(vec![
+            CacheDirective::SMaxAge(60),
+            if user.is_some() {
+                CacheDirective::Private
+            } else {
+                CacheDirective::Public
+            },
+        ]),
+        Some(payload.to_etag()),
     );
 
     Ok(http_caching.into_response_json(&http_request, &payload))
