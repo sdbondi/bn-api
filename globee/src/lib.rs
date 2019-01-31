@@ -241,7 +241,7 @@ pub struct PaymentResponse {
 
 mod date_serialize {
     use chrono::prelude::*;
-    use serde::{self, Deserialize, Deserializer, Serializer};
+    use serde::{self, Deserialize, Deserializer};
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
     where
@@ -253,8 +253,7 @@ mod date_serialize {
 
 }
 
-use chrono::prelude::*;
-use serde::{Deserializer, Serializer};
+use serde::Deserializer;
 use serde_json::Value;
 use std::str::FromStr;
 
