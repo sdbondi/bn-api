@@ -617,6 +617,19 @@ fn show_redeemable_ticket() {
     let result = TicketInstance::show_redeemable_ticket(ticket.id, connection).unwrap();
     assert!(result.redeem_key.is_some());
 
+    // no redeem_date set, event starts 24 hours from now
+    let event_start = NaiveDateTime::from(Utc::now().naive_utc() + Duration::hours(24));
+    let new_event_redeem_date = EventEditableAttributes {
+	redeem_date: None,
+	event_start: Some(event_start),
+	..Default::default()
+    };
+
+    let event = event.update(new_event_redeem_date, connection).unwrap();
+
+    let result = TicketInstance::show_redeemable_ticket(ticket.id, connection).unwrap();
+    assert!(result.redeem_key.is_some());
+
     // Set order on behalf of (should show user information for the on_behalf_of_user user)
     let user2 = project.create_user().finish();
     let order = project
