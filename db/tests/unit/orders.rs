@@ -141,6 +141,7 @@ fn add_tickets_below_min_fee() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
 
     cart.update_quantities(
+        user.id,
         &vec![UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 10,
