@@ -8,7 +8,7 @@ use diesel::prelude::*;
 use diesel::sql_types;
 use diesel::sql_types::{BigInt, Bool, Integer, Nullable, Text, Uuid as dUuid};
 use itertools::Itertools;
-use log::Level;
+use log::Level::{self, Debug};
 use models::*;
 use schema::{events, order_items, orders, organizations, payments, users};
 use serde_json;
@@ -501,6 +501,8 @@ impl Order {
     ) -> Result<(), DatabaseError> {
         self.lock_version(conn)?;
 
+        jlog!(Debug, "Update order quantities", {"items": items,"remove_others":remove_others, "user_id": current_user_id, "box_office_pricing":box_office_pricing });
+
         if box_office_pricing != self.box_office_pricing {
             self.clear_cart(conn)?;
             self.update_box_office_pricing(box_office_pricing, conn)?;
@@ -813,6 +815,12 @@ impl Order {
                 _ => {}
             }
         }
+
+        // Box office purchased tickets do not have fees at this time
+        if self.box_office_pricing {
+            return Ok(());
+        }
+
         for ((event_id, hold_id), items) in self
             .items(conn)?
             .iter()
@@ -1277,6 +1285,7 @@ impl Order {
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
         self.box_office_pricing = box_office_pricing;
+        jlog!(Debug, "Changing order to use box office pricing", { "order_id": self.id});
         diesel::update(&*self)
             .set((
                 orders::box_office_pricing.eq(&self.box_office_pricing),

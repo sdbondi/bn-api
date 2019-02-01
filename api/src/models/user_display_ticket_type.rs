@@ -38,6 +38,7 @@ impl UserDisplayTicketType {
                 &ticket_pricing,
                 fee_schedule,
                 redemption_code.clone(),
+                box_office_pricing,
                 conn,
             )?),
             None => None,

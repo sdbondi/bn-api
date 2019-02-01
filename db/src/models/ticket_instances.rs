@@ -13,6 +13,7 @@ use rand::Rng;
 use schema::{
     assets, events, order_items, orders, ticket_instances, ticket_types, users, venues, wallets,
 };
+use std::cmp;
 use tari_client::*;
 use time::Duration;
 use utils::errors::*;
@@ -645,9 +646,25 @@ impl TicketInstance {
             .first::<RedeemableTicket>(conn)
             .to_db_error(ErrorCode::QueryError, "Unable to load ticket")?;
 
-        if ticket_data.redeem_date.is_some()
-            && ticket_data.redeem_date.unwrap() > Utc::now().naive_utc()
-        {
+        // Ensure that redeem_key is returned either 24 hours before event start or at redeem_date (whichever is earliest)
+        let day_before_event_start = ticket_data
+            .event_start
+            .map(|event_start| event_start - Duration::hours(24));
+
+        let bounded_redeem_date = ticket_data
+            .redeem_date
+            .map(|redeem_date| {
+                if day_before_event_start.is_none() {
+                    redeem_date
+                } else {
+                    // Whichever one is earlier
+                    cmp::min(day_before_event_start.unwrap(), redeem_date)
+                }
+            })
+            .or(day_before_event_start)
+            .unwrap();
+
+        if bounded_redeem_date > Utc::now().naive_utc() {
             ticket_data.redeem_key = None; //Redeem key not available yet. Should this be an error?
         }
 
