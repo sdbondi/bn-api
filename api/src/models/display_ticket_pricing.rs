@@ -21,6 +21,7 @@ impl DisplayTicketPricing {
         ticket_pricing: &TicketPricing,
         fee_schedule: &FeeSchedule,
         redemption_code: Option<String>,
+        box_office_pricing: bool,
         conn: &PgConnection,
     ) -> Result<DisplayTicketPricing, DatabaseError> {
         let mut is_comp = false;
@@ -55,9 +56,9 @@ impl DisplayTicketPricing {
         // Limit reported discount to price of ticket
         discount_in_cents = cmp::min(ticket_pricing.price_in_cents, discount_in_cents);
 
-        // Determine fees using discounted price, comps have no fees
+        // Determine fees using discounted price, comps and box office purchases have no fees
         let mut fee_in_cents = 0;
-        if !is_comp {
+        if !is_comp && !box_office_pricing {
             fee_in_cents = fee_schedule
                 .get_range(ticket_pricing.price_in_cents - discount_in_cents, conn)
                 .optional()?

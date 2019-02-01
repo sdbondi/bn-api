@@ -160,6 +160,7 @@ fn get_profile_for_organization() {
     // Add order but do not checkout
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 10,
@@ -214,6 +215,7 @@ fn get_profile_for_organization() {
     // Checkout with a second order same event
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,
@@ -249,6 +251,7 @@ fn get_profile_for_organization() {
     // Checkout with new event increasing event count as well
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type2.id,
             quantity: 1,
@@ -310,6 +313,7 @@ fn get_history_for_organization() {
     // User adds item to cart but does not checkout so no history
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 10,
@@ -354,6 +358,7 @@ fn get_history_for_organization() {
     let mut cart2 = Order::find_or_create_cart(&user, connection).unwrap();
     cart2
         .update_quantities(
+            user.id,
             &[UpdateOrderItem {
                 ticket_type_id: ticket_type.id,
                 quantity: 1,

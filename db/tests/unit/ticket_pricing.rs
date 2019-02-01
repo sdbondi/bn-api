@@ -389,6 +389,7 @@ fn update_with_affected_orders() {
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 10,
@@ -576,7 +577,7 @@ fn get_current_ticket_capacity() {
     assert_eq!(ticket_types.len(), 1);
 
     let ticket_capacity = ticket_types[0]
-        .ticket_capacity(project.get_connection())
+        .valid_ticket_count(project.get_connection())
         .unwrap();
     assert_eq!(ticket_capacity, 100);
 }

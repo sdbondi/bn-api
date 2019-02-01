@@ -26,14 +26,15 @@ impl AdminDisplayTicketType {
         fee_schedule: &FeeSchedule,
         conn: &PgConnection,
     ) -> Result<AdminDisplayTicketType, DatabaseError> {
-        let available = ticket_type.remaining_ticket_count(conn)?;
-        let capacity = ticket_type.ticket_capacity(conn)?;
+        let available = ticket_type.valid_available_ticket_count(conn)?;
+        let capacity = ticket_type.valid_ticket_count(conn)?;
         let mut ticket_pricing_list = Vec::new();
         for ticket_pricing in ticket_type.valid_ticket_pricing(false, conn)? {
             ticket_pricing_list.push(DisplayTicketPricing::from_ticket_pricing(
                 &ticket_pricing,
                 fee_schedule,
                 None,
+                false,
                 conn,
             )?);
         }

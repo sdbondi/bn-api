@@ -66,6 +66,7 @@ pub trait PaymentProcessor {
     ) -> Result<ChargeAuthResult, PaymentProcessorError>;
 }
 
+#[derive(Serialize, Clone)]
 pub struct RedirectInfo {
     pub redirect_url: String,
     pub id: String,

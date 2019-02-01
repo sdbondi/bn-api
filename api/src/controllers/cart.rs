@@ -83,7 +83,13 @@ pub fn update_cart(
                 .json(json!({"error": "Event has not been published.".to_string()})));
         }
     }
-    cart.update_quantities(&order_items, box_office_pricing, false, connection)?;
+    cart.update_quantities(
+        user.id(),
+        &order_items,
+        box_office_pricing,
+        false,
+        connection,
+    )?;
 
     Ok(HttpResponse::Ok().json(Order::find(cart.id, connection)?.for_display(None, connection)?))
 }
@@ -93,7 +99,7 @@ pub fn destroy((connection, user): (Connection, User)) -> Result<HttpResponse, B
 
     // Find the current cart of the user, if it exists.
     let mut cart = Order::find_or_create_cart(&user.user, connection)?;
-    cart.update_quantities(&[], false, true, connection)?;
+    cart.update_quantities(user.id(), &[], false, true, connection)?;
 
     Ok(HttpResponse::Ok().json(Order::find(cart.id, connection)?.for_display(None, connection)?))
 }
@@ -145,7 +151,13 @@ pub fn replace_cart(
         }
     }
 
-    cart.update_quantities(&order_items, box_office_pricing, true, connection)?;
+    cart.update_quantities(
+        user.id(),
+        &order_items,
+        box_office_pricing,
+        true,
+        connection,
+    )?;
 
     Ok(HttpResponse::Ok().json(Order::find(cart.id, connection)?.for_display(None, connection)?))
 }
@@ -161,7 +173,6 @@ pub fn show((connection, user): (Connection, User)) -> Result<HttpResponse, BigN
 
 #[derive(Deserialize)]
 pub struct CheckoutCartRequest {
-    pub amount: i64,
     pub method: PaymentRequest,
 }
 
@@ -268,7 +279,6 @@ pub fn checkout(
                 email.clone(),
                 phone.clone(),
                 note.clone(),
-                &req,
                 &user,
             )?
         }
@@ -294,7 +304,6 @@ pub fn checkout(
                 &connection,
                 &mut order,
                 None,
-                &req,
                 &user,
                 &state.config.primary_currency,
                 &provider,
@@ -309,7 +318,6 @@ pub fn checkout(
             &connection,
             &mut order,
             None,
-            &req,
             &user,
             &state.config.primary_currency,
             provider,
@@ -328,7 +336,6 @@ pub fn checkout(
             &connection,
             &mut order,
             Some(&token),
-            &req,
             &user,
             &state.config.primary_currency,
             provider,
@@ -416,7 +423,6 @@ fn checkout_external(
     email: Option<String>,
     phone: Option<String>,
     note: Option<String>,
-    checkout_request: &CheckoutCartRequest,
     user: &User,
 ) -> Result<HttpResponse, BigNeonError> {
     let conn = conn.get();
@@ -457,8 +463,9 @@ fn checkout_external(
 
     let mut order = order.update(UpdateOrderAttributes { note: Some(note) }, conn)?;
     order.set_behalf_of_user(guest.unwrap(), user.id(), conn)?;
+    let total = order.calculate_total(conn)?;
 
-    order.add_external_payment(reference, user.id(), checkout_request.amount, conn)?;
+    order.add_external_payment(reference, user.id(), total, conn)?;
 
     let order = Order::find(order.id, conn)?;
     Ok(HttpResponse::Ok().json(json!(order.for_display(None, conn)?)))
@@ -468,7 +475,6 @@ fn checkout_payment_processor(
     conn: &Connection,
     order: &mut Order,
     token: Option<&str>,
-    req: &CheckoutCartRequest,
     auth_user: &User,
     currency: &str,
     provider_name: &str,
@@ -492,14 +498,7 @@ fn checkout_payment_processor(
     let client = service_locator.create_payment_processor(provider_name)?;
     match client.behavior() {
         PaymentProcessorBehavior::RedirectToPaymentPage(behavior) => {
-            return redirect_to_payment_page(
-                &*behavior,
-                req,
-                &auth_user.user,
-                order,
-                conn.get(),
-                config,
-            );
+            return redirect_to_payment_page(&*behavior, &auth_user.user, order, conn.get(), config);
         }
         PaymentProcessorBehavior::AuthThenComplete(behavior) => {
             let token = if use_stored_payment {
@@ -583,7 +582,7 @@ fn checkout_payment_processor(
             };
 
             return auth_then_complete(
-                &*behavior, token, req, currency, order, auth_user, conn, &*client,
+                &*behavior, token, currency, order, auth_user, conn, &*client,
             );
         }
     };
@@ -592,7 +591,6 @@ fn checkout_payment_processor(
 fn auth_then_complete(
     client: &AuthThenCompletePaymentBehavior,
     token: String,
-    req: &CheckoutCartRequest,
     currency: &str,
     order: &mut Order,
     auth_user: &User,
@@ -601,9 +599,11 @@ fn auth_then_complete(
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = conn.get();
     info!("CART: Auth'ing to payment provider");
+    let amount = order.calculate_total(connection)?;
+
     let auth_result = client.auth(
         &token,
-        req.amount,
+        amount,
         currency,
         "Big Neon Tickets",
         vec![("order_id".to_string(), order.id.to_string())],
@@ -612,7 +612,7 @@ fn auth_then_complete(
     info!("CART: Saving payment to order");
     let payment = match order.add_credit_card_payment(
         auth_user.id(),
-        req.amount,
+        amount,
         client.name(),
         auth_result.id.clone(),
         PaymentStatus::Authorized,
@@ -647,7 +647,6 @@ fn auth_then_complete(
 
 fn redirect_to_payment_page(
     client: &RedirectToPaymentPageBehavior,
-    req: &CheckoutCartRequest,
     user: &DbUser,
     order: &mut Order,
     conn: &PgConnection,
@@ -657,12 +656,19 @@ fn redirect_to_payment_page(
         return application::unprocessable("User must have an email to check out");
     }
 
+    let amount = order.calculate_total(conn)?;
+
     let email = user.email.as_ref().unwrap().to_string();
+    let ipn = if config.ipn_base_url.to_lowercase() == "test" {
+        None
+    } else {
+        Some(format!("{}/ipns/globee", config.ipn_base_url))
+    };
     let response = client.create_payment_request(
-        req.amount as f64 / 100_f64,
+        amount as f64 / 100_f64,
         email,
         order.id,
-        Some(format!("{}/ipns/globee", config.ipn_base_url)),
+        ipn,
         Some(format!(
             "{}/events/{}/tickets/success",
             config.front_end_url,
@@ -677,8 +683,24 @@ fn redirect_to_payment_page(
 
     jlog!(Info, &format!("{} payment created", client.name()), {"order_id": order.id, "payment_provider_id": response.id});
 
-    order.add_checkout_url(user.id, response.redirect_url, response.expires_at, conn)?;
+    order.add_checkout_url(
+        user.id,
+        response.redirect_url.clone(),
+        response.expires_at,
+        conn,
+    )?;
 
+    let external_reference = format!("globee-{}", response.id);
+
+    order.add_provider_payment(
+        Some(external_reference),
+        client.name(),
+        Some(user.id),
+        amount,
+        PaymentStatus::Requested,
+        json!(response.clone()),
+        conn,
+    )?;
     let order = Order::find(order.id, conn)?;
     Ok(HttpResponse::Ok().json(json!(order.for_display(None, conn)?)))
 }

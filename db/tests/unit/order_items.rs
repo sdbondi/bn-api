@@ -23,6 +23,7 @@ fn find_fee_item() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket.id,
             quantity: 10,
@@ -61,6 +62,7 @@ fn order() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket.id,
             quantity: 1,
@@ -109,6 +111,7 @@ fn code() {
         .finish();
 
     cart.update_quantities(
+        user.id,
         &[
             UpdateOrderItem {
                 ticket_type_id: ticket_type.id,
@@ -168,6 +171,7 @@ fn confirm_code_valid() {
         .finish();
 
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,
@@ -233,6 +237,7 @@ fn update_with_validation_errors() {
 
     // max_tickets_per_user_reached 6 with a limit of 5
     let result = cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 6,
@@ -265,6 +270,7 @@ fn update_with_validation_errors() {
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 5,
@@ -282,6 +288,7 @@ fn update_with_validation_errors() {
     // Max uses is 1 so second order for user should trigger validation error
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let result = cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,
@@ -319,6 +326,7 @@ fn update_with_validation_errors() {
         .finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let result = cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type2.id,
             quantity: 1,
@@ -351,6 +359,7 @@ fn update_with_validation_errors() {
     }
 
     let result = cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type2.id,
             quantity: 1,
@@ -376,6 +385,7 @@ fn update_with_validation_errors() {
 
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let result = cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,
@@ -423,6 +433,7 @@ fn calculate_quantity() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket.id,
             quantity: 10,

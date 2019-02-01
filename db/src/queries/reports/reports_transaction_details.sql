@@ -28,15 +28,19 @@ SELECT e.name                                                                   
        orders.user_id,
        CAST(
              (oi.quantity - oi.refunded_quantity) * oi.unit_price_in_cents +
-             (COALESCE(oi_fees.quantity, 0) - COALESCE(oi_fees.refunded_quantity, 0)) * COALESCE(oi_fees.unit_price_in_cents, 0) +
-             (COALESCE(oi_event_fees.quantity, 0) - COALESCE(oi_event_fees.refunded_quantity, 0)) * COALESCE(oi_event_fees.unit_price_in_cents, 0)
+             (COALESCE(oi_fees.quantity, 0) - COALESCE(oi_fees.refunded_quantity, 0)) *
+             COALESCE(oi_fees.unit_price_in_cents, 0) +
+             (COALESCE(oi_event_fees.quantity, 0) - COALESCE(oi_event_fees.refunded_quantity, 0)) *
+             COALESCE(oi_event_fees.unit_price_in_cents, 0)
          AS BIGINT)                                                                                                     AS gross,
-       u.last_name || ', ' || u.first_name                                                                              AS user_name,
-       u.email                                                                                                          AS email
+       COALESCE(u.first_name, '')                                                                                       AS first_name,
+       COALESCE(u.last_name, '')                                                                                        AS last_name,
+       COALESCE(u.phone, '')                                                                                            AS phone,
+       COALESCE(u.email, '')                                                                                            AS email
 FROM orders
        LEFT JOIN order_items oi on (orders.id = oi.order_id AND oi.item_type = 'Tickets')
        LEFT JOIN order_items oi_fees on oi.id = oi_fees.parent_id
-       LEFT JOIN order_items oi_event_fees ON ( oi_event_fees.item_type = 'EventFees' AND orders.id = oi_event_fees.order_id )
+       LEFT JOIN order_items oi_event_fees ON (oi_event_fees.item_type = 'EventFees' AND orders.id = oi_event_fees.order_id)
        LEFT JOIN ticket_types tt ON (oi.ticket_type_id = tt.id)
        LEFT JOIN (SELECT order_id, ARRAY_TO_STRING(ARRAY_AGG(DISTINCT p.payment_method), ', ') AS payment_method FROM payments p GROUP BY p.payment_method, p.order_id) AS p on orders.id = p.order_id
        LEFT JOIN holds h on oi.hold_id = h.id
@@ -47,4 +51,4 @@ WHERE orders.status = 'Paid'
   AND ($2 IS NULL OR e.organization_id = $2)
   AND ($3 IS NULL OR orders.paid_at >= $3)
   AND ($4 IS NULL OR orders.paid_at <= $4)
-  AND (oi.item_type = 'Tickets')
+  AND (oi.item_type = 'Tickets');

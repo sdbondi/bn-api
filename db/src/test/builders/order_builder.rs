@@ -82,18 +82,20 @@ impl<'a> OrderBuilder<'a> {
             None
         };
 
+        let user = self.user.unwrap();
+
         cart.update_quantities(
+            user.id,
             &[UpdateOrderItem {
                 ticket_type_id: self.ticket_type_id.unwrap(),
                 quantity: self.quantity,
-                redemption_code: redemption_code,
+                redemption_code,
             }],
             false,
             false,
             self.connection,
         )
         .unwrap();
-        let user = self.user.unwrap();
 
         if let Some(on_behalf_of_user) = self.on_behalf_of_user {
             cart.set_behalf_of_user(on_behalf_of_user, user.id, self.connection)

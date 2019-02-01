@@ -271,24 +271,6 @@ impl TicketType {
         Ok(valid_ticket_count as u32)
     }
 
-    pub fn remaining_ticket_count(&self, conn: &PgConnection) -> Result<u32, DatabaseError> {
-        let remaining_ticket_count: i64 = ticket_instances::table
-            .inner_join(assets::table)
-            .filter(assets::ticket_type_id.eq(self.id))
-            .filter(
-                ticket_instances::reserved_until
-                    .lt(dsl::now.nullable())
-                    .or(ticket_instances::reserved_until.is_null()),
-            )
-            .select(dsl::count(ticket_instances::id))
-            .first(conn)
-            .to_db_error(
-                ErrorCode::QueryError,
-                "Could not load ticket pricing for ticket type",
-            )?;
-        Ok(remaining_ticket_count as u32)
-    }
-
     pub fn valid_ticket_count(&self, conn: &PgConnection) -> Result<u32, DatabaseError> {
         let valid_ticket_count: i64 = ticket_instances::table
             .inner_join(assets::table)
@@ -318,6 +300,20 @@ impl TicketType {
                 "Could not load ticket pricing for ticket type",
             )?;
         Ok(valid_unsold_ticket_count as u32)
+    }
+
+    pub fn valid_available_ticket_count(&self, conn: &PgConnection) -> Result<u32, DatabaseError> {
+        let valid_available_ticket_count: i64 = ticket_instances::table
+            .inner_join(assets::table)
+            .filter(assets::ticket_type_id.eq(self.id))
+            .filter(ticket_instances::status.eq(TicketInstanceStatus::Available))
+            .select(dsl::count(ticket_instances::id))
+            .first(conn)
+            .to_db_error(
+                ErrorCode::QueryError,
+                "Could not load ticket pricing for ticket type",
+            )?;
+        Ok(valid_available_ticket_count as u32)
     }
 
     pub fn current_ticket_pricing(
@@ -377,17 +373,6 @@ impl TicketType {
             ErrorCode::QueryError,
             "Could not load ticket pricing for ticket type",
         )
-    }
-
-    pub fn ticket_capacity(&self, conn: &PgConnection) -> Result<u32, DatabaseError> {
-        //Calculate capacity by counting the number of ticket instances for event
-        let ticket_capacity: i64 = assets::table
-            .filter(assets::ticket_type_id.eq(self.id))
-            .inner_join(ticket_instances::table)
-            .select(dsl::count(ticket_instances::id))
-            .first(conn)
-            .to_db_error(ErrorCode::QueryError, "Unable to load ticket instances")?;
-        Ok(ticket_capacity as u32)
     }
 
     pub fn add_ticket_pricing(

@@ -118,6 +118,7 @@ fn destroy() {
     // Cart has existing items
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &vec![UpdateOrderItem {
             ticket_type_id: ticket_type_id,
             quantity: 10,
@@ -488,6 +489,7 @@ fn reduce() {
     let user = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id,
             quantity: 10,
@@ -569,6 +571,7 @@ fn remove() {
     let user = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id,
             quantity: 10,
@@ -647,6 +650,7 @@ fn remove_with_increment() {
     let user = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id,
             quantity: 12,
@@ -737,6 +741,7 @@ fn remove_with_increment_failure_invalid_quantity() {
     let user = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id,
             quantity: 12,
@@ -810,7 +815,6 @@ fn checkout_external() {
     let request = TestRequest::create();
 
     let input = Json(cart::CheckoutCartRequest {
-        amount: 100,
         method: PaymentRequest::External {
             reference: Some("TestRef".to_string()),
             first_name: "First".to_string(),
@@ -855,7 +859,6 @@ fn checkout_free() {
     let request = TestRequest::create();
 
     let input = Json(cart::CheckoutCartRequest {
-        amount: 0,
         method: PaymentRequest::Free,
     });
 
@@ -895,7 +898,6 @@ fn checkout_free_for_paid_items() {
     let request = TestRequest::create();
 
     let input = Json(cart::CheckoutCartRequest {
-        amount: 0,
         method: PaymentRequest::Free,
     });
 

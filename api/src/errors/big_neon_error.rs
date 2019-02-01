@@ -4,6 +4,7 @@ use bigneon_db::utils::errors::*;
 use diesel::result::Error as DieselError;
 use errors::AuthError;
 use errors::*;
+use globee::GlobeeError;
 use jwt::errors::Error as JwtError;
 use lettre::smtp::error::Error as SmtpError;
 use lettre_email::error::Error as EmailBuilderError;
@@ -45,6 +46,7 @@ error_conversion!(SerdeError);
 error_conversion!(SmtpError);
 error_conversion!(TariError);
 error_conversion!(UuidParseError);
+error_conversion!(GlobeeError);
 
 impl fmt::Display for BigNeonError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -109,6 +109,7 @@ pub fn details(role: Roles, should_succeed: bool) {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 2,
@@ -236,6 +237,7 @@ pub fn refund(role: Roles, should_succeed: bool) {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 2,

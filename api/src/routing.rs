@@ -212,9 +212,7 @@ pub fn routes(app: &mut CorsBuilder<AppState>) -> App<AppState> {
     .resource("/reports/{id}", |r| {
         r.method(Method::GET).with(reports::get_report);
     })
-    .resource("/status", |r| {
-        r.method(Method::GET).f(|_| HttpResponse::Ok())
-    })
+    .resource("/status", |r| r.method(Method::GET).with(status::check))
     .resource("/stages/{id}", |r| {
         r.method(Method::GET).with(stages::show);
         r.method(Method::PUT).with(stages::update);

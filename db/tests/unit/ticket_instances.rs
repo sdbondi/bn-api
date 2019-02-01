@@ -201,6 +201,7 @@ fn release() {
     // Cart adds ticket type (which only had 1 ticket) setting this to Reserved
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,
@@ -364,6 +365,7 @@ fn find() {
 
     let display_event = event.for_display(connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,
@@ -425,6 +427,7 @@ fn find_for_user() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 5,
@@ -456,6 +459,7 @@ fn release_tickets() {
     let ticket_type_id = event.ticket_types(true, None, connection).unwrap()[0].id;
     order
         .update_quantities(
+            user.id,
             &[UpdateOrderItem {
                 ticket_type_id,
                 quantity: 10,
@@ -629,6 +633,7 @@ fn authorize_ticket_transfer() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 5,
@@ -690,6 +695,7 @@ fn receive_ticket_transfer() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 5,

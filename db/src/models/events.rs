@@ -504,8 +504,11 @@ impl Event {
             FROM events e
             WHERE e.organization_id = $1
             AND CASE WHEN $2
-                THEN COALESCE(e.event_start, '31 Dec 9999') >= now()
-                ELSE COALESCE(e.event_end, '31 Dec 1999') <= now()
+                THEN
+                    COALESCE(e.event_start, '31 Dec 9999') >= now()
+                    OR COALESCE(e.event_end, '31 Dec 1999') > now()
+                ELSE
+                    COALESCE(e.event_end, '31 Dec 1999') <= now()
             END;
         "#,
         )
@@ -626,7 +629,6 @@ impl Event {
 
         let query_ticket_types =
             include_str!("../queries/find_all_events_for_organization_ticket_type.sql");
-        ;
 
         jlog!(Level::Debug, "Fetching summary data for ticket types");
 

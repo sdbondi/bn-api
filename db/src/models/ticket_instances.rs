@@ -552,9 +552,18 @@ impl TicketInstance {
             let key = generate_redeem_key(9);
 
             diesel::update(t)
-                .set(ticket_instances::redeem_key.eq(key))
+                .set(ticket_instances::redeem_key.eq(key.clone()))
                 .execute(conn)
                 .to_db_error(ErrorCode::InternalError, "Could not write redeem key")?;
+            DomainEvent::create(
+                DomainEventTypes::TicketInstancePurchased,
+                "Ticket purchased".to_string(),
+                Tables::TicketInstances,
+                Some(t.id),
+                Some(user_id),
+                Some(json!({
+                "order_id" : order_item.order_id, "wallet_id": wallet[0].id(), "order_item_id": order_item.id, "redeem_key": key}
+            ))).commit(conn)?;
         }
         Ok(())
     }

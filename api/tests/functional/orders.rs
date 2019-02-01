@@ -271,6 +271,7 @@ pub fn details_with_tickets_user_has_no_access_to() {
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let ticket_type2 = &event2.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[
             UpdateOrderItem {
                 ticket_type_id: ticket_type.id,
@@ -403,6 +404,7 @@ pub fn refund_for_non_refundable_tickets() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 2,
@@ -515,6 +517,7 @@ pub fn refund_hold_ticket() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,
@@ -581,6 +584,7 @@ pub fn refund_hold_ticket() {
     // Confirm hold ticket is available for purchase again via new cart
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,
@@ -621,6 +625,7 @@ pub fn refund_removes_event_fee_if_all_event_tickets_refunded() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 2,

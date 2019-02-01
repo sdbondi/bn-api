@@ -96,6 +96,7 @@ fn valid_unsold_ticket_count() {
     let user = project.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &vec![UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 50,
@@ -126,6 +127,7 @@ fn valid_unsold_ticket_count() {
     // Add 1 to cart marking it as reserved
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &vec![UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,
@@ -534,10 +536,17 @@ pub fn remaining_ticket_count() {
         .unwrap()
         .remove(0);
     let mut order = project.create_order().for_event(&event).finish();
-    assert_eq!(90, ticket_type.remaining_ticket_count(connection).unwrap());
+    let user_id = order.user_id;
+    assert_eq!(
+        90,
+        ticket_type
+            .valid_available_ticket_count(connection)
+            .unwrap()
+    );
 
     order
         .update_quantities(
+            user_id,
             &[UpdateOrderItem {
                 ticket_type_id: ticket_type.id,
                 quantity: 20,
@@ -548,10 +557,16 @@ pub fn remaining_ticket_count() {
             connection,
         )
         .unwrap();
-    assert_eq!(80, ticket_type.remaining_ticket_count(connection).unwrap());
+    assert_eq!(
+        80,
+        ticket_type
+            .valid_available_ticket_count(connection)
+            .unwrap()
+    );
 
     order
         .update_quantities(
+            user_id,
             &[UpdateOrderItem {
                 ticket_type_id: ticket_type.id,
                 quantity: 16,
@@ -562,7 +577,12 @@ pub fn remaining_ticket_count() {
             connection,
         )
         .unwrap();
-    assert_eq!(84, ticket_type.remaining_ticket_count(connection).unwrap());
+    assert_eq!(
+        84,
+        ticket_type
+            .valid_available_ticket_count(connection)
+            .unwrap()
+    );
 }
 
 #[test]

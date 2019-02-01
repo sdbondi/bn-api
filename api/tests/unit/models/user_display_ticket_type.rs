@@ -39,6 +39,7 @@ fn from_ticket_type() {
         .get_range(ticket_pricing.price_in_cents, conn)
         .unwrap()
         .fee_in_cents;
+
     // Box office pricing
     let display_ticket_type =
         UserDisplayTicketType::from_ticket_type(&ticket_type, &fee_schedule, true, None, conn)
@@ -49,6 +50,7 @@ fn from_ticket_type() {
                 &box_office_pricing,
                 &fee_schedule,
                 None,
+                true,
                 conn
             )
             .unwrap()
@@ -56,7 +58,8 @@ fn from_ticket_type() {
         display_ticket_type.ticket_pricing,
     );
     let display_ticket_pricing = display_ticket_type.ticket_pricing.unwrap();
-    assert_eq!(fee_in_cents, display_ticket_pricing.fee_in_cents);
+    // No fee for box office pricing
+    assert_eq!(0, display_ticket_pricing.fee_in_cents);
 
     // New event nothing sold
     let display_ticket_type =
@@ -66,8 +69,14 @@ fn from_ticket_type() {
     assert_eq!(display_ticket_type.status, TicketTypeStatus::Published);
     assert_eq!(
         Some(
-            DisplayTicketPricing::from_ticket_pricing(&ticket_pricing, &fee_schedule, None, conn)
-                .unwrap()
+            DisplayTicketPricing::from_ticket_pricing(
+                &ticket_pricing,
+                &fee_schedule,
+                None,
+                false,
+                conn
+            )
+            .unwrap()
         ),
         display_ticket_type.ticket_pricing,
     );
@@ -89,6 +98,7 @@ fn from_ticket_type() {
     // Remaining tickets sold
     order
         .update_quantities(
+            admin.id,
             &[UpdateOrderItem {
                 ticket_type_id: ticket_type.id,
                 quantity: 100,
@@ -108,6 +118,7 @@ fn from_ticket_type() {
     // Release some tickets
     order
         .update_quantities(
+            admin.id,
             &[UpdateOrderItem {
                 ticket_type_id: ticket_type.id,
                 quantity: 90,

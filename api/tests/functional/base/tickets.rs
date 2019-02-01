@@ -149,6 +149,7 @@ pub fn show_redeemable_ticket(role: Roles, should_test_succeed: bool) {
     let mut cart = Order::find_or_create_cart(&user2, conn).unwrap();
     let ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
     cart.update_quantities(
+        user2.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 1,

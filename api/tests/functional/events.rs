@@ -930,6 +930,7 @@ fn dashboard_with_default_range() {
     // org_admin purchases 10 tickets
     let mut cart = Order::find_or_create_cart(&org_admin, connection).unwrap();
     cart.update_quantities(
+        org_admin.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 10,

@@ -30,15 +30,31 @@ fn from_ticket_pricing() {
         .fee_in_cents;
 
     // Display ticket pricing
-    let display_ticket_pricing =
-        DisplayTicketPricing::from_ticket_pricing(&ticket_pricing, &fee_schedule, None, conn)
-            .unwrap();
+    let display_ticket_pricing = DisplayTicketPricing::from_ticket_pricing(
+        &ticket_pricing,
+        &fee_schedule,
+        None,
+        false,
+        conn,
+    )
+    .unwrap();
     assert_eq!(
         display_ticket_pricing.price_in_cents,
         ticket_pricing.price_in_cents
     );
     assert_eq!(display_ticket_pricing.discount_in_cents, 0);
     assert_eq!(display_ticket_pricing.fee_in_cents, fee_in_cents);
+
+    // Box office ticket pricing
+    let display_ticket_pricing =
+        DisplayTicketPricing::from_ticket_pricing(&ticket_pricing, &fee_schedule, None, true, conn)
+            .unwrap();
+    assert_eq!(
+        display_ticket_pricing.price_in_cents,
+        ticket_pricing.price_in_cents
+    );
+    assert_eq!(display_ticket_pricing.discount_in_cents, 0);
+    assert_eq!(display_ticket_pricing.fee_in_cents, 0); // No fee for box office tickets
 
     // Holds code with discount
     let hold = database
@@ -56,6 +72,7 @@ fn from_ticket_pricing() {
         &ticket_pricing,
         &fee_schedule,
         Some(hold.redemption_code),
+        false,
         conn,
     )
     .unwrap();
@@ -77,6 +94,7 @@ fn from_ticket_pricing() {
         &ticket_pricing,
         &fee_schedule,
         Some(hold.redemption_code),
+        false,
         conn,
     )
     .unwrap();
@@ -107,6 +125,7 @@ fn from_ticket_pricing() {
         &ticket_pricing,
         &fee_schedule,
         Some(code.redemption_code),
+        false,
         conn,
     )
     .unwrap();
@@ -132,6 +151,7 @@ fn from_ticket_pricing() {
         &ticket_pricing,
         &fee_schedule,
         Some(code.redemption_code),
+        false,
         conn,
     )
     .unwrap();

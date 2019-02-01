@@ -18,6 +18,7 @@ use std::cmp;
 use std::collections::HashMap;
 use time::Duration;
 use utils::errors::*;
+use utils::iterators::intersect_set;
 use uuid::Uuid;
 use validator::ValidationErrors;
 use validators::*;
@@ -365,9 +366,11 @@ impl Order {
     /// to reflect the new expiry
     pub fn set_expiry(
         &mut self,
+        current_user_id: Option<Uuid>,
         expires_at: Option<NaiveDateTime>,
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
+        let old_expiry = self.expires_at;
         let expires_at = if expires_at.is_some() {
             expires_at.unwrap()
         } else {
@@ -393,6 +396,22 @@ impl Order {
         if affected_rows != 1 {
             return DatabaseError::concurrency_error("Could not update expiry time.");
         }
+
+        DomainEvent::create(
+            DomainEventTypes::OrderUpdated,
+            format!(
+                "Order expiry time updated from {:?} to {:?}",
+                &old_expiry, &expires_at
+            ),
+            Tables::Orders,
+            Some(self.id),
+            current_user_id,
+            Some(json!({
+                "old_expires_at": &old_expiry,
+                "new_expires_at": &expires_at
+            })),
+        )
+        .commit(conn)?;
 
         // Extend the tickets expiry
         let order_items = OrderItem::find_for_order(self.id, conn)?;
@@ -474,6 +493,7 @@ impl Order {
 
     pub fn update_quantities(
         &mut self,
+        current_user_id: Uuid,
         items: &[UpdateOrderItem],
         box_office_pricing: bool,
         remove_others: bool,
@@ -672,7 +692,7 @@ impl Order {
 
         // Set cart expiration time if not currently set (empty carts have no expiration)
         if self.expires_at.is_none() {
-            self.set_expiry(None, conn)?;
+            self.set_expiry(Some(current_user_id), None, conn)?;
         }
 
         for match_data in mapped {
@@ -793,6 +813,12 @@ impl Order {
                 _ => {}
             }
         }
+
+        // Box office purchased tickets do not have fees at this time
+        if self.box_office_pricing {
+            return Ok(());
+        }
+
         for ((event_id, hold_id), items) in self
             .items(conn)?
             .iter()
@@ -975,7 +1001,36 @@ impl Order {
                 ErrorCode::QueryError,
                 "Could not determine if order contains tickets for other organizations",
             )?;
-        }
+        };
+
+        let available_payment_methods: Vec<Vec<String>> = order_items::table
+            .inner_join(events::table.inner_join(organizations::table))
+            .filter(order_items::order_id.eq(self.id))
+            .select(organizations::allowed_payment_providers)
+            .distinct()
+            .load(conn)
+            .to_db_error(
+                ErrorCode::QueryError,
+                "Could not load organizations for order",
+            )?;
+
+        let allowed_payment_methods: Vec<AllowedPaymentMethod> =
+            intersect_set(&available_payment_methods)
+                .into_iter()
+                .filter_map(|s| match s.to_lowercase().as_str() {
+                    "stripe" => Some(AllowedPaymentMethod {
+                        method: "Card".to_string(),
+                        provider: "stripe".to_string(),
+                        display_name: "Card".to_string(),
+                    }),
+                    "globee" => Some(AllowedPaymentMethod {
+                        method: "Provider".to_string(),
+                        provider: "globee".to_string(),
+                        display_name: "Pay with crypto".to_string(),
+                    }),
+                    _ => None,
+                })
+                .collect();
 
         Ok(DisplayOrder {
             id: self.id,
@@ -999,19 +1054,7 @@ impl Order {
             } else {
                 None
             },
-            // TODO: Move this to org or event level
-            allowed_payment_methods: vec![
-                AllowedPaymentMethod {
-                    method: "Card".to_string(),
-                    provider: "stripe".to_string(),
-                    display_name: "Card".to_string(),
-                },
-                AllowedPaymentMethod {
-                    method: "Provider".to_string(),
-                    provider: "globee".to_string(),
-                    display_name: "Pay with crypto".to_string(),
-                },
-            ],
+            allowed_payment_methods,
             order_contains_tickets_for_other_organizations,
         })
     }
@@ -1122,13 +1165,13 @@ impl Order {
 
     pub fn add_checkout_url(
         &mut self,
-        _current_user_id: Uuid,
+        current_user_id: Uuid,
         checkout_url: String,
         expires: NaiveDateTime,
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
         self.checkout_url = Some(checkout_url);
-        self.set_expiry(Some(expires), conn)?;
+        self.set_expiry(Some(current_user_id), Some(expires), conn)?;
         diesel::update(&*self)
             .set((
                 orders::checkout_url.eq(&self.checkout_url),
@@ -1149,15 +1192,28 @@ impl Order {
     ) -> Result<Payment, DatabaseError> {
         match self.status {
             OrderStatus::Paid => {
-                return DatabaseError::business_process_error("This order has already been paid");
+                // still store the payment.
             }
             // orders can only expire if the order is in draft
-            OrderStatus::Draft => (),
-            _ => {
-                return DatabaseError::business_process_error(&format!(
-                    "Order was in unexpected state when trying to make a payment: {}",
-                    self.status
-                ));
+            OrderStatus::Draft => {
+                // This allows users to lock tickets for a period while they are paying
+                // but for now it allows us some time to manage payment details
+                if payment.status == PaymentStatus::Requested {
+                    self.update_status(current_user_id, OrderStatus::PendingPayment, conn)?;
+                    self.set_expiry(
+                        current_user_id,
+                        Some(Utc::now().naive_utc() + Duration::minutes(120)),
+                        conn,
+                    )?;
+                }
+            }
+            OrderStatus::PendingPayment => {
+
+                // Will be checked for completion later
+            }
+            OrderStatus::Cancelled => {
+
+                // Still accept the payment so that the user's account can be credited
             }
         }
 
@@ -1167,6 +1223,7 @@ impl Order {
         }
 
         let p = payment.commit(current_user_id, conn)?;
+        self.clear_user_cart(conn)?;
         self.complete_if_fully_paid(current_user_id, conn)?;
         Ok(p)
     }
@@ -1183,18 +1240,21 @@ impl Order {
             for item in &order_items {
                 TicketInstance::mark_as_purchased(item, self.user_id, conn)?;
             }
-            let cart_user: Option<User> = users::table
-                .filter(users::last_cart_id.eq(self.id))
-                .get_result(conn)
-                .to_db_error(
-                    ErrorCode::QueryError,
-                    "Could not find user attached to this cart",
-                )
-                .optional()?;
+        }
+        Ok(())
+    }
 
-            if let Some(user) = cart_user {
-                user.update_last_cart(None, conn)?;
-            }
+    fn clear_user_cart(&mut self, conn: &PgConnection) -> Result<(), DatabaseError> {
+        let cart_user: Option<User> = users::table
+            .filter(users::last_cart_id.eq(self.id))
+            .get_result(conn)
+            .to_db_error(
+                ErrorCode::QueryError,
+                "Could not find user attached to this cart",
+            )
+            .optional()?;
+        if let Some(user) = cart_user {
+            user.update_last_cart(None, conn)?;
         }
         Ok(())
     }

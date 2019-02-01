@@ -372,7 +372,7 @@ pub fn update_with_invalid_id() {
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
     let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
-    let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
+    let created_ticket_capacity = created_ticket_type.valid_ticket_count(conn).unwrap();
     created_ticket_type.ticket_pricing(conn).unwrap();
 
     //Construct update request
@@ -436,7 +436,7 @@ pub fn update_with_validation_errors() {
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
     let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
-    let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
+    let created_ticket_capacity = created_ticket_type.valid_ticket_count(conn).unwrap();
     let created_ticket_pricing = created_ticket_type.ticket_pricing(conn).unwrap();
 
     //Construct update request
@@ -513,7 +513,7 @@ pub fn update_with_validation_errors_on_ticket_pricing() {
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
     let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
-    let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
+    let created_ticket_capacity = created_ticket_type.valid_ticket_count(conn).unwrap();
     let created_ticket_pricing = created_ticket_type.ticket_pricing(conn).unwrap();
 
     //Construct update request
@@ -593,7 +593,7 @@ pub fn update_with_overlapping_periods() {
     //Retrieve created ticket type and pricing
     let conn = database.connection.get();
     let created_ticket_type = &event.ticket_types(true, None, conn).unwrap()[0];
-    let created_ticket_capacity = created_ticket_type.ticket_capacity(conn).unwrap();
+    let created_ticket_capacity = created_ticket_type.valid_ticket_count(conn).unwrap();
     let created_ticket_pricing = created_ticket_type.ticket_pricing(conn).unwrap();
 
     //Construct update request
@@ -690,6 +690,7 @@ pub fn cancel_with_sold_tickets_and_hold() {
     let user2 = database.create_user().finish();
     let mut cart = Order::find_or_create_cart(&user2, conn).unwrap();
     cart.update_quantities(
+        user2.id,
         &vec![
             UpdateOrderItem {
                 ticket_type_id: created_ticket_type.id,

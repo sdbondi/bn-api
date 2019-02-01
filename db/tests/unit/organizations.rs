@@ -127,6 +127,7 @@ fn find_by_order_item_ids() {
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     let ticket_type2 = &event2.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[
             UpdateOrderItem {
                 ticket_type_id: ticket_type.id,
@@ -197,6 +198,7 @@ fn has_fan() {
     // User adds item to cart but does not checkout so no relationship
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 10,
@@ -822,6 +824,7 @@ fn search_fans() {
     let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     cart.update_quantities(
+        user.id,
         &[UpdateOrderItem {
             ticket_type_id: ticket_type.id,
             quantity: 5,

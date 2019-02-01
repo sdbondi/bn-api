@@ -130,34 +130,56 @@ impl Payment {
         current_user_id: Option<Uuid>,
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
-        let rows_affected = diesel::update(
-            payments::table.filter(
-                payments::id
-                    .eq(self.id)
-                    .and(payments::updated_at.eq(self.updated_at)),
-            ),
-        )
-        .set((
-            payments::status.eq(status),
-            payments::updated_at.eq(dsl::now),
-        ))
-        .execute(conn)
-        .to_db_error(
-            ErrorCode::UpdateError,
-            "Could not change the status of payment",
-        )?;
+        diesel::update(payments::table.filter(payments::id.eq(self.id)))
+            .set((
+                payments::status.eq(status),
+                payments::updated_at.eq(dsl::now),
+            ))
+            .execute(conn)
+            .to_db_error(
+                ErrorCode::UpdateError,
+                "Could not change the status of payment",
+            )?;
 
-        if rows_affected > 0 {
-            DomainEvent::create(
-                DomainEventTypes::PaymentUpdated,
-                format!("Payment status updated to {}", status),
-                Tables::Payments,
-                Some(self.id),
-                current_user_id,
-                Some(json!({ "new_status": status })),
-            )
-            .commit(conn)?;
-        }
+        DomainEvent::create(
+            DomainEventTypes::PaymentUpdated,
+            format!("Payment status updated to {}", status),
+            Tables::Payments,
+            Some(self.id),
+            current_user_id,
+            Some(json!({ "new_status": status })),
+        )
+        .commit(conn)?;
+
+        Ok(())
+    }
+
+    pub fn update_amount(
+        &self,
+        current_user_id: Option<Uuid>,
+        amount: i64,
+        conn: &PgConnection,
+    ) -> Result<(), DatabaseError> {
+        let old_amount = self.amount;
+
+        diesel::update(self)
+            .set((
+                payments::amount.eq(&amount),
+                payments::updated_at.eq(dsl::now),
+            ))
+            .execute(conn)
+            .to_db_error(ErrorCode::UpdateError, "Could not update amount on payment")?;
+        DomainEvent::create(
+            DomainEventTypes::PaymentUpdated,
+            "Payment Amount was updated".to_string(),
+            Tables::Payments,
+            Some(self.id),
+            current_user_id,
+            Some(json!({
+            "old_amount": old_amount, "new_amount": amount
+            })),
+        )
+        .commit(conn)?;
 
         Ok(())
     }
@@ -169,13 +191,19 @@ impl Payment {
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
         if self.status == PaymentStatus::Completed {
-            return DatabaseError::business_process_error(
-                "Payment has already been marked complete",
-            );
+            DomainEvent::create(
+                DomainEventTypes::PaymentCompleted,
+                "Payment was completed".to_string(),
+                Tables::Payments,
+                Some(self.id),
+                current_user_id,
+                Some(raw_data),
+            )
+            .commit(conn)?;
+            return Ok(());
         }
         self.update_status(PaymentStatus::Completed, current_user_id, conn)?;
 
-        println!("Saved payment");
         DomainEvent::create(
             DomainEventTypes::PaymentCompleted,
             "Payment was completed".to_string(),
@@ -185,8 +213,6 @@ impl Payment {
             Some(raw_data),
         )
         .commit(conn)?;
-
-        println!("Domain Action created");
 
         self.order(conn)?
             .complete_if_fully_paid(current_user_id, conn)?;
@@ -208,7 +234,7 @@ impl Payment {
 pub struct NewPayment {
     order_id: Uuid,
     created_by: Option<Uuid>,
-    status: PaymentStatus,
+    pub status: PaymentStatus,
     payment_method: PaymentMethods,
     external_reference: Option<String>,
     amount: i64,
