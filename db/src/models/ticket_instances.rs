@@ -645,8 +645,9 @@ impl TicketInstance {
             .first::<RedeemableTicket>(conn)
             .to_db_error(ErrorCode::QueryError, "Unable to load ticket")?;
 
-        if ticket_data.redeem_date.is_some()
-            && ticket_data.redeem_date.unwrap() > Utc::now().naive_utc()
+        // Remove redeem key from results unless it's 24 hours before event start
+        if ticket_data.event_start.is_none()
+            || ticket_data.event_start.unwrap() - Duration::hours(24) > Utc::now().naive_utc()
         {
             ticket_data.redeem_key = None; //Redeem key not available yet. Should this be an error?
         }
