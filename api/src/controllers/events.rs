@@ -1,8 +1,7 @@
-use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Path, Query, State};
+use actix_web::{http::StatusCode, HttpResponse, Path, Query, State};
 use auth::user::User;
 use bigneon_db::models::*;
 use bigneon_db::utils::errors::{DatabaseError, ErrorCode};
-use bigneon_http::caching::{CacheControl, CacheDirective, CacheHeaders};
 use chrono::prelude::*;
 use chrono::Duration;
 use db::Connection;
@@ -86,12 +85,11 @@ pub fn checkins(
 }
 
 pub fn index(
-    (state, connection, query, auth_user, http_request): (
+    (state, connection, query, auth_user): (
         State<AppState>,
         Connection,
         Query<SearchParameters>,
         OptionalUser,
-        HttpRequest<AppState>,
     ),
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = connection.get();
@@ -260,19 +258,7 @@ pub fn index(
     payload.paging.total = payload.data.len() as u64;
     payload.paging.limit = 100;
 
-    let http_caching = CacheHeaders(
-        CacheControl(vec![
-            CacheDirective::SMaxAge(60),
-            if user.is_some() {
-                CacheDirective::Private
-            } else {
-                CacheDirective::Public
-            },
-        ]),
-        Some(payload.to_etag()),
-    );
-
-    Ok(http_caching.into_response_json(&http_request, &payload))
+    Ok(HttpResponse::Ok().json(&payload))
 }
 
 #[derive(Deserialize)]
@@ -282,13 +268,12 @@ pub struct EventParameters {
 }
 
 pub fn show(
-    (state, connection, parameters, query, user, http_request): (
+    (state, connection, parameters, query, user): (
         State<AppState>,
         Connection,
         Path<PathParameters>,
         Query<EventParameters>,
         OptionalUser,
-        HttpRequest<AppState>,
     ),
 ) -> Result<HttpResponse, BigNeonError> {
     let connection = connection.get();
@@ -461,19 +446,7 @@ pub fn show(
         event_type: event.event_type,
     };
 
-    let http_caching = CacheHeaders(
-        CacheControl(vec![
-            CacheDirective::SMaxAge(60),
-            if user.is_some() {
-                CacheDirective::Private
-            } else {
-                CacheDirective::Public
-            },
-        ]),
-        Some(payload.to_etag()),
-    );
-
-    Ok(http_caching.into_response_json(&http_request, &payload))
+    Ok(HttpResponse::Ok().json(&payload))
 }
 
 pub fn publish(
