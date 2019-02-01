@@ -138,7 +138,7 @@ pub fn index(
         connection,
     )?;
 
-    #[derive(Serialize, ToETag)]
+    #[derive(Serialize)]
     struct EventVenueEntry {
         id: Uuid,
         name: String,
@@ -372,7 +372,7 @@ pub fn show(
     let (min_ticket_price, max_ticket_price) =
         event.current_ticket_pricing_range(box_office_pricing, connection)?;
 
-    #[derive(Serialize, ToETag)]
+    #[derive(Serialize)]
     struct R {
         id: Uuid,
         name: String,

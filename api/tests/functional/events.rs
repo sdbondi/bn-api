@@ -51,7 +51,6 @@ pub fn index() {
         database.connection.clone().into(),
         parameters,
         OptionalUser(None),
-        test_request.request,
     ))
     .into();
 

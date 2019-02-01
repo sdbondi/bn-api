@@ -99,7 +99,6 @@ pub fn show_box_office_pricing(role: Roles, should_test_succeed: bool) {
         path,
         query_parameters,
         OptionalUser(Some(auth_user)),
-        test_request.request,
     ))
     .into();
 
