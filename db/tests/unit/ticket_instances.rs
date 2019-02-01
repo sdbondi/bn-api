@@ -620,9 +620,9 @@ fn show_redeemable_ticket() {
     // no redeem_date set, event starts 24 hours from now
     let event_start = NaiveDateTime::from(Utc::now().naive_utc() + Duration::hours(24));
     let new_event_redeem_date = EventEditableAttributes {
-	redeem_date: None,
-	event_start: Some(event_start),
-	..Default::default()
+        redeem_date: None,
+        event_start: Some(event_start),
+        ..Default::default()
     };
 
     let event = event.update(new_event_redeem_date, connection).unwrap();
