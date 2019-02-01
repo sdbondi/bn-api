@@ -570,10 +570,13 @@ fn show_redeemable_ticket() {
         .unwrap()
         .remove(0);
 
-    //make redeem date in the future
+    //make redeem date in the future for an event in 4 days time
     let new_event_redeem_date = EventEditableAttributes {
         redeem_date: Some(NaiveDateTime::from(
             Utc::now().naive_utc() + Duration::days(2),
+        )),
+        event_start: Some(NaiveDateTime::from(
+            Utc::now().naive_utc() + Duration::days(4),
         )),
         ..Default::default()
     };
@@ -583,11 +586,29 @@ fn show_redeemable_ticket() {
     let result = TicketInstance::show_redeemable_ticket(ticket.id, connection).unwrap();
     assert!(result.redeem_key.is_none());
 
-    //make redeem date in the past
+    //make redeem date in the past for an event in 4 days time
     let new_event_redeem_date = EventEditableAttributes {
         redeem_date: Some(NaiveDateTime::from(
             Utc::now().naive_utc() - Duration::days(2),
         )),
+        event_start: Some(NaiveDateTime::from(
+            Utc::now().naive_utc() + Duration::days(4),
+        )),
+        ..Default::default()
+    };
+
+    let event = event.update(new_event_redeem_date, connection).unwrap();
+
+    let result = TicketInstance::show_redeemable_ticket(ticket.id, connection).unwrap();
+    assert!(result.redeem_key.is_some());
+
+    //make redeem date 12 hours from now, event starts in 24 hours from now
+    let event_start = NaiveDateTime::from(Utc::now().naive_utc() + Duration::hours(24));
+    let new_event_redeem_date = EventEditableAttributes {
+        redeem_date: Some(NaiveDateTime::from(
+            Utc::now().naive_utc() + Duration::hours(12),
+        )),
+        event_start: Some(event_start),
         ..Default::default()
     };
 
