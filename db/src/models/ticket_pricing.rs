@@ -265,7 +265,7 @@ impl TicketPricing {
                 Some("Expected a single ticket pricing period but multiple were found".to_string()),
             ));
         } else if price_points.len() == 0 {
-            if get_default_pricing == false && box_office_pricing == false {
+            if get_default_pricing == false {
                 return TicketPricing::get_current_ticket_pricing(
                     ticket_type_id,
                     box_office_pricing,
