@@ -690,7 +690,7 @@ fn redirect_to_payment_page(
         conn,
     )?;
 
-    let external_reference = format!("globee-{:?}", response.id);
+    let external_reference = format!("globee-{}", response.id);
 
     order.add_provider_payment(
         Some(external_reference),

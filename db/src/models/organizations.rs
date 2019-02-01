@@ -47,6 +47,7 @@ pub struct Organization {
     pub fee_schedule_id: Uuid,
     pub client_event_fee_in_cents: i64,
     pub company_event_fee_in_cents: i64,
+    pub allowed_payment_providers: Vec<String>,
 }
 
 #[derive(Serialize)]

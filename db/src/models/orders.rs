@@ -18,6 +18,7 @@ use std::cmp;
 use std::collections::HashMap;
 use time::Duration;
 use utils::errors::*;
+use utils::iterators::intersect_set;
 use uuid::Uuid;
 use validator::ValidationErrors;
 use validators::*;
@@ -814,6 +815,12 @@ impl Order {
                 _ => {}
             }
         }
+
+        // Box office purchased tickets do not have fees at this time
+        if self.box_office_pricing {
+            return Ok(());
+        }
+
         for ((event_id, hold_id), items) in self
             .items(conn)?
             .iter()
@@ -996,7 +1003,36 @@ impl Order {
                 ErrorCode::QueryError,
                 "Could not determine if order contains tickets for other organizations",
             )?;
-        }
+        };
+
+        let available_payment_methods: Vec<Vec<String>> = order_items::table
+            .inner_join(events::table.inner_join(organizations::table))
+            .filter(order_items::order_id.eq(self.id))
+            .select(organizations::allowed_payment_providers)
+            .distinct()
+            .load(conn)
+            .to_db_error(
+                ErrorCode::QueryError,
+                "Could not load organizations for order",
+            )?;
+
+        let allowed_payment_methods: Vec<AllowedPaymentMethod> =
+            intersect_set(&available_payment_methods)
+                .into_iter()
+                .filter_map(|s| match s.to_lowercase().as_str() {
+                    "stripe" => Some(AllowedPaymentMethod {
+                        method: "Card".to_string(),
+                        provider: "stripe".to_string(),
+                        display_name: "Card".to_string(),
+                    }),
+                    "globee" => Some(AllowedPaymentMethod {
+                        method: "Provider".to_string(),
+                        provider: "globee".to_string(),
+                        display_name: "Pay with crypto".to_string(),
+                    }),
+                    _ => None,
+                })
+                .collect();
 
         Ok(DisplayOrder {
             id: self.id,
@@ -1020,19 +1056,7 @@ impl Order {
             } else {
                 None
             },
-            // TODO: Move this to org or event level
-            allowed_payment_methods: vec![
-                AllowedPaymentMethod {
-                    method: "Card".to_string(),
-                    provider: "stripe".to_string(),
-                    display_name: "Card".to_string(),
-                },
-                AllowedPaymentMethod {
-                    method: "Provider".to_string(),
-                    provider: "globee".to_string(),
-                    display_name: "Pay with crypto".to_string(),
-                },
-            ],
+            allowed_payment_methods,
             order_contains_tickets_for_other_organizations,
         })
     }

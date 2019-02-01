@@ -592,6 +592,7 @@ fn replace_tickets_for_box_office() {
     let creator = project.create_user().finish();
     let organization = project
         .create_organization()
+        .with_event_fee()
         .with_fee_schedule(&project.create_fee_schedule().finish(creator.id))
         .finish();
     let event = project
@@ -653,6 +654,10 @@ fn replace_tickets_for_box_office() {
         fee_schedule_range.fee_in_cents
     );
     assert_eq!(fee_item.quantity, 10);
+    assert!(items
+        .iter()
+        .find(|i| i.item_type == OrderItemTypes::EventFees)
+        .is_some());
 
     // Add box office priced tickets to cart (box_office_pricing = true)
     cart.update_quantities(
@@ -669,7 +674,7 @@ fn replace_tickets_for_box_office() {
     .unwrap();
     assert!(cart.box_office_pricing);
     let items = cart.items(connection).unwrap();
-    assert_eq!(items.len(), 2);
+    assert_eq!(items.len(), 1);
     let order_item = items
         .iter()
         .find(|i| i.ticket_type_id == Some(ticket_type.id))
@@ -679,11 +684,13 @@ fn replace_tickets_for_box_office() {
         order_item.unit_price_in_cents,
         box_office_pricing.price_in_cents
     );
-    let fee_item = order_item.find_fee_item(connection).unwrap().unwrap();
-    assert_eq!(
-        fee_item.unit_price_in_cents,
-        fee_schedule_range.fee_in_cents
-    );
+
+    // No fee for box office items
+    assert!(order_item.find_fee_item(connection).unwrap().is_none());
+    assert!(items
+        .iter()
+        .find(|i| i.item_type == OrderItemTypes::EventFees)
+        .is_none());
 }
 
 #[test]

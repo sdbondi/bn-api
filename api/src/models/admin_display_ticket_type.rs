@@ -34,6 +34,7 @@ impl AdminDisplayTicketType {
                 &ticket_pricing,
                 fee_schedule,
                 None,
+                false,
                 conn,
             )?);
         }
