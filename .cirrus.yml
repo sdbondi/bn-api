@@ -12,5 +12,5 @@ test_task:
   target_cache:
     folder: target
     fingerprint_script: cat Cargo.lock
-    populate_script: cargo install
+    populate_script: cargo build --release
   script: ./scripts/run-other-tests.sh
