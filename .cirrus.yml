@@ -1,0 +1,9 @@
+container:
+  image: quay.io/tarilabs/rust:1.30-alpine
+
+test_task:
+  target_cache:
+    folder: target
+    fingerprint_script: cat Cargo.lock
+    populate_script: cargo install
+  script: ./scripts/run-other-tests.sh
