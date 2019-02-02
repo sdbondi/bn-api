@@ -23,5 +23,5 @@ tags:
 - test
 # secrets: object(Secret)
 images:
-- ["sdbondi/bn-api"]
+- "sdbondi/bn-api"
 # artifacts: object (Artifacts)
