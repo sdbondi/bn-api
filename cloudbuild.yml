@@ -1,5 +1,5 @@
 steps:
-- name: quay.io/tarilabs/rust:1.30-alpine
+- name: quay.io/tarilabs/rust:1.33
   args: []
   env: []
   entrypoint: "./scripts/run-api-tests.sh"
