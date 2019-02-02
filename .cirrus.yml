@@ -1,5 +1,12 @@
 container:
   image: quay.io/tarilabs/rust:1.30-alpine
+  additional_containers:
+  - name: postgres
+    image: postgres:9.6
+    port: 5432
+    env:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
 
 test_task:
   target_cache:
