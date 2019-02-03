@@ -11,9 +11,9 @@ steps:
 timeout: 30m
 # logsBucket: string
 
-# options:
+options:
 #  sourceProvenanceHash: enum(HashType)
-machineType: N1_HIGHCPU_32
+  machineType: N1_HIGHCPU_32
 #  diskSizeGb: string (int64 format)
 #  substitutionOption: enum(SubstitutionOption)
 #  logStreamingOption: enum(LogStreamingOption)
