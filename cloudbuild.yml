@@ -3,7 +3,7 @@ steps:
   args: []
   env: []
   entrypoint: "./scripts/run-api-tests.sh"
-  # dir: ./scripts
+  dir: /workspace
   # secretEnv: string
   # volumes: object(Volume)
   # timeout: string (Duration format)
