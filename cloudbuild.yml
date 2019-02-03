@@ -13,7 +13,7 @@ timeout: 30m
 
 # options:
 #  sourceProvenanceHash: enum(HashType)
-#  machineType: enum(MachineType)
+machineType: N1_HIGHCPU_32
 #  diskSizeGb: string (int64 format)
 #  substitutionOption: enum(SubstitutionOption)
 #  logStreamingOption: enum(LogStreamingOption)
