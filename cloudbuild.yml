@@ -2,7 +2,8 @@ steps:
 - name: sdbondi/rust-builder:latest
   args: []
   env: []
-  entrypoint: "./scripts/run-api-tests.sh"
+  entrypoint: "./run-api-tests.sh"
+  dir: ./scripts
   # secretEnv: string
   # volumes: object(Volume)
   # timeout: string (Duration format)
