@@ -1,4 +1,3 @@
----
 kind: pipeline
 name: bn-api
 
@@ -54,8 +53,6 @@ steps:
           - GLOBEE_BASE_URL="https://test.globee.com/payment-api/v1/"
           - IPN_BASE_URL="TEST"
       commands:
-  #            - rustup component add rustfmt-preview
-  #            - cargo fmt --all -- --check
           - ./scripts/run-other-tests.sh
 
     - name: api-tests
@@ -94,23 +91,23 @@ steps:
       commands:
           - ./scripts/run-api-tests.sh
 
-    rebuild-cache:
-        depends_on:
-            - other-tests
-            - api-tests
-        image: plugins/s3-cache
-        pull: true
-        rebuild: true
-        endpoint:
-            from_secret: aws_s3_endpoint
-        access_key:
-            from_secret: aws_access_key_id
-        secret_key:
-            from_secret: aws_secret_access_key
-        mount:
-            - ./target
-        root:
-            from_secret: aws_s3_bucket
+    - name: rebuild-cache
+      depends_on:
+          - other-tests
+          - api-tests
+      image: plugins/s3-cache
+      pull: true
+      rebuild: true
+      endpoint:
+          from_secret: aws_s3_endpoint
+      access_key:
+          from_secret: aws_access_key_id
+      secret_key:
+          from_secret: aws_secret_access_key
+      mount:
+          - ./target
+      root:
+          from_secret: aws_s3_bucket
 
 services:
     database:
