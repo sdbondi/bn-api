@@ -25,6 +25,6 @@ services:
     database:
         image: postgres:10.4
         environment:
-            - POSTGRES_USER: app
-            - POSTGRES_PASSWORD: password
+            POSTGRES_USER: app
+            POSTGRES_PASSWORD: password
 
