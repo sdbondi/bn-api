@@ -23,5 +23,5 @@ pipeline:
 
 services:
     database:
-	image: postgres
+	image: postgres:10.4
 
