@@ -18,7 +18,7 @@ pipeline:
       root:
           from_secret: aws_s3_bucket
 
-      test1:
+    test1:
       depends_on: ["restore-cache"]
       image: rust:1.31.1
       environment:
