@@ -1,3 +1,6 @@
+kind: pipeline
+name: bn-api
+
 pipeline:
   test1:
       group: test
@@ -6,9 +9,9 @@ pipeline:
       - ./scripts/run-other-tests.sh
 
 
-    test2:
-      group: test
-      image: quay.io/tarilabs/rust:1.30
-      commands:
-      - ./scripts/run-other-tests.sh
+  test2:
+    group: test
+    image: quay.io/tarilabs/rust:1.30
+    commands:
+    - ./scripts/run-other-tests.sh
 
