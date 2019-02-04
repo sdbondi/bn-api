@@ -110,7 +110,7 @@ steps:
           from_secret: aws_s3_bucket
 
 services:
-    database:
+    - name: database
       image: postgres:10.4
       environment:
           POSTGRES_USER: app
