@@ -10,11 +10,12 @@ pipeline:
 
 
   test2:
-    group: test
-    image: quay.io/tarilabs/rust:1.30
-    commands:
-    - ./scripts/run-other-tests.sh
+      group: test
+      image: quay.io/tarilabs/rust:1.30
+      commands:
+	  - ./scripts/run-other-tests.sh
 
 services:
-  database:
-    image: postgres
+    database:
+	image: postgres
+
