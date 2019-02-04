@@ -6,10 +6,10 @@ pipeline:
 	image: drillster/drone-volume-cache
 	restore: true
 	mount:
-	  - ./target
+	    - ./target
 	# Mount the cache volume, needs "Trusted"
 	volumes:
-	  - /tmp/cache/bn-api:/cache
+	    - /tmp/cache/bn-api:/cache
 
     test1:
 	group: test
