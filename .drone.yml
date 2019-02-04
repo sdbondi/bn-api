@@ -115,5 +115,3 @@ services:
 	    POSTGRES_USER: app
 	    POSTGRES_PASSWORD: password
 	    POSTGRES_DB: bigneon_test
-
-
