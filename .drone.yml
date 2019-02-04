@@ -24,9 +24,9 @@ steps:
       environment:
         FRONT_END_URL: "http://localhost"
         BIGNEON_DB: bigneon
-        DATABASE_URL: postgres://app:password@database/bigneon_test
-        TEST_DATABASE_URL: postgres://app:password@database/bigneon_test
-        TEST_DATABASE_ADMIN_URL: postgres://app:password@database/bigneon_test
+        DATABASE_URL: postgres://app:password@database/other_tests
+        TEST_DATABASE_URL: postgres://app:password@database/other_tests
+        TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
         BUILD_DIR: "api"
         TARI_URL: "TEST"
         COMMUNICATION_DEFAULT_SOURCE_EMAIL: "noreply@bigneon.com"
@@ -61,9 +61,9 @@ steps:
       environment:
         FRONT_END_URL: "http://localhost"
         BIGNEON_DB: bigneon
-        DATABASE_URL: postgres://app:password@database/bigneon_test
-        TEST_DATABASE_URL: postgres://app:password@database/bigneon_test
-        TEST_DATABASE_ADMIN_URL: postgres://app:password@database/bigneon_test
+        DATABASE_URL: postgres://app:password@database/api_test
+        TEST_DATABASE_URL: postgres://app:password@database/api_test
+        TEST_DATABASE_ADMIN_URL: postgres://app:password@database/api_test
         BUILD_DIR: "api"
         TARI_URL: "TEST"
         COMMUNICATION_DEFAULT_SOURCE_EMAIL: "noreply@bigneon.com"
@@ -116,4 +116,4 @@ services:
       environment:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: bigneon_test
+          POSTGRES_DB: test
