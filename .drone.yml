@@ -55,7 +55,9 @@ pipeline:
       commands:
   #            - rustup component add rustfmt-preview
   #            - cargo fmt --all -- --check
-          - ./scripts/run-other-tests.sh
+  #          - ./scripts/run-other-tests.sh
+          - cd api
+          - cargo build --release
 
 #    test2:
 #        depends_on: ["restore-cache"]
