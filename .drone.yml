@@ -7,7 +7,6 @@ pipeline:
         restore: true
         mount:
             - ./target
-        # Mount the cache volume, needs "Trusted"
         volumes:
             - /tmp/cache/bn-api:/cache
 
@@ -34,7 +33,6 @@ pipeline:
         rebuild: true
         mount:
             - ./target
-        # Mount the cache volume, needs "Trusted"
         volumes:
             - /tmp/cache/bn-api:/cache
 
