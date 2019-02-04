@@ -1,6 +1,6 @@
 ---
 kind: pipeline
-name: build-cache
+name: bn-api
 
 pipeline:
     restore-cache:
@@ -18,14 +18,8 @@ pipeline:
       root:
           from_secret: aws_s3_bucket
 
----
-kind: pipeline
-name: tests
-
-depends_on: ["build-cache"]
-
-steps:
-    - name: run-tests
+    test1:
+      depends_on: ["restore-cache"]
       image: rust:1.31.1
       environment:
           - FRONT_END_URL="http://localhost"
@@ -61,9 +55,7 @@ steps:
       commands:
   #            - rustup component add rustfmt-preview
   #            - cargo fmt --all -- --check
-  #          - ./scripts/run-other-tests.sh
-          - cd api
-          - cargo build --release
+          - ./scripts/run-other-tests.sh
 
 #    test2:
 #        depends_on: ["restore-cache"]
@@ -101,6 +93,21 @@ steps:
 #        commands:
 #            - ./scripts/run-api-tests.sh
 
+    rebuild-cache:
+        image: plugins/s3-cache
+        pull: true
+        rebuild: true
+        endpoint:
+            from_secret: aws_s3_endpoint
+        access_key:
+            from_secret: aws_access_key_id
+        secret_key:
+            from_secret: aws_secret_access_key
+        mount:
+            - ./target
+        root:
+            from_secret: aws_s3_bucket
+
 services:
     database:
       image: postgres:10.4
@@ -108,28 +115,3 @@ services:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: password
           POSTGRES_DB: bigneon_test
-
----
-kind: pipeline
-name: build-cache-rebuild
-
-depends_on:
-    - build-cache
-    - tests
-
-steps:
-    - name: rebuild-cache
-    image: plugins/s3-cache
-    pull: true
-    rebuild: true
-    endpoint:
-        from_secret: aws_s3_endpoint
-    access_key:
-        from_secret: aws_access_key_id
-    secret_key:
-        from_secret: aws_secret_access_key
-    mount:
-        - ./target
-    root:
-        from_secret: aws_s3_bucket
-
