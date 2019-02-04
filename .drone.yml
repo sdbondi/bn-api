@@ -20,23 +20,23 @@ pipeline:
 	commands:
 	    - ./scripts/run-other-tests.sh
 
-     test2:
-	 group: test
-	 image: rust:1.31.1
-	 environment:
-	     - TEST_DATABASE_URL=postgres://app:password@database:5432/test2
-	     - DATABASE_URL=postgres://app:password@database:5432/test2
-	 commands:
-	     - ./scripts/run-api-tests.sh
+    test2:
+	group: test
+	image: rust:1.31.1
+	environment:
+	    - TEST_DATABASE_URL=postgres://app:password@database:5432/test2
+	    - DATABASE_URL=postgres://app:password@database:5432/test2
+	commands:
+	    - ./scripts/run-api-tests.sh
 
     rebuild-cache:
 	image: drillster/drone-volume-cache
 	rebuild: true
 	mount:
-	  - ./target
+	    - ./target
 	# Mount the cache volume, needs "Trusted"
 	volumes:
-	  - /tmp/cache/bn-api:/cache
+	    - /tmp/cache/bn-api:/cache
 
 services:
     database:
