@@ -3,12 +3,20 @@ name: bn-api
 
 pipeline:
     restore-cache:
-        image: drillster/drone-volume-cache
-        restore: true
-        mount:
-            - ./target
-        volumes:
-            - /tmp/cache/bn-api:/cache
+        image: plugins/s3-cache
+        settings:
+            pull: true
+            endpoint:
+                from_secret: aws_s3_endpoint
+            access_key:
+                from_secret: aws_access_key_id
+            secret_key:
+                from_secret: aws_secret_access_key
+            mount:
+                - ./target
+            path:
+                from_secret: aws_cache_path
+            restore: true
 
     test1:
         group: test
@@ -29,12 +37,20 @@ pipeline:
             - ./scripts/run-api-tests.sh
 
     rebuild-cache:
-        image: drillster/drone-volume-cache
-        rebuild: true
-        mount:
-            - ./target
-        volumes:
-            - /tmp/cache/bn-api:/cache
+        image: plugins/s3-cache
+        settings:
+            pull: true
+            endpoint:
+                from_secret: aws_s3_endpoint
+            access_key:
+                from_secret: aws_access_key_id
+            secret_key:
+                from_secret: aws_secret_access_key
+            mount:
+                - ./target
+            path:
+                from_secret: aws_cache_path
+            rebuild: true
 
 services:
     database:
