@@ -4,19 +4,18 @@ name: bn-api
 pipeline:
     restore-cache:
         image: plugins/s3-cache
-        settings:
-            pull: true
-            endpoint:
-                from_secret: aws_s3_endpoint
-            access_key:
-                from_secret: aws_access_key_id
-            secret_key:
-                from_secret: aws_secret_access_key
-            mount:
-                - ./target
-            path:
-                from_secret: aws_cache_path
-            restore: true
+        pull: true
+        restore: true
+        endpoint:
+            from_secret: aws_s3_endpoint
+        access_key:
+            from_secret: aws_access_key_id
+        secret_key:
+            from_secret: aws_secret_access_key
+        mount:
+            - ./target
+        root:
+            from_secret: aws_s3_bucket
 
     test1:
         group: test
@@ -38,19 +37,18 @@ pipeline:
 
     rebuild-cache:
         image: plugins/s3-cache
-        settings:
-            pull: true
-            endpoint:
-                from_secret: aws_s3_endpoint
-            access_key:
-                from_secret: aws_access_key_id
-            secret_key:
-                from_secret: aws_secret_access_key
-            mount:
-                - ./target
-            path:
-                from_secret: aws_cache_path
-            rebuild: true
+        pull: true
+        rebuild: true
+        endpoint:
+            from_secret: aws_s3_endpoint
+        access_key:
+            from_secret: aws_access_key_id
+        secret_key:
+            from_secret: aws_secret_access_key
+        mount:
+            - ./target
+        root:
+            from_secret: aws_s3_bucket
 
 services:
     database:
