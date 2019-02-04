@@ -15,3 +15,7 @@ pipeline:
     commands:
     - ./scripts/run-other-tests.sh
 
+services:
+  database:
+    image: postgres
+
