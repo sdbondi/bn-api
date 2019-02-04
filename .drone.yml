@@ -1,0 +1,16 @@
+kind: pipeline
+name: bn-api
+
+steps:
+- name: other-tests
+  group: test
+  image: quay.io/tarilabs/rust:1.30-alpine
+  commands:
+  - ./scripts/run-other-tests.sh
+
+
+- name: other-testsx2
+  group: test
+  image: quay.io/tarilabs/rust:1.30-alpine
+  commands:
+  - ./scripts/run-other-tests.sh
