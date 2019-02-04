@@ -29,7 +29,7 @@ pipeline:
          commands:
              - ./scripts/run-api-tests.sh
 
-    restore-cache:
+    rebuild-cache:
         image: drillster/drone-volume-cache
         rebuild: true
         mount:
