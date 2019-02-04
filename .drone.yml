@@ -2,21 +2,21 @@ kind: pipeline
 name: bn-api
 
 steps:
-    - name: restore-cache
-      image: plugins/s3-cache
-      settings:
-        pull: true
-        restore: true
-        endpoint:
-            from_secret: aws_s3_endpoint
-        access_key:
-            from_secret: aws_access_key_id
-        secret_key:
-            from_secret: aws_secret_access_key
-        mount:
-            - ./target
-        root:
-            from_secret: aws_s3_bucket
+#    - name: restore-cache
+#      image: plugins/s3-cache
+#      settings:
+#        pull: true
+#        restore: true
+#        endpoint:
+#            from_secret: aws_s3_endpoint
+#        access_key:
+#            from_secret: aws_access_key_id
+#        secret_key:
+#            from_secret: aws_secret_access_key
+#        mount:
+#            - ./target
+#        root:
+#            from_secret: aws_s3_bucket
 
     - name: other-tests
       depends_on: ["restore-cache"]
@@ -61,6 +61,7 @@ steps:
       environment:
         FRONT_END_URL: "http://localhost"
         BIGNEON_DB: bigneon
+        DATABASE_URL: postgres://app:password@database/bigneon_test
         TEST_DATABASE_URL: postgres://app:password@database/bigneon_test
         TEST_DATABASE_ADMIN_URL: postgres://app:password@database/bigneon_test
         BUILD_DIR: "api"
@@ -91,23 +92,23 @@ steps:
       commands:
       - ./scripts/run-api-tests.sh
 
-    - name: rebuild-cache
-      depends_on:
-          - other-tests
-          - api-tests
-      image: plugins/s3-cache
-      pull: true
-      rebuild: true
-      endpoint:
-          from_secret: aws_s3_endpoint
-      access_key:
-          from_secret: aws_access_key_id
-      secret_key:
-          from_secret: aws_secret_access_key
-      mount:
-          - ./target
-      root:
-          from_secret: aws_s3_bucket
+#    - name: rebuild-cache
+#      depends_on:
+#          - other-tests
+#          - api-tests
+#      image: plugins/s3-cache
+#      pull: true
+#      rebuild: true
+#      endpoint:
+#          from_secret: aws_s3_endpoint
+#      access_key:
+#          from_secret: aws_access_key_id
+#      secret_key:
+#          from_secret: aws_secret_access_key
+#      mount:
+#          - ./target
+#      root:
+#          from_secret: aws_s3_bucket
 
 services:
     - name: database
