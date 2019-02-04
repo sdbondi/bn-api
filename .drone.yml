@@ -97,15 +97,16 @@ steps:
           - other-tests
 #          - api-tests
       image: plugins/s3-cache
-      pull: true
-      rebuild: true
-      endpoint: http://172.17.0.3:9000
-      access_key:
-          from_secret: access_key_id
-      secret_key:
-          from_secret: secret_access_key
-      mount:
-          - ./target
+      settings:
+        pull: true
+        rebuild: true
+        endpoint: http://172.17.0.3:9000
+        access_key:
+            from_secret: access_key_id
+        secret_key:
+            from_secret: secret_access_key
+        mount:
+            - ./target
 
 services:
     - name: database
