@@ -4,14 +4,14 @@ name: bn-api
 steps:
 - name: other-tests
   group: test
-  image: quay.io/tarilabs/rust:1.30-alpine
+  image: quay.io/tarilabs/rust:1.30
   commands:
   - ./scripts/run-other-tests.sh
 
 
 - name: other-testsx2
   group: test
-  image: quay.io/tarilabs/rust:1.30-alpine
+  image: quay.io/tarilabs/rust:1.30
   commands:
   - ./scripts/run-other-tests.sh
 
