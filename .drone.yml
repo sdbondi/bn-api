@@ -3,6 +3,7 @@ name: bn-api
 
 steps:
     - name: restore-cache
+      depends_on: ["clone"]
       image: plugins/s3-cache
       settings:
         pull: true
@@ -16,7 +17,7 @@ steps:
             - ./target
 
     - name: other-tests
-      depends_on: ["clone"]
+      depends_on: ["restore-cache"]
       image: rust:1.31.1
       environment:
         FRONT_END_URL: "http://localhost"
@@ -94,7 +95,7 @@ steps:
     - name: rebuild-cache
       depends_on:
           - other-tests
-          - api-tests
+#          - api-tests
       image: plugins/s3-cache
       pull: true
       rebuild: true
