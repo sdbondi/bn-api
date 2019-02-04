@@ -1,6 +1,6 @@
 ---
 kind: pipeline
-name: bn-api
+name: build-cache
 
 pipeline:
     restore-cache:
@@ -18,8 +18,14 @@ pipeline:
       root:
           from_secret: aws_s3_bucket
 
-    test1:
-      depends_on: ["restore-cache"]
+---
+kind: pipeline
+name: tests
+
+depends_on: ["build-cache"]
+
+steps:
+    - name: run-tests
       image: rust:1.31.1
       environment:
           - FRONT_END_URL="http://localhost"
@@ -95,21 +101,6 @@ pipeline:
 #        commands:
 #            - ./scripts/run-api-tests.sh
 
-    rebuild-cache:
-        image: plugins/s3-cache
-        pull: true
-        rebuild: true
-        endpoint:
-            from_secret: aws_s3_endpoint
-        access_key:
-            from_secret: aws_access_key_id
-        secret_key:
-            from_secret: aws_secret_access_key
-        mount:
-            - ./target
-        root:
-            from_secret: aws_s3_bucket
-
 services:
     database:
       image: postgres:10.4
@@ -117,3 +108,28 @@ services:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: password
           POSTGRES_DB: bigneon_test
+
+---
+kind: pipeline
+name: build-cache-rebuild
+
+depends_on:
+    - build-cache
+    - tests
+
+steps:
+    - name: rebuild-cache
+    image: plugins/s3-cache
+    pull: true
+    rebuild: true
+    endpoint:
+        from_secret: aws_s3_endpoint
+    access_key:
+        from_secret: aws_access_key_id
+    secret_key:
+        from_secret: aws_secret_access_key
+    mount:
+        - ./target
+    root:
+        from_secret: aws_s3_bucket
+
