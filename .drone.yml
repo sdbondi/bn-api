@@ -100,7 +100,7 @@ steps:
       commands:
       - ./scripts/run-api-tests.sh
 
-   - name: integration-tests
+    - name: integration-tests
       depends_on: ["compile"]
       image: rust:1.31.1
       environment:
