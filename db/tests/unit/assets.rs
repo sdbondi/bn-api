@@ -26,7 +26,7 @@ fn update_asset_blockchain_id() {
         )
         .unwrap();
 
-    let asset = Asset::find_by_ticket_type(&ticket_type.id, conn).unwrap();
+    let asset = Asset::find_by_ticket_type(ticket_type.id, conn).unwrap();
     let tari_asset_id = Uuid::new_v4().to_string();
     let asset = asset
         .update_blockchain_id(tari_asset_id.clone(), conn)

@@ -161,7 +161,7 @@ fn valid_unsold_ticket_count() {
     assert_eq!(0, domain_events.len());
 
     // Nullify 49
-    let asset = Asset::find_by_ticket_type(&ticket_type.id, connection).unwrap();
+    let asset = Asset::find_by_ticket_type(ticket_type.id, connection).unwrap();
     TicketInstance::nullify_tickets(asset.id, 49, user.id, connection).unwrap();
     assert_eq!(
         1,

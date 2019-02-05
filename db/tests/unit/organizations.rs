@@ -53,8 +53,8 @@ fn find_by_asset_id() {
         .finish();
     let ticket_type = &event.ticket_types(true, None, &connection).unwrap()[0];
     let ticket_type2 = &event2.ticket_types(true, None, &connection).unwrap()[0];
-    let asset = Asset::find_by_ticket_type(&ticket_type.id, connection).unwrap();
-    let asset2 = Asset::find_by_ticket_type(&ticket_type2.id, connection).unwrap();
+    let asset = Asset::find_by_ticket_type(ticket_type.id, connection).unwrap();
+    let asset2 = Asset::find_by_ticket_type(ticket_type2.id, connection).unwrap();
     assert_eq!(
         Organization::find_by_asset_id(asset.id, connection).unwrap(),
         event.organization(connection).unwrap()

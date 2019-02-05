@@ -1,3 +1,4 @@
+use bigneon_db::dev::times;
 use bigneon_db::dev::TestProject;
 use bigneon_db::prelude::*;
 use chrono::prelude::*;
@@ -158,6 +159,86 @@ fn ticket_type() {
         .unwrap()
         .remove(0);
     assert_eq!(ticket_type, ticket.ticket_type(connection).unwrap());
+}
+
+#[test]
+fn cant_reserve_more_than_tickets_available() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+
+    let event = project
+        .create_event()
+        .with_ticket_pricing()
+        .with_a_specific_number_of_tickets(1)
+        .finish();
+
+    let user = project.create_user().finish();
+    let order = project
+        .create_order()
+        .for_event(&event)
+        .for_user(&user)
+        .quantity(1)
+        .finish();
+
+    let mut order_item: Vec<OrderItem> = order
+        .items(connection)
+        .unwrap()
+        .into_iter()
+        .filter(|oi| oi.item_type == OrderItemTypes::Tickets)
+        .collect();
+    let order_item = order_item.pop().unwrap();
+    let res = TicketInstance::reserve_tickets(
+        &order_item,
+        Some(times::infinity()),
+        order_item.ticket_type_id.unwrap(),
+        None,
+        1,
+        connection,
+    );
+
+    assert!(res.is_err());
+}
+
+#[test]
+fn cant_reserve_nullifed_tickets() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+
+    let event = project
+        .create_event()
+        .with_ticket_pricing()
+        .with_a_specific_number_of_tickets(2)
+        .finish();
+
+    let user = project.create_user().finish();
+    let order = project
+        .create_order()
+        .for_event(&event)
+        .for_user(&user)
+        .quantity(1)
+        .finish();
+
+    let mut order_item: Vec<OrderItem> = order
+        .items(connection)
+        .unwrap()
+        .into_iter()
+        .filter(|oi| oi.item_type == OrderItemTypes::Tickets)
+        .collect();
+    let order_item = order_item.pop().unwrap();
+
+    let asset = Asset::find_by_ticket_type(order_item.ticket_type_id.unwrap(), connection).unwrap();
+
+    TicketInstance::nullify_tickets(asset.id, 1, user.id, connection).unwrap();
+    let res = TicketInstance::reserve_tickets(
+        &order_item,
+        Some(times::infinity()),
+        order_item.ticket_type_id.unwrap(),
+        None,
+        1,
+        connection,
+    );
+
+    assert!(res.is_err());
 }
 
 #[test]

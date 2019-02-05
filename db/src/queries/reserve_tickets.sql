@@ -7,7 +7,7 @@ SET
 WHERE id IN (SELECT t.id
              FROM ticket_instances AS t
                     INNER JOIN assets AS a ON t.asset_id = a.id
-             WHERE (t.order_item_id IS NULL OR (t.reserved_until < now() AND t.status <> 'Purchased'))
+             WHERE ((t.reserved_until < now() AND t.status = 'Reserved') OR t.status = 'Available')
                AND a.ticket_type_id = $3
                AND coalesce($4, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11') =
                    coalesce(t.hold_id, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11') -- dummy guid
