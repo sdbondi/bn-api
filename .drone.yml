@@ -53,6 +53,21 @@ steps:
       - cd api && cargo build --release
       - cd ../db && cargo build --release
 
+    - name: rebuild-cache
+      depends_on:
+          - publish
+      image: plugins/s3-cache
+      settings:
+        rebuild: true
+        endpoint: http://minio1:9000
+        access_key:
+            from_secret: access_key_id
+        secret_key:
+            from_secret: secret_access_key
+        mount:
+            - ./target
+        root: drone
+
     - name: cargo-audit
       depends_on: ["compile"]
       image: rust:1.31.1
@@ -114,29 +129,13 @@ steps:
 #      when:
 #          branch: master
 
-
     - name: flush-cache
       depends_on:
-          - publish
+        - publish
       image: plugins/s3-cache
       settings:
         flush: true
         flush_age: 30
-        endpoint: http://minio1:9000
-        access_key:
-            from_secret: access_key_id
-        secret_key:
-            from_secret: secret_access_key
-        mount:
-            - ./target
-        root: drone
-
-    - name: rebuild-cache
-      depends_on:
-          - publish
-      image: plugins/s3-cache
-      settings:
-        rebuild: true
         endpoint: http://minio1:9000
         access_key:
             from_secret: access_key_id
