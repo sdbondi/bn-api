@@ -102,7 +102,7 @@ steps:
 
     - name: integration-tests
       depends_on: ["restore-cache"]
-      image: rust:1.31.1
+      image: sdbondi/rust-node:0.1
       environment:
           <<: *env
           DATABASE_URL: postgres://app:password@database/integration_tests
@@ -119,6 +119,7 @@ steps:
           - integration-tests
           - other-tests
       settings:
+        dockerfile: Dockerfile.drone
         tags:
           - 0.2.${DRONE_BUILD_NUMBER}
         repo:
@@ -132,6 +133,8 @@ steps:
 #      when:
 #          branch: master
 
+when:
+  event: [ tag, pull_request ]
 
 services:
     - name: database
