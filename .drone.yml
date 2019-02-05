@@ -117,11 +117,12 @@ steps:
       settings:
         dockerfile: Dockerfile.drone
         tags:
+          - latest
           - 0.2.${DRONE_BUILD_NUMBER}
+        region:
+            from_secret: aws_region
         repo:
             from_secret: docker_repo
-        registry:
-            from_secret: docker_registry
         access_key:
             from_secret: aws_access_key_id
         secret_key:
