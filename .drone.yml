@@ -55,7 +55,7 @@ steps:
 
     - name: rebuild-cache
       depends_on:
-          - publish
+          - compile
       image: plugins/s3-cache
       settings:
         rebuild: true
