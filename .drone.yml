@@ -49,24 +49,17 @@ steps:
             - ./target
         root: drone
 
-    - name: other-tests
+    - name: compile
       depends_on: ["restore-cache"]
       image: rust:1.31.1
       environment: *env
       commands:
-      - ./scripts/run-other-tests.sh
-
-    - name: api-tests
-      depends_on: ["clone"]
-      image: rust:1.31.1
-      environment: *env
-      commands:
-      - ./scripts/run-api-tests.sh
+      - cd api
+      - cargo build --release
 
     - name: rebuild-cache
       depends_on:
-          - other-tests
-#          - api-tests
+          - compile
       image: plugins/s3-cache
       settings:
         pull: true
@@ -79,6 +72,20 @@ steps:
         mount:
             - ./target
         root: drone
+
+    - name: other-tests
+      depends_on: ["compile"]
+      image: rust:1.31.1
+      environment: *env
+      commands:
+      - ./scripts/run-other-tests.sh
+
+    - name: api-tests
+      depends_on: ["compile"]
+      image: rust:1.31.1
+      environment: *env
+      commands:
+      - ./scripts/run-api-tests.sh
 
 services:
     - name: database
