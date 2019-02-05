@@ -20,7 +20,7 @@ fi
 
 if [[ -f ./target/release/server ]]; then
     echo "----- Reusing built server -----"
-    ./target/release/server -t false &
+    ./target/release/server -t false > /tmp/api.log &
     export SERVER_PID=$!$1
 else
     cd api
@@ -34,6 +34,7 @@ fi
 newman run --timeout-request 60000 ./integration-tests/bigneon-tests.postman_collection.json -e ./integration-tests/travis.postman_environment.json
 NEWMAN_EXIT_CODE=$?
 kill -s SIGTERM $SERVER_PID
+cat /tmp/api.log
 if [[ $NEWMAN_EXIT_CODE -ne 0 ]]
 then
     exit $NEWMAN_EXIT_CODE
