@@ -1,9 +1,6 @@
 env: &env
     FRONT_END_URL: "http://localhost"
     BIGNEON_DB: bigneon
-    DATABASE_URL: postgres://app:password@database/other_tests
-    TEST_DATABASE_URL: postgres://app:password@database/other_tests
-    TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
     BUILD_DIR: "api"
     TARI_URL: "TEST"
     COMMUNICATION_DEFAULT_SOURCE_EMAIL: "noreply@bigneon.com"
@@ -80,14 +77,22 @@ steps:
     - name: other-tests
       depends_on: ["compile"]
       image: rust:1.31.1
-      environment: *env
+      environment:
+          <<: *env
+          DATABASE_URL: postgres://app:password@database/other_tests
+          TEST_DATABASE_URL: postgres://app:password@database/other_tests
+          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
       commands:
       - ./scripts/run-other-tests.sh
 
     - name: api-tests
       depends_on: ["compile"]
       image: rust:1.31.1
-      environment: *env
+      environment:
+          <<: *env
+          DATABASE_URL: postgres://app:password@database/api_tests
+          TEST_DATABASE_URL: postgres://app:password@database/api_tests
+          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/api_tests
       commands:
       - ./scripts/run-api-tests.sh
 
