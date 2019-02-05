@@ -97,7 +97,6 @@ services:
       environment:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: test
 
 networks:
     default:
