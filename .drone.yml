@@ -54,10 +54,8 @@ steps:
       - cargo build --release
 
     - name: rebuild-cache
-      depends_on:
-          - compile
+      depends_on: ["compile"]
       image: plugins/s3-cache
-      link: minio1
       settings:
         pull: true
         rebuild: true
@@ -100,3 +98,7 @@ services:
           POSTGRES_PASSWORD: password
 
 
+network:
+    drone:
+        external:
+            name: drone
