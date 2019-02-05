@@ -45,26 +45,22 @@ steps:
             - ./target
         root: drone
 
-#    - name: compile
-#      depends_on: ["restore-cache"]
-#      image: rust:1.31.1
-#      environment: *env
-#      commands:
-#      - ls -lrta
-#      - ls -lrta target
-#      - ls -lrta target/release
-#      - cd api
-#      - cargo build --release
+    - name: compile
+      depends_on: ["restore-cache"]
+      image: rust:1.31.1
+      environment: *env
+      commands:
+      - cd api && cargo build --release
+      - cd db && cargo build --release
 
     - name: cargo-audit
-      depends_on: ["restore-cache"]
+      depends_on: ["compile"]
       image: rust:1.31.1
       commands:
           - ./scripts/run-cargo-audit.sh
 
-
     - name: other-tests
-      depends_on: ["restore-cache"]
+      depends_on: ["compile"]
       image: rust:1.31.1
       environment:
           <<: *env
@@ -75,7 +71,7 @@ steps:
         - ./scripts/run-other-tests.sh
 
     - name: api-tests
-      depends_on: ["restore-cache"]
+      depends_on: ["compile"]
       image: rust:1.31.1
       environment:
           <<: *env
@@ -86,7 +82,7 @@ steps:
       - ./scripts/run-api-tests.sh
 
     - name: integration-tests
-      depends_on: ["restore-cache"]
+      depends_on: ["compile"]
       image: sdbondi/rust-node:0.1
       environment:
           <<: *env
