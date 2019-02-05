@@ -15,6 +15,7 @@ steps:
             from_secret: secret_access_key
         mount:
             - ./target
+        root: drone
 
     - name: other-tests
       depends_on: ["restore-cache"]
@@ -105,6 +106,7 @@ steps:
             from_secret: secret_access_key
         mount:
             - ./target
+        root: drone
 
 services:
     - name: database
