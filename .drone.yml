@@ -47,7 +47,7 @@ steps:
         root: drone
 
     - name: compile
-      depends_on: ["clone"]
+      depends_on: ["restore-cache"]
       image: rust:1.31.1
       environment: *env
       commands:
