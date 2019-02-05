@@ -7,10 +7,16 @@ cargo run --release create -c $DATABASE_URL -f -e superuser@test.com -p password
     echo "Migrations failed"
     exit 1
 }
-cd ../api
-cargo build --release
-cargo run --release -- -t false &
-export SERVER_PID=$!$1
+
+if [[ -f ./target/release/server ]]; then
+    ./target/release/server -t false &
+    export SERVER_PID=$!$1
+else
+    cd ../api
+    cargo build --release
+    cargo run --release -- -t false &
+    export SERVER_PID=$!$1
+fi
 
 # Run newman tests
 newman run --timeout-request 60000 ../integration-tests/bigneon-tests.postman_collection.json -e ../integration-tests/travis.postman_environment.json
