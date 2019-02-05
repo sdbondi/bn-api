@@ -88,8 +88,7 @@ steps:
           TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
       commands:
       - ./scripts/run-other-tests.sh
-#
-#
+
     - name: api-tests
       depends_on: ["compile"]
       image: rust:1.31.1
@@ -100,7 +99,7 @@ steps:
           TEST_DATABASE_ADMIN_URL: postgres://app:password@database/api_tests
       commands:
       - ./scripts/run-api-tests.sh
-#
+
    - name: integration-tests
       depends_on: ["compile"]
       image: rust:1.31.1
@@ -134,10 +133,10 @@ steps:
 #          branch: master
 
 
-#services:
-#    - name: database
-#      image: postgres:10.4
-#      environment:
-#          POSTGRES_USER: app
-#          POSTGRES_PASSWORD: password
+services:
+    - name: database
+      image: postgres:10.4
+      environment:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: password
 
