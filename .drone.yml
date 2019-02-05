@@ -35,7 +35,6 @@ steps:
       depends_on: ["clone"]
       image: plugins/s3-cache
       settings:
-        pull: true
         restore: true
         endpoint: http://minio1:9000
         access_key:
@@ -119,12 +118,28 @@ steps:
 #      when:
 #          branch: master
 
-    - name:
+
+    - name: flush-cache
       depends_on:
           - publish
       image: plugins/s3-cache
       settings:
-        pull: true
+        flush: true
+        flush_age: 30
+        endpoint: http://minio1:9000
+        access_key:
+            from_secret: access_key_id
+        secret_key:
+            from_secret: secret_access_key
+        mount:
+            - ./target
+        root: drone
+
+    - name: rebuild-cache
+      depends_on:
+          - publish
+      image: plugins/s3-cache
+      settings:
         rebuild: true
         endpoint: http://minio1:9000
         access_key:
