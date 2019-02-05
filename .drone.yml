@@ -87,7 +87,7 @@ steps:
           TEST_DATABASE_URL: postgres://app:password@database/other_tests
           TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
       commands:
-      - ./scripts/run-other-tests.sh
+        - ./scripts/run-other-tests.sh
 
     - name: api-tests
       depends_on: ["compile"]
