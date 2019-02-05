@@ -45,19 +45,19 @@ steps:
 #            - ./target
 #        root: drone
 
-    - name: compile
-      depends_on: ["clone"]
-      image: rust:1.31.1
-      environment: *env
-      commands:
-      - cd api
-      - cargo build --release
+#    - name: compile
+#      depends_on: ["clone"]
+#      image: rust:1.31.1
+#      environment: *env
+#      commands:
+#      - cd api
+#      - cargo build --release
 
-    - name: cargo-audit
-      depends_on: ["clone"]
-      image: rust:1.31.1
-      commands:
-          - ./scripts/run-cargo-audit.sh
+#    - name: cargo-audit
+#      depends_on: ["compile"]
+#      image: rust:1.31.1
+#      commands:
+#          - ./scripts/run-cargo-audit.sh
 
 #    - name: rebuild-cache
 #      depends_on: ["compile"]
@@ -74,35 +74,48 @@ steps:
 #            - ./target
 #        root: drone
 
-    - name: other-tests
-      depends_on: ["compile"]
-      image: rust:1.31.1
-      environment:
-          <<: *env
-          DATABASE_URL: postgres://app:password@database/other_tests
-          TEST_DATABASE_URL: postgres://app:password@database/other_tests
-          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
-      commands:
-      - ./scripts/run-other-tests.sh
-
-
-    - name: api-tests
-      depends_on: ["compile"]
-      image: rust:1.31.1
-      environment:
-          <<: *env
-          DATABASE_URL: postgres://app:password@database/api_tests
-          TEST_DATABASE_URL: postgres://app:password@database/api_tests
-          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/api_tests
-      commands:
-      - ./scripts/run-api-tests.sh
+#    - name: other-tests
+#      depends_on: ["compile"]
+#      image: rust:1.31.1
+#      environment:
+#          <<: *env
+#          DATABASE_URL: postgres://app:password@database/other_tests
+#          TEST_DATABASE_URL: postgres://app:password@database/other_tests
+#          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
+#      commands:
+#      - ./scripts/run-other-tests.sh
+#
+#
+#    - name: api-tests
+#      depends_on: ["compile"]
+#      image: rust:1.31.1
+#      environment:
+#          <<: *env
+#          DATABASE_URL: postgres://app:password@database/api_tests
+#          TEST_DATABASE_URL: postgres://app:password@database/api_tests
+#          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/api_tests
+#      commands:
+#      - ./scripts/run-api-tests.sh
+#
+#   - name: integration-tests
+#      depends_on: ["compile"]
+#      image: rust:1.31.1
+#      environment:
+#          <<: *env
+#          DATABASE_URL: postgres://app:password@database/integration_tests
+#          TEST_DATABASE_URL: postgres://app:password@database/integration_tests
+#          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/integration_tests
+#      commands:
+#      - ./scripts/run-integration-tests.sh
 
     - name: build
       image: plugins/ecr
       depends_on:
-          - cargo-audit
-          - api-tests
-          - other-tests
+          - clone
+#          - cargo-audit
+#          - api-tests
+#          - integration-tests
+#          - other-tests
       settings:
         tags:
           - 0.2.${DRONE_BUILD_NUMBER}
@@ -110,14 +123,18 @@ steps:
             from_secret: docker_repo
         registry:
             from_secret: docker_registry
+        access_key:
+            from_secret: aws_access_key_id
+        secret_key:
+            from_secret: aws_secret_access_key
 #      when:
 #          branch: master
 
 
-services:
-    - name: database
-      image: postgres:10.4
-      environment:
-          POSTGRES_USER: app
-          POSTGRES_PASSWORD: password
+#services:
+#    - name: database
+#      image: postgres:10.4
+#      environment:
+#          POSTGRES_USER: app
+#          POSTGRES_PASSWORD: password
 
