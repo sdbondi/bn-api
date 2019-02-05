@@ -30,43 +30,49 @@ kind: pipeline
 name: bn-api
 
 steps:
-    - name: restore-cache
-      depends_on: ["clone"]
-      image: plugins/s3-cache
-      settings:
-        pull: true
-        restore: true
-        endpoint: http://minio1:9000
-        access_key:
-            from_secret: access_key_id
-        secret_key:
-            from_secret: secret_access_key
-        mount:
-            - ./target
-        root: drone
+#    - name: restore-cache
+#      depends_on: ["clone"]
+#      image: plugins/s3-cache
+#      settings:
+#        pull: true
+#        restore: true
+#        endpoint: http://minio1:9000
+#        access_key:
+#            from_secret: access_key_id
+#        secret_key:
+#            from_secret: secret_access_key
+#        mount:
+#            - ./target
+#        root: drone
 
     - name: compile
-      depends_on: ["restore-cache"]
+      depends_on: ["clone"]
       image: rust:1.31.1
       environment: *env
       commands:
       - cd api
       - cargo build --release
 
-    - name: rebuild-cache
-      depends_on: ["compile"]
-      image: plugins/s3-cache
-      settings:
-        pull: true
-        rebuild: true
-        endpoint: http://minio1:9000
-        access_key:
-            from_secret: access_key_id
-        secret_key:
-            from_secret: secret_access_key
-        mount:
-            - ./target
-        root: drone
+    - name: cargo-audit
+      depends_on: ["clone"]
+      image: rust:1.31.1
+      commands:
+          - ./scripts/run-cargo-audit.sh
+
+#    - name: rebuild-cache
+#      depends_on: ["compile"]
+#      image: plugins/s3-cache
+#      settings:
+#        pull: true
+#        rebuild: true
+#        endpoint: http://minio1:9000
+#        access_key:
+#            from_secret: access_key_id
+#        secret_key:
+#            from_secret: secret_access_key
+#        mount:
+#            - ./target
+#        root: drone
 
     - name: other-tests
       depends_on: ["compile"]
@@ -79,6 +85,7 @@ steps:
       commands:
       - ./scripts/run-other-tests.sh
 
+
     - name: api-tests
       depends_on: ["compile"]
       image: rust:1.31.1
@@ -90,6 +97,23 @@ steps:
       commands:
       - ./scripts/run-api-tests.sh
 
+    - name: build
+      image: plugins/ecr
+      depends_on:
+          - cargo-audit
+          - api-tests
+          - other-tests
+      settings:
+        tags:
+          - 0.2.${DRONE_BUILD_NUMBER}
+        repo:
+            from_secret: docker_repo
+        registry:
+            from_secret: docker_registry
+#      when:
+#          branch: master
+
+
 services:
     - name: database
       image: postgres:10.4
@@ -97,8 +121,3 @@ services:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: password
 
-
-network:
-    drone:
-        external:
-            name: drone
