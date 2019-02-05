@@ -37,10 +37,11 @@ steps:
     - name: restore-cache
       depends_on: ["clone"]
       image: plugins/s3-cache
+      link: minio1
       settings:
         pull: true
         restore: true
-        endpoint: http://minio:9000
+        endpoint: http://minio1:9000
         access_key:
             from_secret: access_key_id
         secret_key:
@@ -61,10 +62,11 @@ steps:
       depends_on:
           - compile
       image: plugins/s3-cache
+      link: minio1
       settings:
         pull: true
         rebuild: true
-        endpoint: http://minio:9000
+        endpoint: http://minio1:9000
         access_key:
             from_secret: access_key_id
         secret_key:
