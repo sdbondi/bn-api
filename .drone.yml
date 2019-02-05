@@ -1,4 +1,5 @@
 env: &env
+    CARGO_INCREMENTAL: "1"
     FRONT_END_URL: "http://localhost"
     BUILD_DIR: "api"
     TARI_URL: "TEST"
