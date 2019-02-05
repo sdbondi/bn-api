@@ -1,4 +1,4 @@
-- env: &env
+env: &env
     FRONT_END_URL: "http://localhost"
     BIGNEON_DB: bigneon
     DATABASE_URL: postgres://app:password@database/other_tests
