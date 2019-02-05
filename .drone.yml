@@ -63,20 +63,6 @@ steps:
       commands:
           - ./scripts/run-cargo-audit.sh
 
-    - name: rebuild-cache
-      depends_on: ["restore-cache"]
-      image: plugins/s3-cache
-      settings:
-        pull: true
-        rebuild: true
-        endpoint: http://minio1:9000
-        access_key:
-            from_secret: access_key_id
-        secret_key:
-            from_secret: secret_access_key
-        mount:
-            - ./target
-        root: drone
 
     - name: other-tests
       depends_on: ["restore-cache"]
@@ -111,7 +97,7 @@ steps:
       commands:
       - ./scripts/run-integration-tests.sh
 
-    - name: build
+    - name: publish
       image: plugins/ecr
       depends_on:
           - cargo-audit
@@ -132,6 +118,22 @@ steps:
             from_secret: aws_secret_access_key
 #      when:
 #          branch: master
+
+    - name:
+      depends_on:
+          - publish
+      image: plugins/s3-cache
+      settings:
+        pull: true
+        rebuild: true
+        endpoint: http://minio1:9000
+        access_key:
+            from_secret: access_key_id
+        secret_key:
+            from_secret: secret_access_key
+        mount:
+            - ./target
+        root: drone
 
 when:
   event: [ tag, pull_request ]
