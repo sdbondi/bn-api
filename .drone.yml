@@ -37,6 +37,7 @@ steps:
     - name: restore-cache
       depends_on: ["clone"]
       image: plugins/s3-cache
+      network: drone
       link: minio1
       settings:
         pull: true
@@ -62,6 +63,7 @@ steps:
       depends_on:
           - compile
       image: plugins/s3-cache
+      network: drone
       link: minio1
       settings:
         pull: true
