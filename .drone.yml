@@ -50,8 +50,8 @@ steps:
       image: rust:1.31.1
       environment: *env
       commands:
-      - cd api && cargo build --release
-      - cd ../db && cargo build --release
+      - cargo build --release
+      - ls target/release/server
 
     - name: rebuild-cache
       depends_on:
