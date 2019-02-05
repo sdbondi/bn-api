@@ -51,7 +51,7 @@ steps:
       environment: *env
       commands:
       - cd api && cargo build --release
-      - cd db && cargo build --release
+      - cd ../db && cargo build --release
 
     - name: cargo-audit
       depends_on: ["compile"]
