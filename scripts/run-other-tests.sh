@@ -2,7 +2,5 @@
 # Ensure we are in the root of the git repo
 # cd $(git rev-parse --show-toplevel)
 
-cd db
-cargo run --release create -c $DATABASE_URL -f -e superuser@test.com -p password -m 8883
-cd ..
+./target/release/bndb_cli create -c $DATABASE_URL -f -e superuser@test.com -p password -m 8883
 cargo test --release --exclude bigneon_api --all
