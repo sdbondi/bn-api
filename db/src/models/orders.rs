@@ -1171,6 +1171,7 @@ impl Order {
             external_reference,
             amount,
             None,
+            None,
         );
         self.add_payment(payment, Some(current_user_id), conn)
     }
@@ -1182,6 +1183,7 @@ impl Order {
         current_user_id: Option<Uuid>,
         amount: i64,
         status: PaymentStatus,
+        url_nonce: Option<String>,
         data: Value,
         conn: &PgConnection,
     ) -> Result<Payment, DatabaseError> {
@@ -1194,7 +1196,9 @@ impl Order {
             external_reference,
             amount,
             Some(data),
+            url_nonce,
         );
+
         self.add_payment(payment, current_user_id, conn)
     }
 
@@ -1217,6 +1221,7 @@ impl Order {
             Some(external_reference),
             amount,
             Some(provider_data),
+            None,
         );
 
         self.add_payment(payment, Some(current_user_id), conn)
@@ -1267,6 +1272,29 @@ impl Order {
     pub fn items_valid_for_purchase(&self, conn: &PgConnection) -> Result<bool, DatabaseError> {
         let invalid_items = self.order_items_in_invalid_state(conn)?;
         Ok(invalid_items.is_empty())
+    }
+
+    pub fn reset_to_draft(
+        &mut self,
+        current_user_id: Option<Uuid>,
+        conn: &PgConnection,
+    ) -> Result<(), DatabaseError> {
+        match self.status {
+            OrderStatus::Paid => {
+                // still store the payment.
+                DatabaseError::business_process_error(
+                    "Cannot reset to draft, the order is already paid",
+                )
+            }
+            OrderStatus::Cancelled => DatabaseError::business_process_error(
+                "Cannot reset this order because it has been cancelled",
+            ),
+
+            OrderStatus::Draft => Ok(()),
+            OrderStatus::PendingPayment => {
+                self.update_status(current_user_id, OrderStatus::Draft, conn)
+            }
+        }
     }
 
     fn add_payment(
@@ -1327,13 +1355,29 @@ impl Order {
             }
 
             let ticket_ids = TicketInstance::find_ids_for_order(self.id, conn)?;
-            DomainEvent::create(
+            let domain_event = DomainEvent::create(
                 DomainEventTypes::OrderCompleted,
                 "Order completed".into(),
                 Tables::Orders,
                 Some(self.id),
                 current_user_id,
                 Some(json!({ "ticket_ids": ticket_ids })),
+            )
+            .commit(conn)?;
+
+            DomainAction::create(
+                Some(domain_event.id),
+                DomainActionTypes::SendPurchaseCompletedCommunication,
+                None,
+                json!({"order_id": self.id, "user_id": current_user_id}),
+                Some(Tables::Orders.to_string()),
+                Some(self.id),
+                Utc::now().naive_utc(),
+                // Technically this IPN must be processed and should never expire
+                (Utc::now().naive_utc())
+                    .checked_add_signed(Duration::days(3))
+                    .unwrap(),
+                3,
             )
             .commit(conn)?;
         }

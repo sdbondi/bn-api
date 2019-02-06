@@ -11,7 +11,7 @@ pub fn purchase_completed(
     display_order: DisplayOrder,
     config: &Config,
     conn: &PgConnection,
-) -> Result<(), BigNeonError> {
+) -> Result<Communication, BigNeonError> {
     let source = CommAddress::from(config.communication_default_source_email.clone());
     let destinations = CommAddress::from(user_email);
     let title = "BigNeon Purchase Completed".to_string();
@@ -70,7 +70,7 @@ pub fn purchase_completed(
     );
 
     // TODO: Perhaps move this to an event subscription
-    Communication::new(
+    Ok(Communication::new(
         CommunicationType::EmailTemplate,
         title,
         None,
@@ -78,6 +78,5 @@ pub fn purchase_completed(
         destinations,
         Some(template_id),
         Some(vec![template_data]),
-    )
-    .queue(conn)
+    ))
 }

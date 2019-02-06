@@ -34,7 +34,7 @@ impl ProcessPaymentIPNExecutor {
         ProcessPaymentIPNExecutor {
             globee_api_key: config.globee_api_key.clone(),
             globee_base_url: config.globee_base_url.clone(),
-            donot_verify_ipn: config.ipn_base_url.to_lowercase() == "test",
+            donot_verify_ipn: config.api_base_url.to_lowercase() == "test",
         }
     }
 
@@ -99,6 +99,7 @@ impl ProcessPaymentIPNExecutor {
                     None,
                     (ipn.payment_details.received_amount.unwrap_or(0f64) * 100f64) as i64,
                     status,
+                    None,
                     action.payload.clone(),
                     connection,
                 )?

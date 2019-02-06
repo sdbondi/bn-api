@@ -85,6 +85,7 @@ string_enum! { DomainEventTypes [
     OrderStatusUpdated,
     OrderUpdated,
     OrganizationCreated,
+    PaymentCancelled,
     PaymentCreated,
     PaymentCompleted,
     PaymentRefund,
@@ -107,7 +108,8 @@ string_enum! { DomainActionTypes [
     // Marketing Contacts
     MarketingContactsCreateEventList,
     MarketingContactsBulkEventFanListImport,
-    PaymentProviderIPN
+    PaymentProviderIPN,
+    SendPurchaseCompletedCommunication
 
 ]}
 string_enum! { DomainActionStatus [Pending, RetriesExceeded, Errored, Success, Cancelled]}
