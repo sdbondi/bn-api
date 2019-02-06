@@ -2,14 +2,12 @@
 
 set -e
 
-echo "I got: ---> $1"
-
-if [[ -z "$APP_VERSION" ]]; then
-    echo "APP_VERSION env var required"
+if [[ $# -ne 1 ]]; then
+    echo "USAGE: $0 [version]"
     exit 1
 fi
 
-new_version=$APP_VERSION
+new_version=$1
 
 function bump_patch {
     local file="$1"
