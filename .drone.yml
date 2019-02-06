@@ -47,8 +47,6 @@ steps:
             - ./target
         fallback_path: drone/$DRONE_REPO_NAMESPACE/$DRONE_REPO_NAME/master/
         root: drone
-      when:
-          event: [pull_request]
 
     - name: compile
       depends_on:
@@ -59,8 +57,6 @@ steps:
       - cargo build --release
       - test -x target/release/server
       - test -x target/release/bndb_cli
-      when:
-          event: [pull_request]
 
     - name: rebuild-cache
       depends_on:
@@ -76,8 +72,6 @@ steps:
         mount:
             - ./target
         root: drone
-      when:
-          event: [pull_request]
 
     - name: cargo-audit
       depends_on:
@@ -85,8 +79,6 @@ steps:
       image: rust:1.31.1
       commands:
           - ./scripts/run-cargo-audit.sh
-      when:
-          event: [pull_request]
 
     - name: other-tests
       depends_on:
@@ -99,8 +91,6 @@ steps:
           TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
       commands:
           - ./scripts/run-other-tests.sh
-      when:
-          event: [pull_request]
 
     - name: api-tests
       depends_on:
@@ -113,8 +103,6 @@ steps:
           TEST_DATABASE_ADMIN_URL: postgres://app:password@database/api_tests
       commands:
           - ./scripts/run-api-tests.sh
-      when:
-          event: [pull_request]
 
     - name: integration-tests
       depends_on:
@@ -127,8 +115,6 @@ steps:
           TEST_DATABASE_ADMIN_URL: postgres://app:password@database/integration_tests
       commands:
           - ./scripts/run-integration-tests.sh
-      when:
-          event: [pull_request]
 
     - name: publish
       image: plugins/ecr
@@ -171,8 +157,8 @@ steps:
         root: drone
 
 when:
-    event: [pull_request]
-
+    event: [pull_request, push]
+    branch: master
 
 services:
     - name: database
