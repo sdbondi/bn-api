@@ -142,18 +142,18 @@ steps:
           branch: master
           event: push
 
-    - name: deploy-dev
-      image: sdbondi/bn-deploy-step
-      settings:
-        aws_access_key_id:
-            from_secret: aws_access_key_id
-        aws_secret_access_key:
-            from_secret: aws_secret_access_key
-        function:
-            from_secret: aws_lambda_deploy_function
-        cargo_file: api/Cargo.toml
-        payload: |-
-            {"target": "staging", "tag": ""}
+#    - name: deploy-dev
+#      image: sdbondi/bn-deploy-step
+#      settings:
+#        aws_access_key_id:
+#            from_secret: aws_access_key_id
+#        aws_secret_access_key:
+#            from_secret: aws_secret_access_key
+#        function:
+#            from_secret: aws_lambda_deploy_function
+#        cargo_file: api/Cargo.toml
+#        payload: |-
+#            {"target": "staging", "tag": ""}
 
     - name: flush-cache
       depends_on:
