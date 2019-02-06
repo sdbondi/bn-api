@@ -132,7 +132,7 @@ steps:
 
     - name: flush-cache
       depends_on:
-        - publish
+        - rebuild-cache
       image: plugins/s3-cache
       settings:
         flush: true
