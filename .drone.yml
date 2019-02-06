@@ -39,6 +39,9 @@ steps:
       commands:
         - rustup component add rustfmt-preview
         - cargo fmt --all -- --check
+      when:
+          event:
+            excludes: [pull_request]
 
     - name: restore-cache
       depends_on:
