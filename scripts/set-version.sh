@@ -2,6 +2,13 @@
 
 set -e
 
+echo "I got: ---> $1"
+
+if [[ -z "$APP_VERSION" ]]; then
+    echo "APP_VERSION env var required"
+    exit 1
+fi
+
 new_version=$APP_VERSION
 
 function bump_patch {
@@ -11,7 +18,7 @@ function bump_patch {
     local replace="\1\"${new_version}\""
 
     sed -i.tmp -E "s/${search}/${replace}/g" "$1"
-    echo "$file set to $new_version from $version"
+    echo "$file set ($version -> $new_version)"
     rm "$1.tmp"
 }
 

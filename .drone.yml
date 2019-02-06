@@ -69,7 +69,7 @@ steps:
       environment:
           APP_VERSION: *version
       commands:
-        - ./scripts/set-version.sh
+        - ./scripts/set-version.sh $APP_VERSION
       when:
           event: push
           branch: master
@@ -180,6 +180,25 @@ steps:
             from_secret: aws_access_key_id
         secret_key:
             from_secret: aws_secret_access_key
+      when:
+          branch: master
+          event: push
+
+    - name: deploy-dev
+      image: sdbondi/drone-lambda-trigger
+      depends_on:
+          - publish
+      environment:
+          APP_VERSION: *version
+      settings:
+        aws_access_key_id:
+            from_secret: aws_access_key_id
+        aws_secret_access_key:
+            from_secret: aws_secret_access_key
+        function:
+            from_secret: aws_lambda_function
+        payload: |-
+            {"target": "staging", "tag": "$APP_VERSION"}
       when:
           branch: master
           event: push
