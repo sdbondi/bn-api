@@ -208,6 +208,26 @@ pub enum PaymentRequest {
     Free,
 }
 
+pub fn clear_invalid_items(
+    (connection, user): (Connection, User),
+) -> Result<HttpResponse, BigNeonError> {
+    let connection = connection.get();
+    let mut order = match Order::find_cart_for_user(user.id(), connection)? {
+        Some(o) => o,
+        None => return application::unprocessable("No cart exists for user"),
+    };
+
+    if order.status != OrderStatus::Draft {
+        return application::unprocessable(
+            "Could not complete this cart because it is not in the correct status",
+        );
+    }
+    info!("CART: Clearing invalid items");
+
+    order.clear_invalid_items(user.id(), connection)?;
+    Ok(HttpResponse::Ok().json(order.for_display(None, connection)?))
+}
+
 pub fn checkout(
     (connection, json, user, state): (Connection, Json<CheckoutCartRequest>, User, State<AppState>),
 ) -> Result<HttpResponse, BigNeonError> {
@@ -221,6 +241,12 @@ pub fn checkout(
     };
     let order_id = order.id;
     order.lock_version(connection.get())?;
+
+    if !order.items_valid_for_purchase(connection.get())? {
+        return application::unprocessable(
+            "Could not complete this checkout because it contains invalid order items",
+        );
+    }
 
     let order_items = order.items(connection.get())?;
 
@@ -461,7 +487,7 @@ fn checkout_external(
         )?);
     }
 
-    let mut order = order.update(UpdateOrderAttributes { note: Some(note) }, conn)?;
+    let mut order = order.update(UpdateOrderAttributes { note: Some(note) }, user.id(), conn)?;
     order.set_behalf_of_user(guest.unwrap(), user.id(), conn)?;
     let total = order.calculate_total(conn)?;
 

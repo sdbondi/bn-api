@@ -363,7 +363,7 @@ pub fn update(
         return application::forbidden("You do not have access to this order");
     }
 
-    let order = order.update(json.into_inner(), conn)?;
+    let order = order.update(json.into_inner(), user.id(), conn)?;
 
     Ok(HttpResponse::Ok().json(order.for_display(None, conn)?))
 }

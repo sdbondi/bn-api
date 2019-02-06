@@ -3,7 +3,7 @@ use bigneon_api::controllers::cart;
 use bigneon_api::controllers::cart::*;
 use bigneon_api::extractors::*;
 use bigneon_db::models::*;
-use bigneon_db::schema::orders;
+use bigneon_db::schema::{orders, ticket_instances};
 use chrono::prelude::*;
 use chrono::Duration;
 use diesel;
@@ -922,4 +922,143 @@ fn checkout_free_for_paid_items() {
     // Reload order
     let order = Order::find(order.id, connection).unwrap();
     assert_eq!(order.status, OrderStatus::Draft);
+}
+
+#[test]
+fn clear_invalid_items() {
+    let database = TestDatabase::new();
+    let connection = database.connection.get();
+    let event = database
+        .create_event()
+        .with_tickets()
+        .with_ticket_pricing()
+        .finish();
+    let ticket_type = event
+        .ticket_types(true, None, connection)
+        .unwrap()
+        .remove(0);
+
+    let user = database.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+
+    // Order item with past reserved until date
+    cart.update_quantities(
+        user.id,
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 1,
+            redemption_code: None,
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    let items = cart.items(connection).unwrap();
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type.id))
+        .unwrap();
+    let one_minute_ago = NaiveDateTime::from(Utc::now().naive_utc() - Duration::minutes(1));
+    diesel::update(
+        ticket_instances::table.filter(ticket_instances::order_item_id.eq(order_item.id)),
+    )
+    .set((ticket_instances::reserved_until.eq(one_minute_ago),))
+    .execute(connection)
+    .unwrap();
+
+    // Must be admin to check out external
+    let user = support::create_auth_user_from_user(&user, Roles::Admin, None, &database);
+
+    // Not currently valid
+    assert!(!cart.items_valid_for_purchase(connection).unwrap());
+
+    let response: HttpResponse =
+        cart::clear_invalid_items((database.connection.clone().into(), user)).into();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    // Cart no longer contains invalid items
+    assert!(cart.items_valid_for_purchase(connection).unwrap());
+}
+
+#[test]
+fn checkout_fails_for_invalid_items() {
+    let database = TestDatabase::new();
+    let connection = database.connection.get();
+    let event = database
+        .create_event()
+        .with_tickets()
+        .with_ticket_pricing()
+        .finish();
+    let ticket_type = event
+        .ticket_types(true, None, connection)
+        .unwrap()
+        .remove(0);
+
+    let user = database.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+
+    // Order item with past reserved until date
+    cart.update_quantities(
+        user.id,
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 1,
+            redemption_code: None,
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    let items = cart.items(connection).unwrap();
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type.id))
+        .unwrap();
+    let one_minute_ago = NaiveDateTime::from(Utc::now().naive_utc() - Duration::minutes(1));
+    diesel::update(
+        ticket_instances::table.filter(ticket_instances::order_item_id.eq(order_item.id)),
+    )
+    .set((ticket_instances::reserved_until.eq(one_minute_ago),))
+    .execute(connection)
+    .unwrap();
+
+    let request = TestRequest::create();
+
+    let input = Json(cart::CheckoutCartRequest {
+        method: PaymentRequest::External {
+            reference: Some("TestRef".to_string()),
+            first_name: "First".to_string(),
+            last_name: "Last".to_string(),
+            email: Some("easdf@test.com".to_string()),
+            phone: None,
+            note: None,
+        },
+    });
+
+    // Must be admin to check out external
+    let user = support::create_auth_user_from_user(&user, Roles::Admin, None, &database);
+
+    let response: HttpResponse = cart::checkout((
+        database.connection.clone().into(),
+        input,
+        user,
+        request.extract_state(),
+    ))
+    .into();
+    assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+
+    let expected_json = HttpResponse::new(StatusCode::UNPROCESSABLE_ENTITY)
+        .into_builder()
+        .json(json!({
+            "error": "Could not complete this checkout because it contains invalid order items"
+        }));
+    let expected_text = unwrap_body_to_string(&expected_json).unwrap();
+    let body = unwrap_body_to_string(&response).unwrap();
+    assert_eq!(body, expected_text);
+
+    // Reload cart
+    let cart = Order::find(cart.id, connection).unwrap();
+    assert_eq!(cart.status, OrderStatus::Draft);
 }

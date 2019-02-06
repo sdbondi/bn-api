@@ -3,9 +3,9 @@ use diesel;
 use diesel::dsl::{self, select};
 use diesel::pg::types::sql_types::Array;
 use diesel::prelude::*;
-use diesel::sql_types::{BigInt, Nullable, Text, Uuid as dUuid};
+use diesel::sql_types::{BigInt, Bool, Nullable, Text, Uuid as dUuid};
 use models::*;
-use schema::{codes, order_items, ticket_instances};
+use schema::{codes, order_items, ticket_instances, ticket_types};
 use std::borrow::Cow;
 use utils::errors::*;
 use uuid::Uuid;
@@ -17,9 +17,10 @@ sql_function!(fn order_items_code_id_max_uses_valid(order_id: dUuid, code_id: dU
 sql_function!(fn order_items_code_id_max_tickets_per_user_valid(order_item_id: dUuid, order_id: dUuid, code_id: dUuid, quantity: BigInt) -> Bool);
 sql_function!(fn order_items_ticket_type_id_valid_for_access_code(ticket_type_id: dUuid, code_id: Nullable<dUuid>) -> Bool);
 
-#[derive(Identifiable, Associations, Queryable, AsChangeset)]
+#[derive(Identifiable, Associations, Queryable, QueryableByName, AsChangeset)]
 #[belongs_to(Order)]
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
+#[table_name = "order_items"]
 pub struct OrderItem {
     pub id: Uuid,
     pub order_id: Uuid,
@@ -230,6 +231,17 @@ impl OrderItem {
         Ok(validation_errors?)
     }
 
+    pub fn ticket_type(&self, conn: &PgConnection) -> Result<Option<TicketType>, DatabaseError> {
+        Ok(match self.ticket_type_id {
+            Some(ticket_type_id) => ticket_types::table
+                .filter(ticket_types::id.eq(ticket_type_id))
+                .first(conn)
+                .optional()
+                .to_db_error(ErrorCode::QueryError, "Unable to load ticket type")?,
+            None => None,
+        })
+    }
+
     fn ticket_type_id_valid_for_access_code(
         ticket_type_id: Uuid,
         code_id: Option<Uuid>,
@@ -367,7 +379,8 @@ impl OrderItem {
     ) -> Result<Vec<DisplayOrderItem>, DatabaseError> {
         diesel::sql_query(
             r#"
-        SELECT oi.id,
+        SELECT
+           oi.id,
            oi.parent_id,
            tt.id                      AS ticket_type_id,
            tp.id                      AS ticket_pricing_id,
@@ -378,15 +391,44 @@ impl OrderItem {
            CASE
              WHEN item_type = 'PerUnitFees' THEN 'Ticket Fees'
              WHEN item_type = 'EventFees' THEN 'Event Fees - ' || e.name
-             ELSE e.name || ' - ' || tt.name END AS description,
-           h.redemption_code as redemption_code
+             ELSE e.name || ' - ' || tt.name
+           END AS description,
+           COALESCE(h.redemption_code, c.redemption_code) as redemption_code,
+           CASE
+             -- Null prevents serialization
+             WHEN o.status <> 'Draft' THEN null
+             WHEN item_type <> 'Tickets' THEN 'Valid'
+             WHEN ti.status = 'Nullified' THEN 'TicketNullified'
+             WHEN oit.count <> oi.quantity OR ti.reserved_until < now() THEN 'TicketNotReserved'
+             WHEN c.id IS NOT NULL AND c.end_date < now() THEN 'CodeExpired'
+             WHEN h.id IS NOT NULL AND h.end_at < now() THEN 'HoldExpired'
+             ELSE 'Valid'
+           END AS cart_item_status
         FROM order_items oi
+           JOIN orders o on oi.order_id = o.id
            LEFT JOIN events e ON oi.event_id = e.id
            LEFT JOIN ticket_pricing tp
            INNER JOIN ticket_types tt
             ON tp.ticket_type_id = tt.id
             ON oi.ticket_pricing_id = tp.id
            LEFT JOIN holds h ON oi.hold_id = h.id
+           LEFT JOIN ticket_instances ti ON ti.id = (
+               SELECT ti.id
+               FROM ticket_instances ti
+               WHERE ti.order_item_id = oi.id
+               -- Only join on one ticket instance, order by Nullified, reserved_until
+               -- First issue with the order item will result in the cart item status affecting the order item
+               ORDER BY ti.status <> 'Nullified', ti.reserved_until
+               LIMIT 1
+           )
+           LEFT JOIN codes c ON oi.code_id = c.id
+           LEFT JOIN (
+               SELECT count(ti.id) as count, oi.id
+               FROM order_items oi
+               LEFT JOIN ticket_instances ti ON oi.id = ti.order_item_id
+               WHERE oi.order_id = $1
+               GROUP BY oi.id
+           ) oit on oit.id = oi.id
         WHERE oi.order_id = $1
         -- Filter by organization id if list provided otherwise do not filter
         AND (
@@ -545,4 +587,8 @@ pub struct DisplayOrderItem {
     pub description: String,
     #[sql_type = "Nullable<Text>"]
     pub redemption_code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_deserializing)]
+    #[sql_type = "Nullable<Text>"]
+    pub cart_item_status: Option<CartItemStatus>,
 }

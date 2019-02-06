@@ -11,7 +11,7 @@ WHERE id IN (SELECT t.id
              FROM ticket_instances AS t
                     INNER JOIN assets AS a ON t.asset_id = a.id
              WHERE t.order_item_id = $1
-             AND t.status = $3
+             AND t.status = ANY($3)
              AND t.id = COALESCE($4, t.id)
              LIMIT $2 FOR UPDATE SKIP LOCKED)
     RETURNING

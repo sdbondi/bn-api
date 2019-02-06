@@ -1,7 +1,7 @@
 use bigneon_db::dev::times;
 use bigneon_db::dev::TestProject;
 use bigneon_db::models::*;
-use bigneon_db::schema::orders;
+use bigneon_db::schema::{orders, ticket_instances};
 use bigneon_db::utils::errors::ErrorCode::ValidationError;
 use chrono::prelude::*;
 use diesel;
@@ -12,6 +12,7 @@ use uuid::Uuid;
 #[test]
 fn create() {
     let project = TestProject::new();
+    let connection = project.get_connection();
     let venue = project.create_venue().finish();
     let user = project.create_user().finish();
     let organization = project
@@ -27,6 +28,14 @@ fn create() {
     let order = Order::find_or_create_cart(&user, project.get_connection()).unwrap();
     assert_eq!(order.user_id, user.id);
     assert_eq!(order.id.to_string().is_empty(), false);
+    let domain_events = DomainEvent::find(
+        Tables::Orders,
+        Some(order.id),
+        Some(DomainEventTypes::OrderCreated),
+        connection,
+    )
+    .unwrap();
+    assert_eq!(1, domain_events.len());
 }
 
 #[test]
@@ -152,18 +161,160 @@ fn add_tickets_below_min_fee() {
         connection,
     )
     .unwrap();
+
     let items = cart.items(&connection).unwrap();
     let order_item = items
         .iter()
         .find(|i| i.ticket_type_id == Some(ticket_type.id))
         .unwrap();
-
     assert_eq!(order_item.unit_price_in_cents, 0);
     assert_eq!(items.len(), 1);
 
     let fee_item = order_item.find_fee_item(connection).unwrap();
-
     assert_eq!(fee_item, None);
+}
+
+#[test]
+fn items_valid_for_purchase() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let organization = project.create_organization().finish();
+    let event = project
+        .create_event()
+        .with_organization(&organization)
+        .with_tickets()
+        .with_ticket_pricing()
+        .finish();
+    let ticket_type = event
+        .ticket_types(true, None, connection)
+        .unwrap()
+        .remove(0);
+    let hold = project
+        .create_hold()
+        .with_hold_type(HoldTypes::Discount)
+        .with_quantity(1)
+        .with_ticket_type_id(ticket_type.id)
+        .finish();
+    let code = project
+        .create_code()
+        .with_event(&event)
+        .with_code_type(CodeTypes::Discount)
+        .for_ticket_type(&ticket_type)
+        .with_discount_in_cents(Some(10))
+        .finish();
+
+    // Normal order for ticket type
+    let user = project.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    cart.update_quantities(
+        user.id,
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 1,
+            redemption_code: None,
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+
+    assert!(cart.items_valid_for_purchase(connection).unwrap());
+
+    // Order item with no associated ticket_instances record
+    let items = cart.items(connection).unwrap();
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type.id))
+        .unwrap();
+    let none_uuid: Option<Uuid> = None;
+    diesel::update(
+        ticket_instances::table.filter(ticket_instances::order_item_id.eq(order_item.id)),
+    )
+    .set(ticket_instances::order_item_id.eq(none_uuid))
+    .execute(connection)
+    .unwrap();
+    assert!(!cart.items_valid_for_purchase(connection).unwrap());
+
+    // Order item with past reserved until date
+    let one_minute_ago = NaiveDateTime::from(Utc::now().naive_utc() - Duration::minutes(1));
+    diesel::update(
+        ticket_instances::table.filter(ticket_instances::order_item_id.eq(order_item.id)),
+    )
+    .set((
+        ticket_instances::order_item_id.eq(order_item.id),
+        ticket_instances::reserved_until.eq(one_minute_ago),
+    ))
+    .execute(connection)
+    .unwrap();
+    assert!(!cart.items_valid_for_purchase(connection).unwrap());
+
+    // Order item ticket nullified
+    let one_minute_from_now = NaiveDateTime::from(Utc::now().naive_utc() + Duration::minutes(1));
+    diesel::update(
+        ticket_instances::table.filter(ticket_instances::order_item_id.eq(order_item.id)),
+    )
+    .set((
+        ticket_instances::reserved_until.eq(one_minute_from_now),
+        ticket_instances::status.eq(TicketInstanceStatus::Nullified),
+    ))
+    .execute(connection)
+    .unwrap();
+    assert!(!cart.items_valid_for_purchase(connection).unwrap());
+
+    // Code with end date in the past
+    let user = project.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    cart.update_quantities(
+        user.id,
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 1,
+            redemption_code: Some(code.redemption_code.clone()),
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    assert!(cart.items_valid_for_purchase(connection).unwrap());
+
+    code.update(
+        UpdateCodeAttributes {
+            end_date: Some(one_minute_ago),
+            ..Default::default()
+        },
+        connection,
+    )
+    .unwrap();
+    assert!(!cart.items_valid_for_purchase(connection).unwrap());
+
+    // Hold with end at date in the past
+    let user = project.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    cart.update_quantities(
+        user.id,
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 1,
+            redemption_code: Some(hold.redemption_code.clone()),
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    assert!(cart.items_valid_for_purchase(connection).unwrap());
+
+    hold.update(
+        UpdateHoldAttributes {
+            end_at: Some(Some(one_minute_ago)),
+            ..Default::default()
+        },
+        connection,
+    )
+    .unwrap();
+    assert!(!cart.items_valid_for_purchase(connection).unwrap());
 }
 
 #[test]
@@ -641,7 +792,7 @@ fn clear_cart() {
     .unwrap();
     assert!(!cart.items(&connection).unwrap().is_empty());
 
-    cart.clear_cart(connection).unwrap();
+    cart.clear_cart(user.id, connection).unwrap();
     assert!(cart.items(&connection).unwrap().is_empty());
 }
 
@@ -1367,6 +1518,15 @@ fn add_external_payment() {
         .unwrap();
     assert_eq!(cart.status, OrderStatus::Paid);
     assert!(cart.paid_at.is_some());
+
+    let domain_events = DomainEvent::find(
+        Tables::Orders,
+        Some(cart.id),
+        Some(DomainEventTypes::OrderCompleted),
+        conn,
+    )
+    .unwrap();
+    assert_eq!(1, domain_events.len());
 }
 
 #[test]
@@ -1502,6 +1662,327 @@ fn for_display() {
         .unwrap();
     let display_order = order.for_display(None, connection).unwrap();
     assert_eq!(Some(0), display_order.seconds_until_expiry);
+}
+
+#[test]
+fn for_display_with_invalid_items() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let organization = project.create_organization().finish();
+    let event = project
+        .create_event()
+        .with_organization(&organization)
+        .with_tickets()
+        .with_ticket_type_count(5)
+        .with_ticket_pricing()
+        .finish();
+
+    let ticket_types = event.ticket_types(true, None, connection).unwrap();
+    let ticket_type = &ticket_types[0];
+    let ticket_type2 = &ticket_types[1];
+    let ticket_type3 = &ticket_types[2];
+    let ticket_type4 = &ticket_types[3];
+    let ticket_type5 = &ticket_types[4];
+    let hold = project
+        .create_hold()
+        .with_hold_type(HoldTypes::Discount)
+        .with_quantity(1)
+        .with_ticket_type_id(ticket_type5.id)
+        .finish();
+    let code = project
+        .create_code()
+        .with_event(&event)
+        .with_code_type(CodeTypes::Discount)
+        .for_ticket_type(&ticket_type5)
+        .with_discount_in_cents(Some(10))
+        .finish();
+
+    // Normal order for ticket type
+    let user = project.create_user().finish();
+    let mut cart = Order::find_or_create_cart(&user, connection).unwrap();
+    cart.update_quantities(
+        user.id,
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type.id,
+            quantity: 1,
+            redemption_code: None,
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+
+    // Order item with no associated ticket_instances record
+    cart.update_quantities(
+        user.id,
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type2.id,
+            quantity: 2,
+            redemption_code: None,
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    let items = cart.items(connection).unwrap();
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type2.id))
+        .unwrap();
+    let none_uuid: Option<Uuid> = None;
+    let ticket_instance: TicketInstance = ticket_instances::table
+        .filter(ticket_instances::order_item_id.eq(order_item.id))
+        .limit(1)
+        .first(connection)
+        .unwrap();
+    diesel::update(ticket_instances::table.filter(ticket_instances::id.eq(ticket_instance.id)))
+        .set(ticket_instances::order_item_id.eq(none_uuid))
+        .execute(connection)
+        .unwrap();
+
+    let display_order = cart.for_display(None, connection).unwrap();
+    assert_eq!(
+        1,
+        display_order
+            .items
+            .iter()
+            .filter(|i| i.item_type == OrderItemTypes::Tickets
+                && i.cart_item_status == Some(CartItemStatus::TicketNotReserved))
+            .count()
+    );
+
+    // Order item with past reserved until date
+    cart.update_quantities(
+        user.id,
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type3.id,
+            quantity: 1,
+            redemption_code: None,
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    let items = cart.items(connection).unwrap();
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type3.id))
+        .unwrap();
+    let one_minute_ago = NaiveDateTime::from(Utc::now().naive_utc() - Duration::minutes(1));
+    diesel::update(
+        ticket_instances::table.filter(ticket_instances::order_item_id.eq(order_item.id)),
+    )
+    .set((ticket_instances::reserved_until.eq(one_minute_ago),))
+    .execute(connection)
+    .unwrap();
+
+    let display_order = cart.for_display(None, connection).unwrap();
+    assert_eq!(
+        2,
+        display_order
+            .items
+            .iter()
+            .filter(|i| i.item_type == OrderItemTypes::Tickets
+                && i.cart_item_status == Some(CartItemStatus::TicketNotReserved))
+            .count()
+    );
+
+    // Order item with nullified ticket status
+    cart.update_quantities(
+        user.id,
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type4.id,
+            quantity: 2,
+            redemption_code: None,
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    let items = cart.items(connection).unwrap();
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type4.id))
+        .unwrap();
+    let ticket_instance: TicketInstance = ticket_instances::table
+        .filter(ticket_instances::order_item_id.eq(order_item.id))
+        .limit(1)
+        .first(connection)
+        .unwrap();
+    diesel::update(ticket_instances::table.filter(ticket_instances::id.eq(ticket_instance.id)))
+        .set((ticket_instances::status.eq(TicketInstanceStatus::Nullified),))
+        .execute(connection)
+        .unwrap();
+
+    // Code with end date in the past
+    cart.update_quantities(
+        user.id,
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type5.id,
+            quantity: 1,
+            redemption_code: Some(code.redemption_code.clone()),
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+    code.update(
+        UpdateCodeAttributes {
+            end_date: Some(one_minute_ago),
+            ..Default::default()
+        },
+        connection,
+    )
+    .unwrap();
+
+    // Hold with end at date in the past
+    cart.update_quantities(
+        user.id,
+        &[UpdateOrderItem {
+            ticket_type_id: ticket_type5.id,
+            quantity: 1,
+            redemption_code: Some(hold.redemption_code.clone()),
+        }],
+        false,
+        false,
+        connection,
+    )
+    .unwrap();
+
+    hold.update(
+        UpdateHoldAttributes {
+            end_at: Some(Some(one_minute_ago)),
+            ..Default::default()
+        },
+        connection,
+    )
+    .unwrap();
+
+    let display_order = cart.for_display(None, connection).unwrap();
+
+    // Check against expected counts for status based on above
+    assert_eq!(
+        1,
+        display_order
+            .items
+            .iter()
+            .filter(|i| i.item_type == OrderItemTypes::Tickets
+                && i.cart_item_status == Some(CartItemStatus::Valid))
+            .count()
+    );
+    assert_eq!(
+        2,
+        display_order
+            .items
+            .iter()
+            .filter(|i| i.item_type == OrderItemTypes::Tickets
+                && i.cart_item_status == Some(CartItemStatus::TicketNotReserved))
+            .count()
+    );
+    assert_eq!(
+        1,
+        display_order
+            .items
+            .iter()
+            .filter(|i| i.item_type == OrderItemTypes::Tickets
+                && i.cart_item_status == Some(CartItemStatus::TicketNullified))
+            .count()
+    );
+    assert_eq!(
+        1,
+        display_order
+            .items
+            .iter()
+            .filter(|i| i.item_type == OrderItemTypes::Tickets
+                && i.cart_item_status == Some(CartItemStatus::CodeExpired))
+            .count()
+    );
+    assert_eq!(
+        1,
+        display_order
+            .items
+            .iter()
+            .filter(|i| i.item_type == OrderItemTypes::Tickets
+                && i.cart_item_status == Some(CartItemStatus::HoldExpired))
+            .count()
+    );
+
+    // Unpaid order includes valid_for_purchase
+    let generated_json = json!(display_order).to_string();
+    assert!(generated_json.contains("valid_for_purchase"));
+    let deserialized_display_order: DisplayOrder = serde_json::from_str(&generated_json).unwrap();
+    assert_eq!(Some(false), deserialized_display_order.valid_for_purchase);
+
+    // Clear invalid items
+    cart.clear_invalid_items(user.id, connection).unwrap();
+
+    let display_order = cart.for_display(None, connection).unwrap();
+    assert_eq!(
+        1,
+        display_order
+            .items
+            .iter()
+            .filter(|i| i.item_type == OrderItemTypes::Tickets
+                && i.cart_item_status == Some(CartItemStatus::Valid))
+            .count()
+    );
+    assert_eq!(
+        0,
+        display_order
+            .items
+            .iter()
+            .filter(|i| i.item_type == OrderItemTypes::Tickets
+                && i.cart_item_status == Some(CartItemStatus::TicketNotReserved))
+            .count()
+    );
+    assert_eq!(
+        0,
+        display_order
+            .items
+            .iter()
+            .filter(|i| i.item_type == OrderItemTypes::Tickets
+                && i.cart_item_status == Some(CartItemStatus::TicketNullified))
+            .count()
+    );
+    assert_eq!(
+        0,
+        display_order
+            .items
+            .iter()
+            .filter(|i| i.item_type == OrderItemTypes::Tickets
+                && i.cart_item_status == Some(CartItemStatus::CodeExpired))
+            .count()
+    );
+    assert_eq!(
+        0,
+        display_order
+            .items
+            .iter()
+            .filter(|i| i.item_type == OrderItemTypes::Tickets
+                && i.cart_item_status == Some(CartItemStatus::HoldExpired))
+            .count()
+    );
+    let generated_json = json!(display_order).to_string();
+    assert!(generated_json.contains("valid_for_purchase"));
+    let deserialized_display_order: DisplayOrder = serde_json::from_str(&generated_json).unwrap();
+    assert_eq!(Some(true), deserialized_display_order.valid_for_purchase);
+
+    // Pay off cart
+    let total = cart.calculate_total(connection).unwrap();
+    cart.add_external_payment(Some("Test".to_string()), user.id, total, connection)
+        .unwrap();
+
+    // Paid order does not include valid_for_purchase
+    let display_order = cart.for_display(None, connection).unwrap();
+    let generated_json = json!(display_order).to_string();
+    assert!(!generated_json.contains("valid_for_purchase"));
+    let deserialized_display_order: DisplayOrder = serde_json::from_str(&generated_json).unwrap();
+    assert_eq!(None, deserialized_display_order.valid_for_purchase);
 }
 
 #[test]
@@ -1731,14 +2212,37 @@ fn adding_event_fees() {
 #[test]
 pub fn update() {
     let project = TestProject::new();
+    let connection = project.get_connection();
+    let user = project.create_user().finish();
     let order = project.create_order().finish();
 
     let attrs = UpdateOrderAttributes {
         note: Some(Some("Client will pick up at 18h00".to_string())),
     };
-    let updated = order.update(attrs, &project.connection).unwrap();
+
+    let domain_event_count = DomainEvent::find(
+        Tables::Orders,
+        Some(order.id),
+        Some(DomainEventTypes::OrderUpdated),
+        connection,
+    )
+    .unwrap()
+    .len();
+
+    let updated = order.update(attrs, user.id, &project.connection).unwrap();
     assert_eq!(
         updated.note,
         Some("Client will pick up at 18h00".to_string())
     );
+    let new_domain_event_count = DomainEvent::find(
+        Tables::Orders,
+        Some(updated.id),
+        Some(DomainEventTypes::OrderUpdated),
+        connection,
+    )
+    .unwrap()
+    .len();
+
+    // 1 order update event should be recorded from the update call
+    assert_eq!(domain_event_count + 1, new_domain_event_count);
 }

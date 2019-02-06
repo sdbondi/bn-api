@@ -4,7 +4,7 @@ use diesel::dsl::*;
 use diesel::expression::dsl;
 use diesel::prelude::*;
 use diesel::sql_types;
-use diesel::sql_types::{BigInt, Bool, Integer, Nullable, Text, Timestamp, Uuid as dUuid};
+use diesel::sql_types::{Array, BigInt, Bool, Integer, Nullable, Text, Timestamp, Uuid as dUuid};
 use itertools::Itertools;
 use log::Level::Debug;
 use models::*;
@@ -58,7 +58,12 @@ impl TicketInstance {
             .to_db_error(ErrorCode::QueryError, "Unable to load ticket")
     }
 
-    pub fn release(&self, user_id: Uuid, conn: &PgConnection) -> Result<(), DatabaseError> {
+    pub fn release(
+        &self,
+        status: TicketInstanceStatus,
+        user_id: Uuid,
+        conn: &PgConnection,
+    ) -> Result<(), DatabaseError> {
         let query = include_str!("../queries/release_tickets.sql");
         let new_status = if self.ticket_type(conn)?.status == TicketTypeStatus::Cancelled {
             TicketInstanceStatus::Nullified
@@ -69,7 +74,7 @@ impl TicketInstance {
         let tickets: Vec<TicketInstance> = diesel::sql_query(query)
             .bind::<Nullable<dUuid>, _>(self.order_item_id)
             .bind::<BigInt, _>(1)
-            .bind::<Text, _>(TicketInstanceStatus::Purchased)
+            .bind::<Array<Text>, _>(vec![status])
             .bind::<dUuid, _>(self.id)
             .bind::<Text, _>(new_status)
             .get_results(conn)
@@ -352,16 +357,29 @@ impl TicketInstance {
     pub fn release_tickets(
         order_item: &OrderItem,
         quantity: u32,
+        user_id: Uuid,
         conn: &PgConnection,
     ) -> Result<Vec<TicketInstance>, DatabaseError> {
         let query = include_str!("../queries/release_tickets.sql");
+        let ticket_type = order_item.ticket_type(conn)?;
+        let new_status = if ticket_type.is_some()
+            && ticket_type.unwrap().status == TicketTypeStatus::Cancelled
+        {
+            TicketInstanceStatus::Nullified
+        } else {
+            TicketInstanceStatus::Available
+        };
         let ticket_instance_id: Option<Uuid> = None;
         let q = diesel::sql_query(query)
             .bind::<sql_types::Uuid, _>(order_item.id)
             .bind::<BigInt, _>(quantity as i64)
-            .bind::<Text, _>(TicketInstanceStatus::Reserved)
+            // Removes nullified or reserved tickets from a user's cart
+            .bind::<Array<Text>, _>(vec![
+                TicketInstanceStatus::Nullified,
+                TicketInstanceStatus::Reserved,
+            ])
             .bind::<Nullable<dUuid>, _>(ticket_instance_id)
-            .bind::<Text, _>(TicketInstanceStatus::Available);
+            .bind::<Text, _>(new_status);
         let tickets: Vec<TicketInstance> = q
             .get_results(conn)
             .to_db_error(ErrorCode::QueryError, "Could not release tickets")?;
@@ -372,6 +390,13 @@ impl TicketInstance {
                 "Could not release the correct amount of tickets",
             );
         }
+
+        if new_status == TicketInstanceStatus::Nullified {
+            for ticket in &tickets {
+                ticket.create_nullified_domain_event(user_id, conn)?;
+            }
+        }
+
         Ok(tickets)
     }
 
@@ -474,6 +499,21 @@ impl TicketInstance {
     ) -> Result<Vec<TicketInstance>, DatabaseError> {
         ticket_instances::table
             .filter(ticket_instances::order_item_id.eq(order_item_id))
+            .get_results(conn)
+            .to_db_error(ErrorCode::QueryError, "Could not load Ticket Instances")
+    }
+
+    pub fn find_ids_for_order(
+        order_id: Uuid,
+        conn: &PgConnection,
+    ) -> Result<Vec<Uuid>, DatabaseError> {
+        ticket_instances::table
+            .inner_join(
+                order_items::table
+                    .on(ticket_instances::order_item_id.eq(order_items::id.nullable())),
+            )
+            .filter(order_items::order_id.eq(order_id))
+            .select(ticket_instances::id)
             .get_results(conn)
             .to_db_error(ErrorCode::QueryError, "Could not load Ticket Instances")
     }

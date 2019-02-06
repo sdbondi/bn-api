@@ -135,6 +135,38 @@ fn find_for_user_for_display() {
 }
 
 #[test]
+fn find_ids_for_order() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let event = project
+        .create_event()
+        .with_ticket_pricing()
+        .with_ticket_type_count(1)
+        .finish();
+    let user = project.create_user().finish();
+    let order = project
+        .create_order()
+        .for_event(&event)
+        .for_user(&user)
+        .quantity(1)
+        .is_paid()
+        .finish();
+    let ticket = &TicketInstance::find_for_user(user.id, connection).unwrap()[0];
+    // Add additional tickets to user account
+    project
+        .create_order()
+        .for_event(&event)
+        .for_user(&user)
+        .quantity(1)
+        .is_paid()
+        .finish();
+    assert_eq!(
+        TicketInstance::find_ids_for_order(order.id, connection).unwrap(),
+        vec![ticket.id]
+    );
+}
+
+#[test]
 fn ticket_type() {
     let project = TestProject::new();
     let connection = project.get_connection();
@@ -270,7 +302,9 @@ fn release() {
         .remove(0);
     assert_eq!(ticket.status, TicketInstanceStatus::Purchased);
     TicketInstance::authorize_ticket_transfer(user.id, vec![ticket.id], 3600, connection).unwrap();
-    assert!(ticket.release(creator.id, connection).is_ok());
+    assert!(ticket
+        .release(TicketInstanceStatus::Purchased, creator.id, connection)
+        .is_ok());
 
     // Reload ticket
     let ticket = TicketInstance::find(ticket.id, connection).unwrap();
@@ -338,7 +372,9 @@ fn release_for_cancelled_ticket_type() {
     ticket_type.cancel(connection).unwrap();
 
     TicketInstance::authorize_ticket_transfer(user.id, vec![ticket.id], 3600, connection).unwrap();
-    assert!(ticket.release(creator.id, connection).is_ok());
+    assert!(ticket
+        .release(TicketInstanceStatus::Purchased, creator.id, connection)
+        .is_ok());
 
     // Reload ticket
     let ticket = TicketInstance::find(ticket.id, connection).unwrap();
@@ -579,7 +615,8 @@ fn release_tickets() {
         .unwrap();
 
     // Release tickets
-    let released_tickets = TicketInstance::release_tickets(&order_item, 4, connection).unwrap();
+    let released_tickets =
+        TicketInstance::release_tickets(&order_item, 4, user.id, connection).unwrap();
 
     assert_eq!(released_tickets.len(), 4);
     assert!(released_tickets
@@ -597,12 +634,79 @@ fn release_tickets() {
         .get_connection()
         .transaction::<Vec<TicketInstance>, Error, _>(|| {
             // Release requesting too many tickets
-            let released_tickets = TicketInstance::release_tickets(&order_item, 7, connection);
+            let released_tickets =
+                TicketInstance::release_tickets(&order_item, 7, user.id, connection);
             assert_eq!(released_tickets.unwrap_err().code, 7200,);
 
             Err(Error::RollbackTransaction)
         })
         .unwrap_err();
+}
+
+#[test]
+fn release_tickets_cancelled_ticket_type() {
+    let project = TestProject::new();
+    let connection = project.get_connection();
+    let event = project.create_event().with_ticket_pricing().finish();
+    let user = project.create_user().finish();
+    let mut order = Order::find_or_create_cart(&user, connection).unwrap();
+    let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
+    order
+        .update_quantities(
+            user.id,
+            &[UpdateOrderItem {
+                ticket_type_id: ticket_type.id,
+                quantity: 10,
+                redemption_code: None,
+            }],
+            false,
+            false,
+            connection,
+        )
+        .unwrap();
+
+    let items = order.items(&connection).unwrap();
+    let order_item = items
+        .iter()
+        .find(|i| i.ticket_type_id == Some(ticket_type.id))
+        .unwrap();
+
+    // Cancel ticket type
+    ticket_type.cancel(connection).unwrap();
+    let released_tickets =
+        TicketInstance::release_tickets(&order_item, 4, user.id, connection).unwrap();
+
+    assert_eq!(released_tickets.len(), 4);
+    assert!(released_tickets
+        .iter()
+        .filter(|&ticket| ticket.order_item_id == Some(order_item.id))
+        .collect::<Vec<&TicketInstance>>()
+        .is_empty());
+    assert!(released_tickets
+        .iter()
+        .filter(|&ticket| ticket.reserved_until.is_some())
+        .collect::<Vec<&TicketInstance>>()
+        .is_empty());
+    assert_eq!(
+        4,
+        released_tickets
+            .iter()
+            .filter(|&ticket| ticket.status == TicketInstanceStatus::Nullified)
+            .collect::<Vec<&TicketInstance>>()
+            .len()
+    );
+
+    // Nullified domain event should exist for each ticket
+    for released_ticket in released_tickets {
+        let domain_events = DomainEvent::find(
+            Tables::TicketInstances,
+            Some(released_ticket.id),
+            Some(DomainEventTypes::TicketInstanceNullified),
+            connection,
+        )
+        .unwrap();
+        assert_eq!(1, domain_events.len());
+    }
 }
 
 #[test]
