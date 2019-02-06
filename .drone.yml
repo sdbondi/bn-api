@@ -238,20 +238,20 @@ steps:
           event: [pull_request, push]
           branch: master
 
-  - name: notify-fail
-    depends_on:
-      - cargo-audit
-      - api-tests
-      - integration-tests
-      - other-tests
-    irc:
-      prefix: build
-      nick: drone
-      channel: bigneon-dev
-      host: chat.freenode.net
-      port: 6667
-      template: |-
-        *{{build.status}}* <{{build.link}}|{{repo.owner}}/{{repo.name}}#{{truncate build.commit 8}} ({{build.branch}}) by {{build.author}}
+    - name: notify-fail
+      depends_on:
+        - cargo-audit
+        - api-tests
+        - integration-tests
+        - other-tests
+      irc:
+        prefix: build
+        nick: drone
+        channel: bigneon-dev
+        host: chat.freenode.net
+        port: 6667
+        template: |-
+          *{{build.status}}* <{{build.link}}|{{repo.owner}}/{{repo.name}}#{{truncate build.commit 8}} ({{build.branch}}) by {{build.author}}
 
 services:
     - name: database
