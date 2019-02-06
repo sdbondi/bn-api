@@ -162,7 +162,6 @@ name: deploy
 
 steps:
     - name: restore-cache
-      depends_on: ["clone"]
       image: plugins/s3-cache
       settings:
           restore: true
@@ -176,7 +175,6 @@ steps:
           root: drone
 
     - name: compile
-      depends_on: ["restore-cache"]
       image: rust:1.31.1
       commands:
           - cargo build --release
@@ -184,7 +182,6 @@ steps:
 
     - name: publish
       image: plugins/ecr
-      depends_on: ["restore-cache"]
       settings:
           dockerfile: Dockerfile.drone
           tags:
