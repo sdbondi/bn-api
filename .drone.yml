@@ -43,6 +43,7 @@ steps:
             from_secret: secret_access_key
         mount:
             - ./target
+        fallback_path: drone/$DRONE_REPO_NAMESPACE/$DRONE_REPO_NAME/master/
         root: drone
 
     - name: compile
@@ -108,28 +109,29 @@ steps:
       commands:
       - ./scripts/run-integration-tests.sh
 
-#    - name: publish
-#      image: plugins/ecr
-#      depends_on:
-#          - cargo-audit
-#          - api-tests
-#          - integration-tests
-#          - other-tests
-#      settings:
-#        dockerfile: Dockerfile.drone
-#        tags:
-#          - latest
-#          - 0.2.${DRONE_BUILD_NUMBER}
-#        region:
-#            from_secret: aws_region
-#        repo:
-#            from_secret: docker_repo
-#        access_key:
-#            from_secret: aws_access_key_id
-#        secret_key:
-#            from_secret: aws_secret_access_key
-#      when:
-#          branch: master
+    - name: publish
+      image: plugins/ecr
+      depends_on:
+          - cargo-audit
+          - api-tests
+          - integration-tests
+          - other-tests
+      settings:
+        dockerfile: Dockerfile.drone
+        tags:
+          - latest
+          - 0.2.${DRONE_BUILD_NUMBER}
+        region:
+            from_secret: aws_region
+        repo:
+            from_secret: docker_repo
+        access_key:
+            from_secret: aws_access_key_id
+        secret_key:
+            from_secret: aws_secret_access_key
+      when:
+          branch: master
+          event: push
 
     - name: flush-cache
       depends_on:
@@ -148,7 +150,7 @@ steps:
         root: drone
 
 when:
-  event: [ pull_request ]
+    ref: [ refs/heads/master, refs/pull/*/head ]
 
 services:
     - name: database
@@ -156,49 +158,5 @@ services:
       environment:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: password
-
----
-kind: pipeline
-name: Publish
-
-depends_on: [Tests]
-steps:
-#    - name: restore-cache
-#      image: plugins/s3-cache
-#      settings:
-#          restore: true
-#          endpoint: http://minio1:9000
-#          access_key:
-#              from_secret: access_key_id
-#          secret_key:
-#              from_secret: secret_access_key
-#          mount:
-#              - ./target
-#          root: drone
-
-    - name: compile
-      image: rust:1.31.1
-      commands:
-          - ls target/release/server
-
-    - name: publish
-      image: plugins/ecr
-      settings:
-          dockerfile: Dockerfile.drone
-          tags:
-              - latest
-              - 0.2.${DRONE_BUILD_NUMBER}
-          region:
-              from_secret: aws_region
-          repo:
-              from_secret: docker_repo
-          access_key:
-              from_secret: aws_access_key_id
-          secret_key:
-              from_secret: aws_secret_access_key
-
-when:
-    event: push
-    branch: master
 
 
