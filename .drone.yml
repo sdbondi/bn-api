@@ -29,7 +29,7 @@ env: &env
     IPN_BASE_URL: "TEST"
 
 kind: pipeline
-name: Pull Request
+name: Build
 
 steps:
     - name: rust-fmt-check
