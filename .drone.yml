@@ -181,4 +181,3 @@ services:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: password
 
-
