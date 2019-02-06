@@ -239,6 +239,11 @@ steps:
           branch: master
 
   - name: notify-fail
+    depends_on:
+      - cargo-audit
+      - api-tests
+      - integration-tests
+      - other-tests
     irc:
       prefix: build
       nick: drone
@@ -247,9 +252,6 @@ steps:
       port: 6667
       template: |-
         *{{build.status}}* <{{build.link}}|{{repo.owner}}/{{repo.name}}#{{truncate build.commit 8}} ({{build.branch}}) by {{build.author}}
-    when:
-        status:
-          - failure
 
 services:
     - name: database
