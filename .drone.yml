@@ -48,7 +48,8 @@ steps:
         fallback_path: drone/$DRONE_REPO_NAMESPACE/$DRONE_REPO_NAME/master/
         root: drone
       when:
-          event: [pull_request]
+          event: [pull_request, push]
+          branch: master
 
     - name: compile
       depends_on:
@@ -60,7 +61,8 @@ steps:
       - test -x target/release/server
       - test -x target/release/bndb_cli
       when:
-          event: [pull_request]
+          event: [pull_request, push]
+          branch: master
 
     - name: rebuild-cache
       depends_on:
@@ -77,7 +79,8 @@ steps:
             - ./target
         root: drone
       when:
-          event: [pull_request]
+          event: [pull_request, push]
+          branch: master
 
     - name: cargo-audit
       depends_on:
@@ -86,7 +89,8 @@ steps:
       commands:
           - ./scripts/run-cargo-audit.sh
       when:
-          event: [pull_request]
+          event: [pull_request, push]
+          branch: master
 
     - name: other-tests
       depends_on:
@@ -100,7 +104,8 @@ steps:
       commands:
           - ./scripts/run-other-tests.sh
       when:
-          event: [pull_request]
+          event: [pull_request, push]
+          branch: master
 
     - name: api-tests
       depends_on:
@@ -114,7 +119,8 @@ steps:
       commands:
           - ./scripts/run-api-tests.sh
       when:
-          event: [pull_request]
+          event: [pull_request, push]
+          branch: master
 
     - name: integration-tests
       depends_on:
@@ -170,6 +176,9 @@ steps:
         mount:
             - ./target
         root: drone
+      when:
+          event: [pull_request, push]
+          branch: master
 
 services:
     - name: database
