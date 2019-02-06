@@ -1,3 +1,4 @@
+version: &version 0.2.${DRONE_BUILD_NUMBER}
 env: &env
     CARGO_INCREMENTAL: "1"
     FRONT_END_URL: "http://localhost"
@@ -45,6 +46,12 @@ steps:
             - ./target
         fallback_path: drone/$DRONE_REPO_NAMESPACE/$DRONE_REPO_NAME/master/
         root: drone
+
+    - name: bump-cargo-version
+      depends_on: ["clone"]
+      image: rust: 1.31.1
+      commands:
+          - ./scripts/set-version.sh {{*version}}
 
     - name: compile
       depends_on: ["restore-cache"]
@@ -109,6 +116,9 @@ steps:
       commands:
       - ./scripts/run-integration-tests.sh
 
+    - name: tag
+
+
     - name: publish
       image: plugins/ecr
       depends_on:
@@ -132,6 +142,19 @@ steps:
       when:
           branch: master
           event: push
+
+    - name: deploy-dev
+      image: sdbondi/bn-deploy-step
+      settings:
+        aws_access_key_id:
+            from_secret: aws_access_key_id
+        aws_secret_access_key:
+            from_secret: aws_secret_access_key
+        function:
+            from_secret: aws_lambda_deploy_function
+        cargo_file: api/Cargo.toml
+        payload: |-
+            {"target": "staging", "tag": ""}
 
     - name: flush-cache
       depends_on:
