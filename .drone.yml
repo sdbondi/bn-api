@@ -178,7 +178,6 @@ steps:
     - name: compile
       depends_on: ["restore-cache"]
       image: rust:1.31.1
-      environment: *env
       commands:
           - cargo build --release
           - ls target/release/server
