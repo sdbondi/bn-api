@@ -159,7 +159,7 @@ steps:
 when:
     event: [pull_request]
 
-
+services:
     - name: database
       image: postgres:10.4
       environment:
