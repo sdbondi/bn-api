@@ -239,12 +239,13 @@ steps:
           branch: master
 
     - name: notify-fail
+      imaghe: plugins/irc
       depends_on:
         - cargo-audit
         - api-tests
         - integration-tests
         - other-tests
-      irc:
+      settings:
         prefix: build
         nick: drone
         channel: bigneon-dev
