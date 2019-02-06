@@ -1,6 +1,5 @@
-version: &version "0.2.${DRONE_BUILD_NUMBER}"
 env: &env
-    APP_VERSION: *version
+    APP_VERSION: &version "0.2.${DRONE_BUILD_NUMBER}"
     CARGO_INCREMENTAL: "1"
     FRONT_END_URL: "http://localhost"
     BUILD_DIR: "api"
