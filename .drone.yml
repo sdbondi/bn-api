@@ -239,7 +239,7 @@ steps:
           branch: master
 
     - name: notify-fail
-      imaghe: plugins/irc
+      imaghe: plugins/drone-irc
       depends_on:
         - cargo-audit
         - api-tests
