@@ -32,6 +32,7 @@ kind: pipeline
 name: Build
 
 steps:
+
     - name: rust-fmt-check
       depends_on:
         - clone
@@ -236,6 +237,19 @@ steps:
       when:
           event: [pull_request, push]
           branch: master
+
+  - name: notify-fail
+    irc:
+      prefix: build
+      nick: drone
+      channel: bigneon-dev
+      host: chat.freenode.net
+      port: 6667
+      template: |-
+        *{{build.status}}* <{{build.link}}|{{repo.owner}}/{{repo.name}}#{{truncate build.commit 8}} ({{build.branch}}) by {{build.author}}
+    when:
+        status:
+          - failure
 
 services:
     - name: database
