@@ -161,7 +161,7 @@ services:
 kind: pipeline
 name: Publish
 
-depends_on: Tests
+depends_on: [Tests]
 steps:
 #    - name: restore-cache
 #      image: plugins/s3-cache
