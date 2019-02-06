@@ -48,16 +48,6 @@ steps:
         fallback_path: drone/$DRONE_REPO_NAMESPACE/$DRONE_REPO_NAME/master/
         root: drone
 
-    - name: bump-cargo-version
-      depends_on: ["clone"]
-      image: rust:1.31.1
-      environment: *env
-      commands:
-          - ./scripts/set-version.sh {{*version}}
-      when:
-          branch: master
-          event: push
-
     - name: compile
       depends_on: ["restore-cache"]
       image: rust:1.31.1
@@ -145,18 +135,6 @@ steps:
           branch: master
           event: push
 
-#    - name: deploy-dev
-#      image: sdbondi/bn-deploy-step
-#      settings:
-#        aws_access_key_id:
-#            from_secret: aws_access_key_id
-#        aws_secret_access_key:
-#            from_secret: aws_secret_access_key
-#        function:
-#            from_secret: aws_lambda_deploy_function
-#        cargo_file: api/Cargo.toml
-#        payload: |-
-#            {"target": "staging", "tag": ""}
 
     - name: flush-cache
       depends_on:
