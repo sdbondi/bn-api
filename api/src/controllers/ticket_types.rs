@@ -123,7 +123,7 @@ pub fn create(
             expiry_date: data.end_date.timestamp(),
         },
     )?;
-    let asset = Asset::find_by_ticket_type(&ticket_type.id, connection)?;
+    let asset = Asset::find_by_ticket_type(ticket_type.id, connection)?;
     let _asset = asset.update_blockchain_id(tari_asset_id, connection)?;
     Ok(HttpResponse::Created().json(DisplayCreatedTicket { id: ticket_type.id }))
 }
@@ -197,6 +197,7 @@ pub fn cancel(
         organization,
         ticket_type,
         valid_unsold_ticket_count,
+        user.id(),
         connection,
     )?;
 
@@ -227,7 +228,7 @@ pub fn update(
         if valid_ticket_count < requested_capacity {
             let starting_tari_id = ticket_type.ticket_count(connection)?;
             let additional_ticket_count = requested_capacity - valid_ticket_count;
-            let asset = Asset::find_by_ticket_type(&ticket_type.id, connection)?;
+            let asset = Asset::find_by_ticket_type(ticket_type.id, connection)?;
             let org_wallet =
                 Wallet::find_default_for_organization(event.organization_id, connection)?;
             //Issue more tickets locally
@@ -258,6 +259,7 @@ pub fn update(
                 organization,
                 ticket_type.clone(),
                 nullify_ticket_count,
+                user.id(),
                 connection,
             )?;
         }
@@ -355,12 +357,13 @@ fn nullify_tickets(
     organization: Organization,
     ticket_type: TicketType,
     quantity: u32,
+    user_id: Uuid,
     connection: &PgConnection,
 ) -> Result<(), BigNeonError> {
-    let asset = Asset::find_by_ticket_type(&ticket_type.id, connection)?;
+    let asset = Asset::find_by_ticket_type(ticket_type.id, connection)?;
     let org_wallet = Wallet::find_default_for_organization(organization.id, connection)?;
     //Nullify tickets locally
-    let tickets = TicketInstance::nullify_tickets(asset.id, quantity, connection)?;
+    let tickets = TicketInstance::nullify_tickets(asset.id, quantity, user_id, connection)?;
     //Nullify tickets on chain
     if tickets.len() == quantity as usize {
         let tari_ids: Vec<u64> = (0..tickets.len())

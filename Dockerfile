@@ -11,6 +11,8 @@ ADD Cargo.docker.toml ./Cargo.toml
 RUN cargo build --release
 RUN rm src/*.rs
 
+# Add the compiled binary for build caching
+ADD target ./target
 # Add the actual source code
 ADD api ./api/
 ADD db ./db/

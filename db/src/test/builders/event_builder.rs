@@ -195,7 +195,7 @@ impl<'a> EventBuilder<'a> {
                         .unwrap();
                 }
 
-                Asset::find_by_ticket_type(&ticket_type.id, self.connection)
+                Asset::find_by_ticket_type(ticket_type.id, self.connection)
                     .unwrap()
                     .update_blockchain_id(
                         format!("{}.{}", event.name, ticket_type.name).to_string(),

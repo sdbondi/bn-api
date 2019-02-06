@@ -34,7 +34,7 @@ impl Asset {
     }
 
     pub fn find_by_ticket_type(
-        ticket_type_id: &Uuid,
+        ticket_type_id: Uuid,
         conn: &PgConnection,
     ) -> Result<Asset, DatabaseError> {
         assets::table
