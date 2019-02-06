@@ -29,7 +29,7 @@ env: &env
     IPN_BASE_URL: "TEST"
 
 kind: pipeline
-name: "Test - ${DRONE_REPO_BRANCH}"
+name: Pull Request
 
 steps:
     - name: restore-cache
