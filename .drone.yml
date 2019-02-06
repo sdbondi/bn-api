@@ -30,7 +30,7 @@ env: &env
     IPN_BASE_URL: "TEST"
 
 
-test_steps: &tests
+test_steps: &test_steps
   - name: cargo-audit
     depends_on:
       - compile
@@ -76,7 +76,7 @@ test_steps: &tests
 
 
 kind: pipeline
-name: Test - ${DRONE_REPO_BRANCH}
+name: "Test - ${DRONE_REPO_BRANCH}"
 
 steps:
     - name: restore-cache
@@ -120,7 +120,7 @@ steps:
             - ./target
         root: drone
 
-    - *tests
+    - *test_steps
 
     - name: publish
       image: plugins/ecr
