@@ -32,6 +32,14 @@ kind: pipeline
 name: Pull Request
 
 steps:
+    - name: rust-fmt-check
+      depends_on:
+        - clone
+      image: rust:1.31.1
+      commands:
+        - rustup component add rustfmt-preview
+        - cargo fmt --all -- --check
+
     - name: restore-cache
       depends_on:
         - clone
