@@ -27,10 +27,8 @@ env: &env
     GLOBEE_BASE_URL: "https://test.globee.com/payment-api/v1/"
     IPN_BASE_URL: "TEST"
 
----
-
 kind: pipeline
-name: Pull Request
+name: Tests
 
 steps:
     - name: restore-cache
@@ -161,7 +159,7 @@ services:
 
 ---
 kind: pipeline
-name: Master Build
+name: Publish
 
 steps:
 #    - name: restore-cache
@@ -180,7 +178,6 @@ steps:
     - name: compile
       image: rust:1.31.1
       commands:
-          - cargo build --release
           - ls target/release/server
 
     - name: publish
@@ -198,7 +195,6 @@ steps:
               from_secret: aws_access_key_id
           secret_key:
               from_secret: aws_secret_access_key
-
 
 when:
     event: push
