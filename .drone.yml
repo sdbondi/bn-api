@@ -62,6 +62,18 @@ steps:
           event: [pull_request, push]
           branch: master
 
+    - name: set-version
+      depends_on:
+        - clone
+      image: rust:1.31.1
+      environment:
+          APP_VERSION: *version
+      commands:
+        - ./scripts/set-version.sh
+#      when:
+#          event: [push]
+#          branch: master
+
     - name: compile
       depends_on:
         - restore-cache

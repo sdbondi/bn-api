@@ -2,5 +2,5 @@
 
 set -e
 
-echo "I WOULD SET THE VERSION TO $1"
+echo "I WOULD SET THE VERSION TO $APP_VERSION"
 
