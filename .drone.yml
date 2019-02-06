@@ -107,26 +107,26 @@ steps:
       commands:
       - ./scripts/run-integration-tests.sh
 
-    - name: publish
-      image: plugins/ecr
-      depends_on:
-          - cargo-audit
-          - api-tests
-          - integration-tests
-          - other-tests
-      settings:
-        dockerfile: Dockerfile.drone
-        tags:
-          - latest
-          - 0.2.${DRONE_BUILD_NUMBER}
-        region:
-            from_secret: aws_region
-        repo:
-            from_secret: docker_repo
-        access_key:
-            from_secret: aws_access_key_id
-        secret_key:
-            from_secret: aws_secret_access_key
+#    - name: publish
+#      image: plugins/ecr
+#      depends_on:
+#          - cargo-audit
+#          - api-tests
+#          - integration-tests
+#          - other-tests
+#      settings:
+#        dockerfile: Dockerfile.drone
+#        tags:
+#          - latest
+#          - 0.2.${DRONE_BUILD_NUMBER}
+#        region:
+#            from_secret: aws_region
+#        repo:
+#            from_secret: docker_repo
+#        access_key:
+#            from_secret: aws_access_key_id
+#        secret_key:
+#            from_secret: aws_secret_access_key
 #      when:
 #          branch: master
 
@@ -155,4 +155,54 @@ services:
       environment:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: password
+
+---
+kind: pipeline
+name: deploy
+
+steps:
+    - name: restore-cache
+      depends_on: ["clone"]
+      image: plugins/s3-cache
+      settings:
+          restore: true
+          endpoint: http://minio1:9000
+          access_key:
+              from_secret: access_key_id
+          secret_key:
+              from_secret: secret_access_key
+          mount:
+              - ./target
+          root: drone
+
+    - name: compile
+      depends_on: ["restore-cache"]
+      image: rust:1.31.1
+      environment: *env
+      commands:
+          - cargo build --release
+          - ls target/release/server
+
+    - name: publish
+      image: plugins/ecr
+      depends_on: ["restore-cache"]
+      settings:
+          dockerfile: Dockerfile.drone
+          tags:
+              - latest
+              - 0.2.${DRONE_BUILD_NUMBER}
+          region:
+              from_secret: aws_region
+          repo:
+              from_secret: docker_repo
+          access_key:
+              from_secret: aws_access_key_id
+          secret_key:
+              from_secret: aws_secret_access_key
+
+
+when:
+    event: push
+    branch: master
+
 
