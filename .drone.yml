@@ -1,3 +1,4 @@
+
 env: &env
     APP_VERSION: &version "0.2.${DRONE_BUILD_NUMBER}"
     CARGO_INCREMENTAL: "1"
@@ -28,8 +29,54 @@ env: &env
     GLOBEE_BASE_URL: "https://test.globee.com/payment-api/v1/"
     IPN_BASE_URL: "TEST"
 
+
+tests: &tests
+    - name: cargo-audit
+      depends_on:
+        - compile
+      image: rust:1.31.1
+      commands:
+          - ./scripts/run-cargo-audit.sh
+
+    - name: other-tests
+      depends_on:
+        - compile
+      image: rust:1.31.1
+      environment:
+          <<: *env
+          DATABASE_URL: postgres://app:password@database/other_tests
+          TEST_DATABASE_URL: postgres://app:password@database/other_tests
+          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
+      commands:
+        - ./scripts/run-other-tests.sh
+
+    - name: api-tests
+      depends_on:
+        - compile
+      image: rust:1.31.1
+      environment:
+          <<: *env
+          DATABASE_URL: postgres://app:password@database/api_tests
+          TEST_DATABASE_URL: postgres://app:password@database/api_tests
+          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/api_tests
+      commands:
+      - ./scripts/run-api-tests.sh
+
+    - name: integration-tests
+      depends_on:
+        - compile
+      image: sdbondi/rust-node:0.1
+      environment:
+          <<: *env
+          DATABASE_URL: postgres://app:password@database/integration_tests
+          TEST_DATABASE_URL: postgres://app:password@database/integration_tests
+          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/integration_tests
+      commands:
+      - ./scripts/run-integration-tests.sh
+
+
 kind: pipeline
-name: Tests
+name: Test - ${DRONE_REPO_BRANCH}
 
 steps:
     - name: restore-cache
@@ -73,48 +120,7 @@ steps:
             - ./target
         root: drone
 
-    - name: cargo-audit
-      depends_on:
-        - compile
-      image: rust:1.31.1
-      commands:
-          - ./scripts/run-cargo-audit.sh
-
-    - name: other-tests
-      depends_on:
-        - compile
-      image: rust:1.31.1
-      environment:
-          <<: *env
-          DATABASE_URL: postgres://app:password@database/other_tests
-          TEST_DATABASE_URL: postgres://app:password@database/other_tests
-          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
-      commands:
-        - ./scripts/run-other-tests.sh
-
-    - name: api-tests
-      depends_on:
-        - compile
-      image: rust:1.31.1
-      environment:
-          <<: *env
-          DATABASE_URL: postgres://app:password@database/api_tests
-          TEST_DATABASE_URL: postgres://app:password@database/api_tests
-          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/api_tests
-      commands:
-      - ./scripts/run-api-tests.sh
-
-    - name: integration-tests
-      depends_on:
-        - compile
-      image: sdbondi/rust-node:0.1
-      environment:
-          <<: *env
-          DATABASE_URL: postgres://app:password@database/integration_tests
-          TEST_DATABASE_URL: postgres://app:password@database/integration_tests
-          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/integration_tests
-      commands:
-      - ./scripts/run-integration-tests.sh
+    - *tests
 
     - name: publish
       image: plugins/ecr
