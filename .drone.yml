@@ -1,6 +1,5 @@
-version: &version 0.2.${DRONE_BUILD_NUMBER}
 env: &env
-    APP_VERSION: *version
+    APP_VERSION:  0.2.${DRONE_BUILD_NUMBER}
     CARGO_INCREMENTAL: "1"
     FRONT_END_URL: "http://localhost"
     BUILD_DIR: "api"
@@ -140,7 +139,6 @@ steps:
       when:
           branch: master
           event: push
-
 
     - name: flush-cache
       depends_on:
