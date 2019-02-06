@@ -50,8 +50,10 @@ steps:
     - name: bump-cargo-version
       depends_on: ["clone"]
       image: rust: 1.31.1
+      environment:
+          VERSION: *version
       commands:
-          - ./scripts/set-version.sh {{*version}}
+          - ./scripts/set-version.sh
 
     - name: compile
       depends_on: ["restore-cache"]
