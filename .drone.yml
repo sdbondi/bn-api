@@ -69,7 +69,6 @@ tests: &tests
     commands:
     - ./scripts/run-integration-tests.sh
 
-
 kind: pipeline
 name: Tests
 
@@ -95,9 +94,9 @@ steps:
       environment: *env
       commands:
           - ./scripts/set-version.sh {{*version}}
-      when:
-          branch: master
-          event: push
+#      when:
+#          branch: master
+#          event: push
 
     - name: compile
       depends_on: ["restore-cache"]
@@ -123,6 +122,8 @@ steps:
             - ./target
         root: drone
 
+    - *tests
+
     - name: publish
       image: plugins/ecr
       depends_on:
@@ -143,9 +144,9 @@ steps:
             from_secret: aws_access_key_id
         secret_key:
             from_secret: aws_secret_access_key
-      when:
-          branch: master
-          event: push
+#      when:
+#          branch: master
+#          event: push
 
 #    - name: deploy-dev
 #      image: sdbondi/bn-deploy-step
