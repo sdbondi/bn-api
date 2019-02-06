@@ -70,9 +70,9 @@ steps:
           APP_VERSION: *version
       commands:
         - ./scripts/set-version.sh
-#      when:
-#          event: [push]
-#          branch: master
+      when:
+          event: push
+          branch: master
 
     - name: compile
       depends_on:
