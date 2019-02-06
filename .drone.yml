@@ -29,7 +29,7 @@ env: &env
     GLOBEE_BASE_URL: "https://test.globee.com/payment-api/v1/"
     IPN_BASE_URL: "TEST"
 
-tests: &tests
+test_steps: &test_steps
   - name: cargo-audit
     depends_on: ["compile"]
     image: rust:1.31.1
@@ -122,7 +122,7 @@ steps:
             - ./target
         root: drone
 
-    - *tests
+    - *test_steps
 
     - name: publish
       image: plugins/ecr
