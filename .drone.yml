@@ -152,7 +152,6 @@ steps:
             - ./target
         root: drone
 
-
 services:
     - name: database
       image: postgres:10.4
