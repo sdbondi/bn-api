@@ -41,7 +41,7 @@ steps:
         - cargo fmt --all -- --check
       when:
           event:
-            excludes: [pull_request]
+            exclude: [pull_request]
 
     - name: restore-cache
       depends_on:
