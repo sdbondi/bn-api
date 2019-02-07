@@ -215,7 +215,7 @@ steps:
         function_name:
             from_secret: deploy_lambda_function_name
         payload: |-
-	  {\\"target\\": \\"bn-api-staging\\", \\"tag\\": \\"$APP_VERSION\\"}
+          {\\"target\\": \\"bn-api-staging\\", \\"tag\\": \\"$APP_VERSION\\"}
       when:
           branch: master
           event: push
