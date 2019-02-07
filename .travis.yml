@@ -83,4 +83,5 @@ env:
   - API_KEYS_ENCRYPTION_KEY="test_key"
   - GLOBEE_API_KEY="GDFOzMkPAw79a8TCAHKkiknJB6bEYgbb"
   - GLOBEE_BASE_URL="https://test.globee.com/payment-api/v1/"
-  - IPN_BASE_URL="TEST"
+  - API_BASE_URL="http://localhost"
+  - VALIDATE_IPNS=false
