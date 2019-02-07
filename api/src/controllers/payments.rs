@@ -32,7 +32,7 @@ pub fn callback(
     ),
 ) -> Result<HttpResponse, BigNeonError> {
     let conn = connection.get();
-    let mut order = Order::find(path.id, conn)?;
+    let order = Order::find(path.id, conn)?;
     let mut payments: Vec<Payment> = order
         .payments(conn)?
         .into_iter()
