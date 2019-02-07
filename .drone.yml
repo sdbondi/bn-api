@@ -188,7 +188,7 @@ steps:
 
     - name: tag-commit
       depends_on:
-	- publish
+        - publish
       image: sdbondi/git-ssh-client:0.1-alpine
       environment:
           <<: *env
@@ -203,7 +203,7 @@ steps:
     - name: deploy-dev
       image: sdbondi/drone-lambda-trigger
       depends_on:
-	  - publish
+          - publish
       environment: *env
       settings:
         access_key_id:
