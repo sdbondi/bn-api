@@ -162,26 +162,26 @@ steps:
           event: [pull_request, push]
           branch: master
 
-     - name: publish
-       image: plugins/ecr
-       depends_on:
-         - cargo-audit
-         - api-tests
-         - integration-tests
-         - other-tests
-       settings:
-	 dockerfile: Dockerfile.drone
-	 tags:
-	   - latest
-	   - 0.2.${DRONE_BUILD_NUMBER}
-	 region:
-	     from_secret: aws_region
-	 repo:
-	     from_secret: docker_repo
-	 access_key:
-	     from_secret: aws_access_key_id
-	 secret_key:
-	     from_secret: aws_secret_access_key
+    - name: publish
+      image: plugins/ecr
+      depends_on:
+        - cargo-audit
+        - api-tests
+        - integration-tests
+        - other-tests
+      settings:
+        dockerfile: Dockerfile.drone
+        tags:
+          - latest
+          - 0.2.${DRONE_BUILD_NUMBER}
+        region:
+            from_secret: aws_region
+        repo:
+            from_secret: docker_repo
+        access_key:
+            from_secret: aws_access_key_id
+        secret_key:
+            from_secret: aws_secret_access_key
      when:
        branch: master
        event: push
