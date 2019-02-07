@@ -222,7 +222,7 @@ steps:
 
     - name: flush-cache
       depends_on:
-        - rebuild-cache
+        - deploy-dev
       image: plugins/s3-cache
       settings:
         flush: true
