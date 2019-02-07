@@ -53,9 +53,9 @@ steps:
         restore: true
         endpoint: http://minio1:9000
         access_key:
-            from_secret: access_key_id
+            from_secret: minio_access_key_id
         secret_key:
-            from_secret: secret_access_key
+            from_secret: minio_secret_access_key
         mount:
             - ./target
         fallback_path: drone/$DRONE_REPO_NAMESPACE/$DRONE_REPO_NAME/master/
@@ -97,9 +97,9 @@ steps:
         rebuild: true
         endpoint: http://minio1:9000
         access_key:
-            from_secret: access_key_id
+            from_secret: minio_access_key_id
         secret_key:
-            from_secret: secret_access_key
+            from_secret: minio_secret_access_key
         mount:
             - ./target
         root: drone
@@ -228,9 +228,9 @@ steps:
         flush_age: 30
         endpoint: http://minio1:9000
         access_key:
-            from_secret: access_key_id
+            from_secret: minio_access_key_id
         secret_key:
-            from_secret: secret_access_key
+            from_secret: minio_secret_access_key
         mount:
             - ./target
         root: drone
