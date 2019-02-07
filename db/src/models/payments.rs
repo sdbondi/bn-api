@@ -194,7 +194,9 @@ impl Payment {
         current_user_id: Option<Uuid>,
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
-        if self.status == PaymentStatus::Completed {
+        if self.status != PaymentStatus::Completed {
+            self.update_status(PaymentStatus::Completed, current_user_id, conn)?;
+
             DomainEvent::create(
                 DomainEventTypes::PaymentCompleted,
                 "Payment was completed".to_string(),
@@ -204,20 +206,7 @@ impl Payment {
                 Some(raw_data),
             )
             .commit(conn)?;
-            return Ok(());
         }
-        self.update_status(PaymentStatus::Completed, current_user_id, conn)?;
-
-        DomainEvent::create(
-            DomainEventTypes::PaymentCompleted,
-            "Payment was completed".to_string(),
-            Tables::Payments,
-            Some(self.id),
-            current_user_id,
-            Some(raw_data),
-        )
-        .commit(conn)?;
-
         self.order(conn)?
             .complete_if_fully_paid(current_user_id, conn)?;
 

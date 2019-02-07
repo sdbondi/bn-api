@@ -198,7 +198,7 @@ pub fn routes(app: &mut CorsBuilder<AppState>) -> App<AppState> {
         r.method(Method::POST).with(password_resets::create);
         r.method(Method::PUT).with(password_resets::update);
     })
-    .resource("/payments/callback/{id}/{nonce}", |r| {
+    .resource("/payments/callback/{nonce}/{id}", |r| {
         r.method(Method::GET).with(payments::callback);
     })
     .resource("/payment_methods", |r| {

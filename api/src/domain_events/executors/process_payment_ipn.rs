@@ -14,7 +14,7 @@ use uuid::Uuid;
 pub struct ProcessPaymentIPNExecutor {
     globee_api_key: String,
     globee_base_url: String,
-    donot_verify_ipn: bool,
+    validate_ipn: bool,
 }
 
 impl DomainActionExecutor for ProcessPaymentIPNExecutor {
@@ -34,7 +34,7 @@ impl ProcessPaymentIPNExecutor {
         ProcessPaymentIPNExecutor {
             globee_api_key: config.globee_api_key.clone(),
             globee_base_url: config.globee_base_url.clone(),
-            donot_verify_ipn: config.api_base_url.to_lowercase() == "test",
+            validate_ipn: config.validate_ipns,
         }
     }
 
@@ -46,7 +46,7 @@ impl ProcessPaymentIPNExecutor {
         }
         let client = GlobeeClient::new(self.globee_api_key.clone(), self.globee_base_url.clone());
 
-        if !self.donot_verify_ipn {
+        if self.validate_ipn {
             ipn = client.get_payment_request(&ipn.id)?;
         }
 
@@ -114,7 +114,7 @@ impl ProcessPaymentIPNExecutor {
                 (ipn.payment_details.received_amount.unwrap_or(0f64) * 100f64) as i64,
                 connection,
             )?;
-            jlog!(Debug, "IPN: Marking paymnent complete", {"ipn_id": ipn.id, "order_id": order_id, "status": status});
+            jlog!(Debug, "IPN: Marking payment complete", {"ipn_id": ipn.id, "order_id": order_id, "status": status});
 
             payment.mark_complete(json!(ipn), None, connection)?;
         } else {

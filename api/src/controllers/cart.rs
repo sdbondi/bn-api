@@ -643,11 +643,8 @@ fn redirect_to_payment_page(
     let amount = order.calculate_total(conn)?;
 
     let email = user.email.as_ref().unwrap().to_string();
-    let ipn = if config.api_base_url.to_lowercase() == "test" {
-        None
-    } else {
-        Some(format!("{}/ipns/globee", config.api_base_url))
-    };
+
+    let ipn = Some(format!("{}/ipns/globee", config.api_base_url));
 
     let nonce = random_alpha_string(12);
     let response = client.create_payment_request(
@@ -656,12 +653,12 @@ fn redirect_to_payment_page(
         order.id,
         ipn,
         Some(format!(
-            "{}/callback/{}/{}?success=true",
-            &config.api_base_url, order.id, nonce
+            "{}/payments/callback/{}/{}?success=true",
+            &config.api_base_url, nonce, order.id,
         )),
         Some(format!(
-            "{}/callback/{}/{}?success=false",
-            &config.api_base_url, order.id, nonce
+            "{}/payments/callback/{}/{}?success=false",
+            &config.api_base_url, nonce, order.id,
         )),
     )?;
 

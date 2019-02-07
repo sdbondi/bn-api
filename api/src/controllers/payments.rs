@@ -10,15 +10,16 @@ use helpers::application;
 use server::AppState;
 use uuid::Uuid;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct QueryParams {
-    success: bool,
+    pub success: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+// The nonce is in the path so that it is not cached.
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PathParams {
-    id: Uuid,
-    nonce: String,
+    pub nonce: String,
+    pub id: Uuid,
 }
 
 pub fn callback(

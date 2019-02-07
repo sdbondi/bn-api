@@ -1346,7 +1346,13 @@ impl Order {
         current_user_id: Option<Uuid>,
         conn: &PgConnection,
     ) -> Result<(), DatabaseError> {
-        if self.total_paid(conn)? >= self.calculate_total(conn)? {
+        if self.status == OrderStatus::Paid {
+            return Ok(());
+        }
+
+        let total_paid = self.total_paid(conn)?;
+        let total_required = self.calculate_total(conn)?;
+        if total_paid >= total_required {
             self.update_status(current_user_id, OrderStatus::Paid, conn)?;
             //Mark tickets as Purchased
             let order_items = OrderItem::find_for_order(self.id, conn)?;
@@ -1380,7 +1386,8 @@ impl Order {
                 3,
             )
             .commit(conn)?;
-        }
+        };
+        jlog!(Debug, "Order was checked for completion by was short", {"required_amount": total_required, "total_paid": total_paid, "order_id": self.id});
         Ok(())
     }
 

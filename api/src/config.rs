@@ -24,6 +24,7 @@ pub struct Config {
     pub facebook_app_secret: Option<String>,
     pub globee_api_key: String,
     pub globee_base_url: String,
+    pub validate_ipns: bool,
     pub api_base_url: String,
     pub google_recaptcha_secret_key: Option<String>,
     pub http_keep_alive: usize,
@@ -61,6 +62,7 @@ const FACEBOOK_APP_ID: &str = "FACEBOOK_APP_ID";
 const FACEBOOK_APP_SECRET: &str = "FACEBOOK_APP_SECRET";
 const GLOBEE_API_KEY: &str = "GLOBEE_API_KEY";
 const GLOBEE_BASE_URL: &str = "GLOBEE_BASE_URL";
+const VALIDATE_IPNS: &str = "VALIDATE_IPNS";
 const API_BASE_URL: &str = "API_BASE_URL";
 const GOOGLE_RECAPTCHA_SECRET_KEY: &str = "GOOGLE_RECAPTCHA_SECRET_KEY";
 const PRIMARY_CURRENCY: &str = "PRIMARY_CURRENCY";
@@ -164,6 +166,10 @@ impl Config {
         let api_base_url =
             env::var(&API_BASE_URL).expect(&format!("{} must be defined", API_BASE_URL));
 
+        let validate_ipns = env::var(&VALIDATE_IPNS)
+            .unwrap_or("true".to_string())
+            .parse()
+            .expect(&format!("{} is not a valid boolean value", VALIDATE_IPNS));
         let google_recaptcha_secret_key = env::var(&GOOGLE_RECAPTCHA_SECRET_KEY).ok();
 
         let communication_default_source_email = env::var(&COMMUNICATION_DEFAULT_SOURCE_EMAIL)
@@ -241,6 +247,7 @@ impl Config {
             facebook_app_secret,
             globee_api_key,
             globee_base_url,
+            validate_ipns,
             api_base_url,
             google_recaptcha_secret_key,
             http_keep_alive,

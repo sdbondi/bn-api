@@ -33,7 +33,11 @@ impl SendOrderCompleteExecutor {
         SendOrderCompleteExecutor { config }
     }
 
-    fn perform_job(&self, action: &DomainAction, conn: &Connection) -> Result<(), BigNeonError> {
+    pub fn perform_job(
+        &self,
+        action: &DomainAction,
+        conn: &Connection,
+    ) -> Result<(), BigNeonError> {
         let conn = conn.get();
         let order = Order::find(
             action.main_table_id.ok_or(ApplicationError::new(
