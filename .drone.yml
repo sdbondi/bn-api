@@ -189,10 +189,10 @@ steps:
     - name: tag-commit
       depends_on:
         - set-version
-      image: sdbondi/ssh-client:0.1-alpine
+      image: sdbondi/git-ssh-client:0.1-alpine
       environment:
           <<: *env
-          GITHUB_SSH:
+          GITHUB_SSH_KEY:
               from_secret: github_deploy_key
       commands:
         - ./scripts/tag-and-commit.sh
