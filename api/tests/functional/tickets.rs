@@ -1,4 +1,5 @@
 use actix_web::{http::StatusCode, FromRequest, Path, Query};
+use bigneon_api::controllers::tickets::SendTicketsRequest;
 use bigneon_api::controllers::tickets::{
     self, SearchParameters, ShowTicketResponse, TransferTicketRequest,
 };
@@ -425,6 +426,49 @@ fn ticket_transfer_authorization() {
 }
 
 #[test]
+fn send_to_existing_user() {
+    let database = TestDatabase::new();
+    let conn = database.connection.get();
+    let sender = database.create_user().finish();
+    let auth_sender = support::create_auth_user_from_user(&sender, Roles::User, None, &database);
+    database.create_order().for_user(&sender).is_paid().finish();
+    let tickets = TicketInstance::find_for_user(sender.id, conn).unwrap();
+    let tickets: Vec<Uuid> = tickets.into_iter().map(|t| t.id).collect();
+
+    let expected_tickets = tickets.clone();
+
+    let receiver = database.create_user().finish();
+    let mut ticket_transfer_request = SendTicketsRequest {
+        ticket_ids: tickets,
+        validity_period_in_seconds: Some(600),
+        email_or_phone: receiver.email.unwrap(),
+    };
+
+    let request = TestRequest::create();
+
+    let response = tickets::send_via_email_or_phone((
+        database.connection.clone().into(),
+        Json(ticket_transfer_request.clone()),
+        auth_sender.clone(),
+        request.extract_state(),
+    ))
+    .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let sender_tickets = TicketInstance::find_for_user(sender.id, conn).unwrap();
+    let receiver_tickets = TicketInstance::find_for_user(receiver.id, conn).unwrap();
+    assert_eq!(sender_tickets, vec![]);
+    assert_eq!(
+        receiver_tickets
+            .into_iter()
+            .map(|t| t.id)
+            .collect::<Vec<Uuid>>(),
+        expected_tickets
+    );
+}
+
+#[test]
 fn receive_ticket_transfer() {
     let database = TestDatabase::new();
     let request = TestRequest::create();
@@ -466,7 +510,7 @@ fn receive_ticket_transfer() {
 
     let transfer_auth = TicketInstance::authorize_ticket_transfer(
         auth_user.id(),
-        vec![tickets[0].id, tickets[1].id],
+        &vec![tickets[0].id, tickets[1].id],
         3600,
         conn,
     )
