@@ -33,6 +33,7 @@ name: Build
 
 steps:
 
+    # This check is done on another build for event:push
     - name: rust-fmt-check
       depends_on:
         - clone
@@ -41,7 +42,6 @@ steps:
         - rustup component add rustfmt-preview
         - cargo fmt --all -- --check
       when:
-          # This check is done on another build for event:push
           event:
             exclude: [pull_request]
 
