@@ -440,12 +440,12 @@ pub fn refund_for_non_refundable_tickets() {
     let sender_wallet = Wallet::find_default_for_user(user.id, connection).unwrap();
     let receiver_wallet = Wallet::find_default_for_user(user2.id, connection).unwrap();
     let transfer_auth =
-        TicketInstance::authorize_ticket_transfer(user.id, vec![ticket.id], 3600, connection)
+        TicketInstance::authorize_ticket_transfer(user.id, &vec![ticket.id], 3600, connection)
             .unwrap();
     TicketInstance::receive_ticket_transfer(
         transfer_auth,
         &sender_wallet,
-        &receiver_wallet.id,
+        receiver_wallet.id,
         connection,
     )
     .unwrap();

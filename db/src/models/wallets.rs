@@ -21,6 +21,25 @@ pub struct Wallet {
     updated_at: NaiveDateTime,
 }
 
+#[derive(Copy, Clone)]
+pub struct WalletId(Uuid);
+
+impl WalletId {
+    pub fn new(id: Uuid) -> WalletId {
+        WalletId(id)
+    }
+
+    pub fn inner(&self) -> Uuid {
+        self.0
+    }
+}
+
+impl From<WalletId> for Uuid {
+    fn from(s: WalletId) -> Self {
+        s.inner()
+    }
+}
+
 impl Wallet {
     pub fn find(id: Uuid, conn: &PgConnection) -> Result<Wallet, DatabaseError> {
         wallets::table

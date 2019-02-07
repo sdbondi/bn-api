@@ -726,20 +726,30 @@ impl TicketInstance {
         Ok(ticket_data)
     }
 
-    pub fn authorize_ticket_transfer(
-        user_id: Uuid,
-        ticket_ids: Vec<Uuid>,
-        validity_period_in_seconds: u32,
+    pub fn direct_transfer(
+        from_user_id: Uuid,
+        ticket_ids: &[Uuid],
+        to_user_id: Uuid,
         conn: &PgConnection,
-    ) -> Result<TransferAuthorization, DatabaseError> {
-        //Confirm that tickets are purchased and owned by user
+    ) -> Result<(), DatabaseError> {
+        let auth = TicketInstance::authorize_ticket_transfer(from_user_id, ticket_ids, 3600, conn)?;
+        let wallet = Wallet::find_default_for_user(from_user_id, conn)?;
+        let receiver_wallet = Wallet::find_default_for_user(to_user_id, conn)?;
+        TicketInstance::receive_ticket_transfer(auth, &wallet, receiver_wallet.id, conn)?;
+        Ok(())
+    }
 
+    fn verify_tickets_belong_to_user(
+        user_id: Uuid,
+        ticket_ids: &[Uuid],
+        conn: &PgConnection,
+    ) -> Result<(WalletId, Vec<(Uuid, NaiveDateTime)>), DatabaseError> {
         let tickets = TicketInstance::find_for_user(user_id, conn)?;
-        let mut ticket_ids_and_updated_at: Vec<(Uuid, NaiveDateTime)> = Vec::new();
+        let mut ticket_ids_and_updated_at = vec![];
         let mut all_tickets_valid = true;
         let mut wallet_id = Uuid::nil();
 
-        for ti in &ticket_ids {
+        for ti in ticket_ids {
             let mut found_and_purchased = false;
             for t in &tickets {
                 if t.id == *ti && t.status == TicketInstanceStatus::Purchased {
@@ -762,18 +772,31 @@ impl TicketInstance {
             ));
         }
 
+        Ok((WalletId::new(wallet_id), ticket_ids_and_updated_at))
+    }
+
+    pub fn authorize_ticket_transfer(
+        user_id: Uuid,
+        ticket_ids: &[Uuid],
+        validity_period_in_seconds: u32,
+        conn: &PgConnection,
+    ) -> Result<TransferAuthorization, DatabaseError> {
+        //Confirm that tickets are purchased and owned by user
+        let (wallet_id, ticket_ids_and_updated_at) =
+            TicketInstance::verify_tickets_belong_to_user(user_id, ticket_ids, conn)?;
+
         //Generate transfer_key and store keys and set transfer_expiry date
         let transfer_key = Uuid::new_v4();
         let transfer_expiry_date =
             Utc::now().naive_utc() + Duration::seconds(validity_period_in_seconds as i64);
 
         let mut update_count = 0;
-        for (t_id, t_updated_at) in &ticket_ids_and_updated_at {
+        for (t_id, t_updated_at) in ticket_ids_and_updated_at {
             update_count += diesel::update(
                 ticket_instances::table
                     .filter(ticket_instances::id.eq(t_id))
                     .filter(ticket_instances::updated_at.eq(t_updated_at))
-                    .filter(ticket_instances::wallet_id.eq(wallet_id)),
+                    .filter(ticket_instances::wallet_id.eq(wallet_id.inner())),
             )
             .set((
                 ticket_instances::transfer_key.eq(&transfer_key),
@@ -805,7 +828,7 @@ impl TicketInstance {
         message.push_str((ticket_ids.len() as u32).to_string().as_str());
         let secret_key = Wallet::find_default_for_user(user_id, conn)?.secret_key;
         Ok(TransferAuthorization {
-            transfer_key: transfer_key,
+            transfer_key,
             sender_user_id: user_id,
             num_tickets: ticket_ids.len() as u32,
             signature: convert_bytes_to_hexstring(&cryptographic_signature(
@@ -818,7 +841,7 @@ impl TicketInstance {
     pub fn receive_ticket_transfer(
         transfer_authorization: TransferAuthorization,
         sender_wallet: &Wallet,
-        receiver_wallet_id: &Uuid,
+        receiver_wallet_id: Uuid,
         conn: &PgConnection,
     ) -> Result<Vec<TicketInstance>, DatabaseError> {
         //Validate signature

@@ -301,7 +301,7 @@ fn release() {
         .unwrap()
         .remove(0);
     assert_eq!(ticket.status, TicketInstanceStatus::Purchased);
-    TicketInstance::authorize_ticket_transfer(user.id, vec![ticket.id], 3600, connection).unwrap();
+    TicketInstance::authorize_ticket_transfer(user.id, &[ticket.id], 3600, connection).unwrap();
     assert!(ticket
         .release(TicketInstanceStatus::Purchased, creator.id, connection)
         .is_ok());
@@ -371,7 +371,7 @@ fn release_for_cancelled_ticket_type() {
     let ticket_type = &event.ticket_types(true, None, connection).unwrap()[0];
     ticket_type.cancel(connection).unwrap();
 
-    TicketInstance::authorize_ticket_transfer(user.id, vec![ticket.id], 3600, connection).unwrap();
+    TicketInstance::authorize_ticket_transfer(user.id, &[ticket.id], 3600, connection).unwrap();
     assert!(ticket
         .release(TicketInstanceStatus::Purchased, creator.id, connection)
         .is_ok());
@@ -462,12 +462,11 @@ fn was_transferred() {
     let sender_wallet = Wallet::find_default_for_user(user.id, connection).unwrap();
     let receiver_wallet = Wallet::find_default_for_user(user2.id, connection).unwrap();
     let transfer_auth =
-        TicketInstance::authorize_ticket_transfer(user.id, vec![ticket.id], 3600, connection)
-            .unwrap();
+        TicketInstance::authorize_ticket_transfer(user.id, &[ticket.id], 3600, connection).unwrap();
     TicketInstance::receive_ticket_transfer(
         transfer_auth,
         &sender_wallet,
-        &receiver_wallet.id,
+        receiver_wallet.id,
         connection,
     )
     .unwrap();
@@ -982,7 +981,7 @@ fn authorize_ticket_transfer() {
     ticket_ids.push(Uuid::new_v4());
 
     let transfer_auth2 =
-        TicketInstance::authorize_ticket_transfer(user.id, ticket_ids, 24, connection);
+        TicketInstance::authorize_ticket_transfer(user.id, &ticket_ids, 24, connection);
 
     assert!(transfer_auth2.is_err());
 
@@ -991,7 +990,7 @@ fn authorize_ticket_transfer() {
     let ticket_ids: Vec<Uuid> = tickets.iter().map(|t| t.id).collect();
 
     let transfer_auth3 =
-        TicketInstance::authorize_ticket_transfer(user.id, ticket_ids, 24, connection).unwrap();
+        TicketInstance::authorize_ticket_transfer(user.id, &ticket_ids, 24, connection).unwrap();
 
     assert_eq!(transfer_auth3.sender_user_id, user.id);
 }
@@ -1038,8 +1037,7 @@ fn receive_ticket_transfer() {
     let user2 = project.create_user().finish();
     //try receive ones that are expired
     let transfer_auth =
-        TicketInstance::authorize_ticket_transfer(user.id, ticket_ids.clone(), 0, connection)
-            .unwrap();
+        TicketInstance::authorize_ticket_transfer(user.id, &ticket_ids, 0, connection).unwrap();
 
     let _q: Vec<TicketInstance> = diesel::sql_query(
         r#"
@@ -1059,7 +1057,7 @@ fn receive_ticket_transfer() {
     let receive_auth2 = TicketInstance::receive_ticket_transfer(
         transfer_auth,
         &sender_wallet,
-        &receiver_wallet.id,
+        receiver_wallet.id,
         connection,
     );
 
@@ -1067,15 +1065,14 @@ fn receive_ticket_transfer() {
 
     //try receive the wrong number of tickets (too few)
     let transfer_auth =
-        TicketInstance::authorize_ticket_transfer(user.id, ticket_ids.clone(), 3600, connection)
-            .unwrap();
+        TicketInstance::authorize_ticket_transfer(user.id, &ticket_ids, 3600, connection).unwrap();
 
     let mut wrong_auth = transfer_auth.clone();
     wrong_auth.num_tickets = 4;
     let receive_auth1 = TicketInstance::receive_ticket_transfer(
         wrong_auth,
         &sender_wallet,
-        &receiver_wallet.id,
+        receiver_wallet.id,
         connection,
     );
     assert!(receive_auth1.is_err());
@@ -1084,7 +1081,7 @@ fn receive_ticket_transfer() {
     let _receive_auth3 = TicketInstance::receive_ticket_transfer(
         transfer_auth,
         &sender_wallet,
-        &receiver_wallet.id,
+        receiver_wallet.id,
         connection,
     );
 
@@ -1094,4 +1091,28 @@ fn receive_ticket_transfer() {
     let received_ticket = TicketInstance::find(ticket_ids[0], connection).unwrap();
 
     assert_eq!(receive_wallet.id, received_ticket.wallet_id);
+}
+
+#[test]
+fn transfer_to_existing_user() {
+    let project = TestProject::new();
+    let original_purchaser = project.create_user().finish();
+
+    let connection = project.get_connection();
+
+    let receiver = project.create_user().finish();
+    project
+        .create_order()
+        .for_user(&original_purchaser)
+        .quantity(5)
+        .is_paid()
+        .finish();
+    let ticket_ids: Vec<Uuid> = TicketInstance::find_for_user(original_purchaser.id, connection)
+        .unwrap()
+        .into_iter()
+        .map(|ti| ti.id)
+        .collect();
+
+    TicketInstance::direct_transfer(original_purchaser.id, &ticket_ids, receiver.id, connection)
+        .unwrap();
 }

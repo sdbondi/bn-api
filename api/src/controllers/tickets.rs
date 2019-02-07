@@ -1,7 +1,8 @@
 use actix_web::State;
 use actix_web::{HttpResponse, Path, Query};
 use auth::user::User;
-use bigneon_db::models::*;
+use bigneon_db::models::User as DbUser;
+use bigneon_db::prelude::*;
 use chrono::prelude::*;
 use communications::{mailers, smsers};
 use db::Connection;
@@ -129,29 +130,48 @@ pub fn send_via_email_or_phone(
     auth_user.requires_scope(Scopes::TicketTransfer)?;
     let connection = connection.get();
 
-    let authorization = TicketInstance::authorize_ticket_transfer(
-        auth_user.id(),
-        send_tickets_request.ticket_ids.clone(),
-        send_tickets_request
-            .validity_period_in_seconds
-            .unwrap_or(604_800) as u32,
-        connection,
-    )?;
     let re = Regex::new(r"[^0-9\+]+").unwrap();
     let numbers_only = re.replace_all(&send_tickets_request.email_or_phone, "");
 
     if send_tickets_request.email_or_phone.contains("@") {
-        mailers::tickets::send_tickets(
-            &state.config,
-            send_tickets_request.email_or_phone.clone(),
-            &authorization.sender_user_id.to_string(),
-            authorization.num_tickets,
-            &authorization.transfer_key.to_string(),
-            &authorization.signature,
-            &auth_user.user,
+        let existing_user =
+            DbUser::find_by_email(&send_tickets_request.email_or_phone, connection).optional()?;
+        if let Some(user) = existing_user {
+            TicketInstance::direct_transfer(
+                auth_user.id(),
+                &send_tickets_request.ticket_ids,
+                user.id,
+                connection,
+            )?;
+        } else {
+            let authorization = TicketInstance::authorize_ticket_transfer(
+                auth_user.id(),
+                &send_tickets_request.ticket_ids,
+                send_tickets_request
+                    .validity_period_in_seconds
+                    .unwrap_or(604_800) as u32,
+                connection,
+            )?;
+            mailers::tickets::send_tickets(
+                &state.config,
+                send_tickets_request.email_or_phone.clone(),
+                &authorization.sender_user_id.to_string(),
+                authorization.num_tickets,
+                &authorization.transfer_key.to_string(),
+                &authorization.signature,
+                &auth_user.user,
+                connection,
+            )?;
+        }
+    } else if numbers_only.len() > 7 {
+        let authorization = TicketInstance::authorize_ticket_transfer(
+            auth_user.id(),
+            &send_tickets_request.ticket_ids,
+            send_tickets_request
+                .validity_period_in_seconds
+                .unwrap_or(604_800) as u32,
             connection,
         )?;
-    } else if numbers_only.len() > 7 {
         smsers::tickets::send_tickets(
             &state.config,
             send_tickets_request.email_or_phone.clone(),
@@ -190,7 +210,7 @@ pub fn transfer_authorization(
 
     let transfer_authorization = TicketInstance::authorize_ticket_transfer(
         auth_user.id(),
-        transfer_tickets_request.ticket_ids.clone(),
+        &transfer_tickets_request.ticket_ids,
         transfer_tickets_request.validity_period_in_seconds as u32,
         connection,
     )?;
@@ -216,7 +236,7 @@ pub fn receive_transfer(
     let tickets = TicketInstance::receive_ticket_transfer(
         transfer_authorization.into_inner(),
         &sender_wallet,
-        &receiver_wallet.id,
+        receiver_wallet.id,
         connection,
     )?;
 
