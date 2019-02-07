@@ -204,8 +204,6 @@ steps:
       image: sdbondi/drone-lambda-trigger
       depends_on:
           - restore-cache
-      environment:
-	  DEPLOY_VERSION: "123"
       settings:
         access_key_id:
             from_secret: aws_access_key_id
@@ -215,8 +213,9 @@ steps:
             from_secret: aws_secret_access_key
         function_name:
             from_secret: deploy_lambda_function_name
+        deploy_version: *version
         payload: |-
-          {\\\"target\\\": \\\"bn-api-staging\\\", \\\"tag\\\": \\\"$DEPLOY_VERSION\\\"}
+          {\\"target\\": \\"bn-api-staging\\", \\"tag\\": \\\\"$PLUGIN_DEPLOY_VERSION\\\"}
       when:
           branch: master
           event: push
