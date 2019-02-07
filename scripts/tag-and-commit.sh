@@ -15,6 +15,8 @@ fi
 mkdir -p $HOME/.ssh/
 declare -r SSH_FILE="$(mktemp -u $HOME/.ssh/githubXXXXXX)"
 
+eval $(ssh-agent -s)
+
 echo $GITHUB_SSH_KEY > $SSH_FILE
 echo $GITHUB_SSH_KEY | ssh-add -
 
