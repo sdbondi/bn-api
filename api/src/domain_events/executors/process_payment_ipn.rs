@@ -38,11 +38,17 @@ impl ProcessPaymentIPNExecutor {
         }
     }
 
-    fn perform_job(&self, action: &DomainAction, conn: &Connection) -> Result<(), BigNeonError> {
+    pub fn perform_job(
+        &self,
+        action: &DomainAction,
+        conn: &Connection,
+    ) -> Result<(), BigNeonError> {
         let mut ipn: GlobeeIpnRequest = serde_json::from_value(action.payload.clone())?;
         if ipn.custom_payment_id.is_none() {
-            // TODO: Return failed?
-            return Ok(());
+            return Err(ApplicationError::new(
+                "Invalid IPN, the custom_payment_id must be specified".to_string(),
+            )
+            .into());
         }
         let client = GlobeeClient::new(self.globee_api_key.clone(), self.globee_base_url.clone());
 
