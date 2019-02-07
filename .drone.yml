@@ -167,8 +167,8 @@ steps:
       image: plugins/ecr
       depends_on:
           - cargo-audit
-          - api-tests
-          - integration-tests
+#          - api-tests
+#          - integration-tests
           - other-tests
       settings:
         dockerfile: Dockerfile.drone
