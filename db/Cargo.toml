@@ -1,6 +1,6 @@
 [package]
 name = "bigneon_db"
-version = "0.2.19"
+version = "0.2.20"
 authors = ["CjS77","mikethetike"]
 license = "BSD-3"
 repository = "https://github.com/big-neon/bn-db/"
