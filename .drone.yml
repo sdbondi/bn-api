@@ -239,21 +239,23 @@ steps:
           event: [pull_request, push]
           branch: master
 
-#    - name: notify-fail
-#      imaghe: plugins/drone-irc
-#      depends_on:
-#        - cargo-audit
-#        - api-tests
-#        - integration-tests
-#        - other-tests
-#      settings:
-#        prefix: build
-#        nick: drone
-#        channel: bigneon-dev
-#        host: chat.freenode.net
-#        port: 6667
-#        template: |-
-#          *{{build.status}}* <{{build.link}}|{{repo.owner}}/{{repo.name}}#{{truncate build.commit 8}} ({{build.branch}}) by {{build.author}}
+    - name: notify-fail
+      image: plugins/drone-irc
+      depends_on:
+        - cargo-audit
+        - api-tests
+        - integration-tests
+        - other-tests
+      settings:
+        prefix: build
+        nick: drone
+        channel: bigneon-dev
+        host: chat.freenode.net
+        port: 6667
+        template: |-
+          *{{build.status}}* <{{build.link}}|{{repo.owner}}/{{repo.name}}#{{truncate build.commit 8}} ({{build.branch}}) by {{build.author}}
+      when:
+          status: failure
 
 services:
     - name: database
