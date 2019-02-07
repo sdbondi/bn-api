@@ -65,73 +65,73 @@ steps:
           event: [pull_request, push]
           branch: master
 
-    - name: set-version
-      depends_on:
-        - clone
-      image: rust:1.31.1
-      environment:
-          APP_VERSION: *version
-      commands:
-        - ./scripts/set-version.sh $APP_VERSION
-      when:
-          event: push
-          branch: master
+    # - name: set-version
+    #   depends_on:
+    #     - clone
+    #   image: rust:1.31.1
+    #   environment:
+    #       APP_VERSION: *version
+    #   commands:
+    #     - ./scripts/set-version.sh $APP_VERSION
+    #   when:
+    #       event: push
+    #       branch: master
 
-    - name: compile
-      depends_on:
-        - restore-cache
-      image: rust:1.31.1
-      environment: *env
-      commands:
-      - cargo build --release
-      - test -x target/release/server
-      - test -x target/release/bndb_cli
-      when:
-          event: [pull_request, push]
-          branch: master
+    # - name: compile
+    #   depends_on:
+    #     - restore-cache
+    #   image: rust:1.31.1
+    #   environment: *env
+    #   commands:
+    #   - cargo build --release
+    #   - test -x target/release/server
+    #   - test -x target/release/bndb_cli
+    #   when:
+    #       event: [pull_request, push]
+    #       branch: master
 
-    - name: rebuild-cache
-      depends_on:
-          - compile
-      image: plugins/s3-cache
-      settings:
-        rebuild: true
-        endpoint: http://minio1:9000
-        access_key:
-            from_secret: minio_access_key_id
-        secret_key:
-            from_secret: minio_secret_access_key
-        mount:
-            - ./target
-        root: drone
-      when:
-          event: [pull_request, push]
-          branch: master
+    # - name: rebuild-cache
+    #   depends_on:
+    #       - compile
+    #   image: plugins/s3-cache
+    #   settings:
+    #     rebuild: true
+    #     endpoint: http://minio1:9000
+    #     access_key:
+    #         from_secret: minio_access_key_id
+    #     secret_key:
+    #         from_secret: minio_secret_access_key
+    #     mount:
+    #         - ./target
+    #     root: drone
+    #   when:
+    #       event: [pull_request, push]
+    #       branch: master
 
-    - name: cargo-audit
-      depends_on:
-          - compile
-      image: rust:1.31.1
-      commands:
-          - ./scripts/run-cargo-audit.sh
-      when:
-          event: [pull_request, push]
-          branch: master
+    # - name: cargo-audit
+    #   depends_on:
+    #       - compile
+    #   image: rust:1.31.1
+    #   commands:
+    #       - ./scripts/run-cargo-audit.sh
+    #   when:
+    #       event: [pull_request, push]
+    #       branch: master
 
-    - name: other-tests
-      depends_on:
-          - compile
-      image: rust:1.31.1
-      environment:
-          <<: *env
-          DATABASE_URL: postgres://app:password@database/other_tests
-          TEST_DATABASE_URL: postgres://app:password@database/other_tests
-          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
-      commands:
-          - ./scripts/run-other-tests.sh
-      when:
-          event: [pull_request, push]
-          branch: master
+    # - name: other-tests
+    #   depends_on:
+    #       - compile
+    #   image: rust:1.31.1
+    #   environment:
+    #       <<: *env
+    #       DATABASE_URL: postgres://app:password@database/other_tests
+    #       TEST_DATABASE_URL: postgres://app:password@database/other_tests
+    #       TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
+    #   commands:
+    #       - ./scripts/run-other-tests.sh
+    #   when:
+    #       event: [pull_request, push]
+    #       branch: master
 
 #    - name: api-tests
 #      depends_on:
@@ -163,29 +163,29 @@ steps:
 #          event: [pull_request, push]
 #          branch: master
 
-    - name: publish
-      image: plugins/ecr
-      depends_on:
-          - cargo-audit
-#          - api-tests
-#          - integration-tests
-          - other-tests
-      settings:
-        dockerfile: Dockerfile.drone
-        tags:
-          - latest
-          - 0.2.${DRONE_BUILD_NUMBER}
-        region:
-            from_secret: aws_region
-        repo:
-            from_secret: docker_repo
-        access_key:
-            from_secret: aws_access_key_id
-        secret_key:
-            from_secret: aws_secret_access_key
-      when:
-          branch: master
-          event: push
+#     - name: publish
+#       image: plugins/ecr
+#       depends_on:
+#           - cargo-audit
+# #          - api-tests
+# #          - integration-tests
+#           - other-tests
+#       settings:
+#         dockerfile: Dockerfile.drone
+#         tags:
+#           - latest
+#           - 0.2.${DRONE_BUILD_NUMBER}
+#         region:
+#             from_secret: aws_region
+#         repo:
+#             from_secret: docker_repo
+#         access_key:
+#             from_secret: aws_access_key_id
+#         secret_key:
+#             from_secret: aws_secret_access_key
+#       when:
+#           branch: master
+#           event: push
 
     - name: tag-commit
       depends_on:
@@ -196,7 +196,7 @@ steps:
           GITHUB_SSH:
               from_secret: github_deploy_key
       commands:
-        - ./scripts/tag-and-commit.sh $APP_VERSION
+        - ./scripts/tag-and-commit.sh
       when:
           event: push
           branch: master

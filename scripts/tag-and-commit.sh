@@ -7,8 +7,8 @@ if [[ -z "$CI" ]]; then
     exit 1
 fi
 
-if [[ $# -ne 1 ]]; then
-    echo "USAGE: $0 [new version]"
+if [[ -z "$APP_VERSION" ]]; then
+    echo "APP_VERSION env var required"
     exit 1
 fi
 
@@ -26,7 +26,7 @@ chmod 600 "$SSH_FILE" && \
 
 
 
-version=$1
+version=$APP_VERSION
 
 git add db/Cargo.toml api/Cargo.toml
 git commit -m  "Version set to ${version} [skip ci]"
