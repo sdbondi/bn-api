@@ -76,98 +76,98 @@ steps:
           event: push
           branch: master
 
-     - name: compile
-       depends_on:
-	 - restore-cache
-       image: rust:1.31.1
-       environment: *env
-       commands:
-       - cargo build --release
-       - test -x target/release/server
-       - test -x target/release/bndb_cli
-       when:
-	   event: [pull_request, push]
-	   branch: master
+    - name: compile
+      depends_on:
+          - restore-cache
+      image: rust:1.31.1
+      environment: *env
+      commands:
+      - cargo build --release
+      - test -x target/release/server
+      - test -x target/release/bndb_cli
+      when:
+        event: [pull_request, push]
+        branch: master
 
-     - name: rebuild-cache
-       depends_on:
-	   - compile
-       image: plugins/s3-cache
-       settings:
-	 rebuild: true
-	 endpoint: http://minio1:9000
-	 access_key:
-	     from_secret: minio_access_key_id
-	 secret_key:
-	     from_secret: minio_secret_access_key
-	 mount:
-	     - ./target
-	 root: drone
-       when:
-	   event: [pull_request, push]
-	   branch: master
+    - name: rebuild-cache
+      depends_on:
+	  - compile
+      image: plugins/s3-cache
+      settings:
+        rebuild: true
+        endpoint: http://minio1:9000
+        access_key:
+            from_secret: minio_access_key_id
+        secret_key:
+            from_secret: minio_secret_access_key
+        mount:
+            - ./target
+      root: drone
+        when:
+          event: [pull_request, push]
+          branch: master
 
-     - name: cargo-audit
-       depends_on:
+    - name: cargo-audit
+      depends_on:
 	   - compile
-       image: rust:1.31.1
-       commands:
-	   - ./scripts/run-cargo-audit.sh
-       when:
-	   event: [pull_request, push]
-	   branch: master
+      image: rust:1.31.1
+      commands:
+	  - ./scripts/run-cargo-audit.sh
+      when:
+        event: [pull_request, push]
+        branch: master
 
-     - name: other-tests
-       depends_on:
-	   - compile
-       image: rust:1.31.1
-       environment:
-	   <<: *env
-	   DATABASE_URL: postgres://app:password@database/other_tests
-	   TEST_DATABASE_URL: postgres://app:password@database/other_tests
-	   TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
-       commands:
+    - name: other-tests
+      depends_on:
+	  - compile
+      image: rust:1.31.1
+      environment:
+        <<: *env
+        DATABASE_URL: postgres://app:password@database/other_tests
+        TEST_DATABASE_URL: postgres://app:password@database/other_tests
+        TEST_DATABASE_ADMIN_URL: postgres://app:password@database/other_tests
+      commands:
 	   - ./scripts/run-other-tests.sh
-       when:
-	   event: [pull_request, push]
-	   branch: master
+      when:
+        event: [pull_request, push]
+        branch: master
 
-#    - name: api-tests
-#      depends_on:
-#          - compile
-#      image: rust:1.31.1
-#      environment:
-#          <<: *env
-#          DATABASE_URL: postgres://app:password@database/api_tests
-#          TEST_DATABASE_URL: postgres://app:password@database/api_tests
-#          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/api_tests
-#      commands:
-#          - ./scripts/run-api-tests.sh
-#      when:
-#          event: [pull_request, push]
-#          branch: master
-#
-#    - name: integration-tests
-#      depends_on:
-#          - compile
-#      image: sdbondi/rust-node:0.1
-#      environment:
-#          <<: *env
-#          DATABASE_URL: postgres://app:password@database/integration_tests
-#          TEST_DATABASE_URL: postgres://app:password@database/integration_tests
-#          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/integration_tests
-#      commands:
-#          - ./scripts/run-integration-tests.sh
-#      when:
-#          event: [pull_request, push]
-#          branch: master
+    - name: api-tests
+      depends_on:
+          - compile
+      image: rust:1.31.1
+      environment:
+          <<: *env
+          DATABASE_URL: postgres://app:password@database/api_tests
+          TEST_DATABASE_URL: postgres://app:password@database/api_tests
+          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/api_tests
+      commands:
+          - ./scripts/run-api-tests.sh
+      when:
+          event: [pull_request, push]
+          branch: master
+
+    - name: integration-tests
+      depends_on:
+          - compile
+      image: sdbondi/rust-node:0.1
+      environment:
+          <<: *env
+          DATABASE_URL: postgres://app:password@database/integration_tests
+          TEST_DATABASE_URL: postgres://app:password@database/integration_tests
+          TEST_DATABASE_ADMIN_URL: postgres://app:password@database/integration_tests
+      commands:
+          - ./scripts/run-integration-tests.sh
+      when:
+          event: [pull_request, push]
+          branch: master
 
      - name: publish
        image: plugins/ecr
        depends_on:
 	   - cargo-audit
- #          - api-tests
- #          - integration-tests
+       - api-tests
+       - integration-tests
 	   - other-tests
        settings:
 	 dockerfile: Dockerfile.drone
@@ -259,7 +259,7 @@ steps:
 
 services:
     - name: database
-      image: postgres:10.4
+      image: postgres:9.6
       environment:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: password
