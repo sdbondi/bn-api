@@ -78,7 +78,7 @@ steps:
 
     - name: compile
       depends_on:
-          - restore-cache
+        - restore-cache
       image: rust:1.31.1
       environment: *env
       commands:
@@ -91,7 +91,7 @@ steps:
 
     - name: rebuild-cache
       depends_on:
-	  - compile
+        - compile
       image: plugins/s3-cache
       settings:
         rebuild: true
@@ -102,7 +102,7 @@ steps:
             from_secret: minio_secret_access_key
         mount:
             - ./target
-      root: drone
+        root: drone
         when:
           event: [pull_request, push]
           branch: master
