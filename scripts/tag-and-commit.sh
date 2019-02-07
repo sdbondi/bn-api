@@ -12,6 +12,7 @@ if [[ -z "$APP_VERSION" ]]; then
     exit 1
 fi
 
+mkdir -p $HOME/.ssh/
 declare -r SSH_FILE="$(mktemp -u $HOME/.ssh/githubXXX)"
 
 echo -n $GITHUB_SSH_KEY > $SSH_FILE
