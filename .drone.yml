@@ -67,7 +67,7 @@ steps:
     - name: set-version
       depends_on:
         - clone
-      image: rust:1.31.1
+      image: alpine/git:1.0.4
       environment:
           APP_VERSION: *version
       commands:

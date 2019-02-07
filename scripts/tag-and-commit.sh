@@ -24,7 +24,6 @@ printf "%s\n" \
   "Host github.com" \
   "  IdentityFile $SSH_FILE" \
   "  LogLevel ERROR" >> ~/.ssh/config
-chmod 600 ~/.ssh/config
 
 git config --global user.email "$GH_USER_EMAIL"
 git config --global user.name "$GH_USER_NAME"
