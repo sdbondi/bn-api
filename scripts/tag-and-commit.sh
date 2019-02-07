@@ -15,7 +15,7 @@ fi
 mkdir -p $HOME/.ssh/
 declare -r SSH_FILE="$(mktemp -u $HOME/.ssh/githubXXXXXX)"
 
-ssh-keyscan github.com > ~/.ssh/known_hosts
+ssh-keyscan github.com > ~/.ssh/known_hosts 2> /dev/null
 
 eval $(ssh-agent -s)
 
@@ -28,8 +28,6 @@ ssh-add <(echo "$GITHUB_SSH_KEY")
 #  "Host github.com" \
 #  "  IdentityFile $SSH_FILE" \
 #  "  LogLevel ERROR" >> ~/.ssh/config
-
-ssh -T git@github.com
 
 git config --global user.email "$GH_USER_EMAIL"
 git config --global user.name "$GH_USER_NAME"
