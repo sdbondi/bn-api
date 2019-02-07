@@ -215,7 +215,7 @@ steps:
             from_secret: deploy_lambda_function_name
 	deploy_version: *version
         payload: |-
-	  {\\"target\\": \\"bn-api-staging\\", \\"tag\\": \\"$PLUGIN_DEPLOY_VERSION\\"}
+          {\\"target\\": \\"bn-api-staging\\", \\"tag\\": \\"$PLUGIN_DEPLOY_VERSION\\"}
       when:
           branch: master
           event: push
