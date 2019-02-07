@@ -18,8 +18,7 @@ declare -r SSH_FILE="$(mktemp -u $HOME/.ssh/githubXXXXXX)"
 eval $(ssh-agent -s)
 
 echo -n $GITHUB_SSH_KEY > $SSH_FILE
-echo -n $GITHUB_SSH_KEY | ssh-add -
-
+ssh-add <(echo "$GITHUB_SSH_KEY")
 # Enable SSH authentication
 
 chmod 600 "$SSH_FILE"
