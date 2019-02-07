@@ -1,12 +1,11 @@
+use actix_web::HttpResponse;
 use actix_web::State;
-use actix_web::{http::StatusCode, HttpResponse};
 use auth::user::User;
 use bigneon_db::models::TicketType as Dbticket_types;
 use bigneon_db::models::User as DbUser;
 use bigneon_db::models::*;
 use bigneon_db::utils::errors::Optional;
 use bigneon_db::utils::rand::random_alpha_string;
-use communications::mailers;
 use config::Config;
 use db::Connection;
 use diesel::pg::PgConnection;
@@ -22,7 +21,6 @@ use payments::PaymentProcessorBehavior;
 use payments::RedirectToPaymentPageBehavior;
 use server::AppState;
 use std::collections::HashMap;
-use tari_client::TariClient;
 use utils::ServiceLocator;
 use uuid::Uuid;
 
@@ -241,7 +239,6 @@ pub fn checkout(
         Some(o) => o,
         None => return application::unprocessable("No cart exists for user"),
     };
-    let order_id = order.id;
     order.lock_version(connection.get())?;
 
     if !order.items_valid_for_purchase(connection.get())? {

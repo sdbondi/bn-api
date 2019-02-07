@@ -1102,7 +1102,7 @@ fn checkout_provider_globee() {
     let response = cart::checkout((
         database.connection.clone().into(),
         input,
-        user,
+        user.clone(),
         request.extract_state(),
     ))
     .unwrap();
@@ -1133,7 +1133,7 @@ fn checkout_provider_globee() {
         path,
         database.connection.clone().into(),
         request.extract_state(),
-        request.request,
+        OptionalUser(Some(user)),
     ))
     .unwrap();
 

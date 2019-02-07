@@ -1303,32 +1303,23 @@ impl Order {
         current_user_id: Option<Uuid>,
         conn: &PgConnection,
     ) -> Result<Payment, DatabaseError> {
-        match self.status {
-            OrderStatus::Paid => {
-                // still store the payment.
-            }
-            // orders can only expire if the order is in draft
-            OrderStatus::Draft => {
-                // This allows users to lock tickets for a period while they are paying
-                // but for now it allows us some time to manage payment details
-                if payment.status == PaymentStatus::Requested {
-                    self.update_status(current_user_id, OrderStatus::PendingPayment, conn)?;
-                    self.set_expiry(
-                        current_user_id,
-                        Some(Utc::now().naive_utc() + Duration::minutes(120)),
-                        conn,
-                    )?;
-                }
-            }
-            OrderStatus::PendingPayment => {
-
-                // Will be checked for completion later
-            }
-            OrderStatus::Cancelled => {
-
-                // Still accept the payment so that the user's account can be credited
-            }
-        }
+        //        match self.status {
+        //            OrderStatus::Paid => {
+        //                // still store the payment.
+        //            }
+        //            // orders can only expire if the order is in draft
+        //            OrderStatus::Draft => {
+        //             // Leave in draft,
+        //            }
+        //            OrderStatus::PendingPayment => {
+        //
+        //                // Will be checked for completion later
+        //            }
+        //            OrderStatus::Cancelled => {
+        //
+        //                // Still accept the payment so that the user's account can be credited
+        //            }
+        //        }
 
         // Confirm codes are still valid
         for item in self.items(conn)? {
@@ -1336,7 +1327,10 @@ impl Order {
         }
 
         let p = payment.commit(current_user_id, conn)?;
-        self.clear_user_cart(conn)?;
+        if p.status != PaymentStatus::Requested {
+            self.clear_user_cart(conn)?;
+        }
+
         self.complete_if_fully_paid(current_user_id, conn)?;
         Ok(p)
     }
@@ -1484,7 +1478,7 @@ impl Order {
         Ok(())
     }
 
-    fn update_status(
+    pub(crate) fn update_status(
         &mut self,
         current_user_id: Option<Uuid>,
         status: OrderStatus,

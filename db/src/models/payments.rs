@@ -1,4 +1,5 @@
 use chrono::NaiveDateTime;
+use chrono::Utc;
 use diesel;
 use diesel::expression::dsl;
 use diesel::pg::PgConnection;
@@ -7,6 +8,7 @@ use models::orders::Order;
 use models::*;
 use schema::payments;
 use serde_json;
+use time::Duration;
 use utils::errors::*;
 use uuid::Uuid;
 
@@ -212,6 +214,24 @@ impl Payment {
 
         Ok(())
     }
+    pub fn mark_pending_ipn(
+        &self,
+        current_user_id: Option<Uuid>,
+        conn: &PgConnection,
+    ) -> Result<(), DatabaseError> {
+        if self.status != PaymentStatus::Completed {
+            self.update_status(PaymentStatus::PendingIpn, current_user_id, conn)?;
+            let mut order = self.order(conn)?;
+            order.update_status(current_user_id, OrderStatus::PendingPayment, conn)?;
+            order.set_expiry(
+                current_user_id,
+                Some(Utc::now().naive_utc() + Duration::minutes(120)),
+                conn,
+            )?;
+        }
+        Ok(())
+    }
+
     pub fn mark_cancelled(
         &self,
         raw_data: serde_json::Value,
@@ -223,7 +243,7 @@ impl Payment {
             Completed | Authorized | Refunded | PendingConfirmation => {
                 DatabaseError::business_process_error("Could not mark payment as cancelled because it is in a status that doesn't allow cancelling")
             }
-            Requested | Unpaid | Draft | Unknown => {
+            Requested | Unpaid | Draft | Unknown | PendingIpn => {
 
                 DomainEvent::create(
                     DomainEventTypes::PaymentCancelled,

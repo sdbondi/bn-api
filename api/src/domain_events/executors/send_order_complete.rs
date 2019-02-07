@@ -6,10 +6,8 @@ use domain_events::executor_future::ExecutorFuture;
 use domain_events::routing::DomainActionExecutor;
 use errors::*;
 use futures::future;
-use helpers::application;
 use log::Level::Error;
 use std::collections::HashMap;
-use utils::communication::Communication;
 use uuid::Uuid;
 
 pub struct SendOrderCompleteExecutor {
@@ -97,14 +95,8 @@ impl SendOrderCompleteExecutor {
 
         //Communicate purchase completed to user
         if let (Some(first_name), Some(email)) = (user.first_name, user.email) {
-            mailers::cart::purchase_completed(
-                &first_name,
-                email,
-                display_order,
-                &self.config,
-                conn,
-            )?
-            .queue(conn)?;
+            mailers::cart::purchase_completed(&first_name, email, display_order, &self.config)?
+                .queue(conn)?;
         }
         Ok(())
     }

@@ -1,11 +1,11 @@
 use crate::db::Connection;
-use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Path;
 use actix_web::Query;
 use actix_web::State;
 use bigneon_db::prelude::*;
 use errors::*;
+use extractors::OptionalUser;
 use helpers::application;
 use server::AppState;
 use uuid::Uuid;
@@ -23,12 +23,12 @@ pub struct PathParams {
 }
 
 pub fn callback(
-    (query, path, connection, state, request): (
+    (query, path, connection, state, user): (
         Query<QueryParams>,
         Path<PathParams>,
         Connection,
         State<AppState>,
-        HttpRequest<AppState>,
+        OptionalUser,
     ),
 ) -> Result<HttpResponse, BigNeonError> {
     let conn = connection.get();
@@ -49,6 +49,9 @@ pub fn callback(
     // Just redirect to page accordingly
 
     if query.success {
+        if payment.status == PaymentStatus::Requested {
+            payment.mark_pending_ipn(user.id(), conn)?;
+        }
         application::redirect(&format!(
             "{}/events/{}/tickets/success",
             state.config.front_end_url,
@@ -60,7 +63,7 @@ pub fn callback(
             None,
             conn,
         )?;
-        order.reset_to_draft(None, conn)?;
+        // order.reset_to_draft(None, conn)?;
         application::redirect(&format!(
             "{}/events/{}/tickets/confirmation",
             state.config.front_end_url,
