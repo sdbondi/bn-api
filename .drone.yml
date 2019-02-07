@@ -209,8 +209,8 @@ steps:
       settings:
         access_key_id:
             from_secret: aws_access_key_id
-	aws_region:
-	    from_secret: aws_region
+        aws_region:
+            from_secret: aws_region
         secret_access_key:
             from_secret: aws_secret_access_key
         function_name:
