@@ -1083,7 +1083,7 @@ fn checkout_provider_globee() {
 
     let user = database.create_user().finish();
 
-    let _order = database
+    database
         .create_cart()
         .for_user(&user)
         .for_event(&event)
@@ -1110,7 +1110,7 @@ fn checkout_provider_globee() {
     assert_eq!(response.status(), StatusCode::OK);
     let body = unwrap_body_to_string(&response).unwrap();
     let order: DisplayOrder = serde_json::from_str(body).unwrap();
-    assert_eq!(order.status, OrderStatus::PendingPayment);
+    assert_eq!(order.status, OrderStatus::Draft);
 
     // User accepts
     let db_payment = &Order::find(order.id, conn).unwrap().payments(conn).unwrap()[0];
@@ -1120,10 +1120,8 @@ fn checkout_provider_globee() {
         db_payment.url_nonce.clone().unwrap(),
         order.id
     );
-    println!("{:?}", url);
     let request = TestRequest::create_with_uri_custom_params(&url, vec!["nonce", "id"]);
     let query = Query::<controllers::payments::QueryParams>::extract(&request.request).unwrap();
-    println!("{:?}", query);
     let mut path = Path::<controllers::payments::PathParams>::extract(&request.request).unwrap();
     path.nonce = db_payment.url_nonce.clone().unwrap();
     path.id = order.id;
@@ -1139,15 +1137,18 @@ fn checkout_provider_globee() {
 
     assert_eq!(response.status(), StatusCode::FOUND);
 
+    let order = Order::find(order.id, conn).unwrap();
+    assert_eq!(order.status, OrderStatus::PendingPayment);
+
     //let request = TestRequest::create_with_uri("/ipns/globee");
 
     let ipn = GlobeeIpnRequest {
         id: "".to_string(),
-        status: None,
+        status: Some("confirmed".to_string()),
         total: None,
         adjusted_total: None,
         currency: None,
-        custom_payment_id: None,
+        custom_payment_id: Some(order.id.to_string()),
         custom_store_reference: None,
         callback_data: None,
         customer: Customer {
@@ -1155,9 +1156,9 @@ fn checkout_provider_globee() {
             email: Email::new("something@test.com".to_string()),
         },
         payment_details: PaymentDetails {
-            currency: None,
-            received_amount: None,
-            received_difference: None,
+            currency: Some("BTC".to_string()),
+            received_amount: Some(order.calculate_total(conn).unwrap() as f64 / 100f64),
+            received_difference: Some(0.0),
         },
         redirect_url: None,
         success_url: None,
@@ -1174,16 +1175,21 @@ fn checkout_provider_globee() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let mut domain_actions = DomainAction::find_pending(None, conn).unwrap();
+    let mut domain_actions =
+        DomainAction::find_pending(Some(DomainActionTypes::PaymentProviderIPN), conn).unwrap();
 
     assert_eq!(domain_actions.len(), 1);
 
     let domain_action = domain_actions.remove(0);
+    assert_eq!(domain_action.main_table_id, Some(order.id));
 
-    let processor = domain_events::executors::send_order_complete::SendOrderCompleteExecutor::new(
-        request.config.clone(),
+    let processor = domain_events::executors::process_payment_ipn::ProcessPaymentIPNExecutor::new(
+        &request.config,
     );
     processor
         .perform_job(&domain_action, &database.connection.clone())
         .unwrap();
+
+    let order = Order::find(order.id, conn).unwrap();
+    assert_eq!(order.status, OrderStatus::Paid);
 }
