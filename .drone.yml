@@ -182,9 +182,9 @@ steps:
             from_secret: aws_access_key_id
         secret_key:
             from_secret: aws_secret_access_key
-     when:
-       branch: master
-       event: push
+      when:
+        branch: master
+        event: push
 
     - name: tag-commit
       depends_on:
