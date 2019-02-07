@@ -18,6 +18,7 @@ matrix:
   - stage: tests
     name: Test API
     env:
+    - RUST_BACKTRACE=1
     - TEST_SCRIPT="run-api-tests.sh"
     - DATABASE_URL=postgres://postgres:password123@localhost/bigneon_test
   - stage: tests
