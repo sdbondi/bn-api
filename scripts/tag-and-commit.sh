@@ -40,5 +40,6 @@ git remote add sshremote git@github.com:sdbondi/bn-api.git
 
 git add db/Cargo.toml api/Cargo.toml
 git commit -m  "Version set to ${version} [skip ci]"
-git tag ${new_version}
-git push sshremote master --tags
+git tag ${version}
+git push sshremote master
+git push sshremote ${version}
