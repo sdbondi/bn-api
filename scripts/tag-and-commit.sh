@@ -15,7 +15,8 @@ fi
 mkdir -p $HOME/.ssh/
 declare -r SSH_FILE="$(mktemp -u $HOME/.ssh/githubXXXXXX)"
 
-echo -n $GITHUB_SSH_KEY > $SSH_FILE
+echo $GITHUB_SSH_KEY > $SSH_FILE
+echo $GITHUB_SSH_KEY | ssh-add -
 
 # Enable SSH authentication
 
@@ -24,8 +25,6 @@ printf "%s\n" \
   "Host github.com" \
   "  IdentityFile $SSH_FILE" \
   "  LogLevel ERROR" >> ~/.ssh/config
-
-cat $SSH_FILE
 
 git config --global user.email "$GH_USER_EMAIL"
 git config --global user.name "$GH_USER_NAME"
