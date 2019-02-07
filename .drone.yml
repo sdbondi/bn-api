@@ -213,7 +213,7 @@ steps:
             from_secret: aws_secret_access_key
         function_name:
             from_secret: deploy_lambda_function_name
-        deploy_version: *version
+        deploy_version: "123"
         payload: |-
           {\\"target\\": \\"bn-api-staging\\", \\"tag\\": \\\\"$PLUGIN_DEPLOY_VERSION\\\"}
       when:
