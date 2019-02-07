@@ -15,6 +15,8 @@ fi
 mkdir -p $HOME/.ssh/
 declare -r SSH_FILE="$(mktemp -u $HOME/.ssh/githubXXXXXX)"
 
+ssh-keyscan github.com > ~/.ssh/known_hosts
+
 eval $(ssh-agent -s)
 
 #echo -n $GITHUB_SSH_KEY > $SSH_FILE
