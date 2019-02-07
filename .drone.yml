@@ -263,4 +263,3 @@ services:
       when:
           event: [pull_request, push]
           branch: master
-
