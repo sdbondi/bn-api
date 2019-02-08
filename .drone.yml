@@ -85,8 +85,8 @@ steps:
       environment: *env
       commands:
       - cargo build
-      - test -x target/release/server
-      - test -x target/release/bndb_cli
+      - test -x target/debug/server
+      - test -x target/debug/bndb_cli
       when:
         event: [pull_request, push]
         branch: master
