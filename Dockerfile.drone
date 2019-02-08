@@ -1,7 +1,7 @@
 FROM quay.io/tarilabs/run:alpine
 
-ADD ./target/release/server /usr/bin/
-ADD ./target/release/bndb_cli /usr/bin/
+ADD target/release/server /usr/bin/
+ADD target/release/bndb_cli /usr/bin/
 ADD reset-database.sh /usr/bin/
 
 CMD ["server"]

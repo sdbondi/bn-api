@@ -81,12 +81,12 @@ steps:
     - name: compile
       depends_on:
         - restore-cache
-      image: rust:1.31.1
+      image: quay.io/tarilabs/rust:1.30-alpine
       environment: *env
       commands:
-      - cargo build
-      - test -x target/debug/server
-      - test -x target/debug/bndb_cli
+      - cargo build --release
+      - test -x target/release/server
+      - test -x target/release/bndb_cli
       when:
         event: [pull_request, push]
         branch: master
