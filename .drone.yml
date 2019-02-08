@@ -38,7 +38,7 @@ steps:
     - name: rust-fmt-check
       depends_on:
         - clone
-      image: quay.io/tarilabs/rust:1.30-alpine
+      image: sdbondi/bn-api-builder:latest
       commands:
         - rustup component add rustfmt-preview
         - cargo fmt --all -- --check
@@ -69,7 +69,7 @@ steps:
     - name: set-version
       depends_on:
         - clone
-      image: quay.io/tarilabs/rust:1.30-alpine
+      image: sdbondi/bn-api-builder:latest
       environment:
           APP_VERSION: *version
       commands:
@@ -81,7 +81,7 @@ steps:
     - name: compile
       depends_on:
         - restore-cache
-      image: quay.io/tarilabs/rust:1.30-alpine
+      image: sdbondi/bn-api-builder:latest
       environment: *env
       commands:
       - cargo build --release
@@ -112,7 +112,7 @@ steps:
     - name: cargo-audit
       depends_on:
         - compile
-      image: quay.io/tarilabs/rust:1.30-alpine
+      image: sdbondi/bn-api-builder:latest
       commands:
         - ./scripts/run-cargo-audit.sh
       when:
@@ -122,7 +122,7 @@ steps:
     - name: other-tests
       depends_on:
         - compile
-      image: quay.io/tarilabs/rust:1.30-alpine
+      image: sdbondi/bn-api-builder:latest
       environment:
         <<: *env
         DATABASE_URL: postgres://app:password@database/other_tests
@@ -137,7 +137,7 @@ steps:
     - name: api-tests
       depends_on:
         - compile
-      image: quay.io/tarilabs/rust:1.30-alpine
+      image: sdbondi/bn-api-builder:latest
       environment:
           <<: *env
           DATABASE_URL: postgres://app:password@database/api_tests
@@ -152,7 +152,7 @@ steps:
     - name: integration-tests
       depends_on:
         - compile
-      image: sdbondi/rust-node:0.1
+      image: sdbondi/bn-api-builder:latest
       environment:
           <<: *env
           DATABASE_URL: postgres://app:password@database/integration_tests
