@@ -9,7 +9,7 @@ fi
 
 new_version=$1
 
-function bump_patch {
+function set_cargo_version {
     local file="$1"
     local version=`sed -En 's/version[[:space:]]*=[[:space:]]*"([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+)"/\1/p' < $file`
     local search='^(version[[:space:]]*=[[:space:]]*).+'
@@ -23,7 +23,7 @@ function bump_patch {
 FILES=( "db/Cargo.toml" "api/Cargo.toml" )
 
 for target in "${FILES[@]}"; do
-    bump_patch "$target"
+    set_cargo_version "$target"
 done
 
 
