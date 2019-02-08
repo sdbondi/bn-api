@@ -84,7 +84,7 @@ steps:
       image: rust:1.31.1
       environment: *env
       commands:
-      - cargo build --release
+      - cargo build
       - test -x target/release/server
       - test -x target/release/bndb_cli
       when:
