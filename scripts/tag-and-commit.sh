@@ -16,18 +16,8 @@ mkdir -p $HOME/.ssh/
 declare -r SSH_FILE="$(mktemp -u $HOME/.ssh/githubXXXXXX)"
 
 ssh-keyscan github.com > ~/.ssh/known_hosts 2> /dev/null
-
 eval $(ssh-agent -s)
-
-#echo -n $GITHUB_SSH_KEY > $SSH_FILE
 ssh-add <(echo "$GITHUB_SSH_KEY")
-# Enable SSH authentication
-
-#chmod 600 "$SSH_FILE"
-#printf "%s\n" \
-#  "Host github.com" \
-#  "  IdentityFile $SSH_FILE" \
-#  "  LogLevel ERROR" >> ~/.ssh/config
 
 git config --global user.email "$GH_USER_EMAIL"
 git config --global user.name "$GH_USER_NAME"
@@ -36,7 +26,7 @@ version=$APP_VERSION
 
 git checkout master
 
-git remote add sshremote git@github.com:sdbondi/bn-api.git
+git remote add sshremote git@github.com:$DRONE_REPO.git
 
 git add db/Cargo.toml api/Cargo.toml
 git commit -m  "Version set to ${version} [skip ci]"
