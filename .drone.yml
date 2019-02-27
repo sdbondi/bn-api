@@ -259,11 +259,6 @@ steps:
 
     - name: notify
       image: plugins/slack
-      depends_on:
-        - compile
-        - other-tests
-        - api-tests
-        - integration-tests
       settings:
         webhook:
           from_secret: nomatter_webhook
